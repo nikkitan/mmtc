@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context>
+    <Resource auth="Container" driverClassName="com.mysql.jdbc.Driver"  factory="org.apache.tomcat.jdbc.pool.DataSourceFactory" maxActive="100" maxIdle="19" maxTotal="1000" maxWaitMillis="10000" minIdle="1" name="jdbc/mmtcMySQLDataSource" password="mysqlmmtc(6454)" type="javax.sql.DataSource" url="jdbc:mysql://mmtc-db-dev.cjmff6hkiqpv.us-west-2.rds.amazonaws.com:3306/mmtc?autoReconnect=true" username="root"/>
+</Context>
