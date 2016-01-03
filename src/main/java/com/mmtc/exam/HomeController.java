@@ -400,7 +400,7 @@ public class HomeController {
 		}				
 	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 	    String curUser = auth.getName();		
-		String key = curUser;// + "MendezMasterTrainingCenter6454";//TODO: move string literal to config file.
+		String key = curUser + "MendezMasterTrainingCenter6454";//TODO: move string literal to config file.
 	    MessageDigest md = null;
 	    try {
 			md = MessageDigest.getInstance("SHA");
@@ -500,7 +500,6 @@ public class HomeController {
 	    try {
 			md = MessageDigest.getInstance("SHA");
 		} catch (NoSuchAlgorithmException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 			logger.error("[DEADLy] SHA not found in security algorithms!!!");
 			return null;
@@ -517,7 +516,7 @@ public class HomeController {
 				serial = Integer.toString(s.getInt("serial"));
 				found.setQuestion(serial + "." + s.getString("question"));
 				found.setOptions(s.getString("options"));
-				String key = curUser;// + "MendezMasterTrainingCenter6454";//TODO: move string literal to config file.
+				String key = curUser + "MendezMasterTrainingCenter6454";//TODO: move string literal to config file.
 				md.update(key.getBytes());
 				byte[] aesKey = md.digest();
 				aesKey = Arrays.copyOf(aesKey, 16);
