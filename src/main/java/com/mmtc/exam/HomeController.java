@@ -213,6 +213,7 @@ public class HomeController {
 				}   			
     		}
     		Integer pI = 0;
+    		int r  = 0;
     		String prevTestSerial = "0";
     		String curTestSerial = "0";
     		XSSFWorkbook parser = null;
@@ -227,21 +228,15 @@ public class HomeController {
                 Boolean isQuestion = true;
                 String curValue = null;
                 JsonArray jArr = null;
-                int i = 0;
                 conn = dataSource.getConnection();
                 sql =  "INSERT INTO test (question, serial, answer, keywords, options, testsuite_pk, " + 
                 		"createdat, updatedat) VALUES (?,?,?,?,?,?,NOW(),NOW())";
     			preparedSql = conn.prepareStatement(sql);
                 while(rItor.hasNext()){
-                   	if(i % 4 == 0){
+                   	if(r % 4 == 0){
                 		if(isQuestion == false){
                 			isQuestion = true;
-                			//preparedSql.setString(6, UUID.randomUUID().toString().replaceAll("-", ""));
                 			preparedSql.setLong(6, rowID);
-                			/*java.util.Date dt = new java.util.Date();
-                			String currentTime = sdf.format(dt);
-            				preparedSql.setDate(8, new java.sql.Date(Calendar.getInstance().getTimeInMillis()));
-            				preparedSql.setDate(9, new java.sql.Date(Calendar.getInstance().getTimeInMillis()));*/
                             preparedSql.addBatch();
                             logger.info("[Done_prepared_batch].");
                 		}
@@ -251,11 +246,12 @@ public class HomeController {
                 		}
                 	}
                 	Row row = rItor.next();//Row row = sheet1.getRow(i);
+                	if(row.getPhysicalNumberOfCells() > 0){
                 	++pI;
                 	//logger.info("[pI]: " + pI.toString());
                 	//For each row, iterate through all the columns
                     Iterator<Cell> cellIterator = row.cellIterator();                	
-                    while (cellIterator.hasNext())
+                    cellloop: while (cellIterator.hasNext())
                     {
                         Cell cell = cellIterator.next();
                         //Check the cell type and format accordingly
@@ -266,17 +262,12 @@ public class HomeController {
                                 System.out.print(cell.getNumericCellValue() + ",");
                                 break;
                             case Cell.CELL_TYPE_STRING:
-                            	if(isQuestion == true){
-                            		curValue = cell.getStringCellValue();
+                            	curValue = cell.getStringCellValue();
+                            	logger.info("{},",curValue);
+                            	if(isQuestion == true){                            	
                             		int dotPos = curValue.indexOf('.');
                             		if(dotPos != -1){
                             			curTestSerial = curValue.substring(0, dotPos);
-                            			/*if(preparedSql == null || preparedSql.isClosed() == true){
-                                			conn = dataSource.getConnection();
-                                            sql =  "INSERT INTO test (question, serial, answer, keywords, options, uuid, testsuite_pk, " + 
-                                            		"createdat, updatedat) VALUES (?,?,?,?,?,?,?,?,?)";
-                                			preparedSql = conn.prepareStatement(sql);
-                                		}*/
                                 		preparedSql.setNString(pI, curValue.substring(dotPos+1));
                             			pI++;
                             			Integer c = Integer.parseInt(curTestSerial);
@@ -287,17 +278,20 @@ public class HomeController {
                             			prevTestSerial = c.toString();//curTestSerial;
                             		}else{
                             			//Error: Question doesn't begin with serial number followed by '.'.
-                            			throw new Exception("Missing serial number and '.' in front of question!");
-                            		}          		
+                            			throw new Exception("Missing serial number and '.' in front of question after question " + curTestSerial);
+                            		}
+                            		break cellloop;//We only allow 1 cell for question.
                             	}else{
                                 	if(jArr == null)
                                 		jArr = new  JsonArray();
                             		jArr.add(cell.getStringCellValue());
                             	}
-                                System.out.print(cell.getStringCellValue() + ",");
                                 break;
                             case Cell.CELL_TYPE_BLANK:
                             	logger.info("[CELL_TYPE_BLANK]!");
+                            default:
+                            	logger.error("[UNKnown cell type]!!");
+                            	break;
                             
                         }
                     }
@@ -308,22 +302,20 @@ public class HomeController {
                     		pI = 0;
                     	jArr = null;
                     }
-
                     logger.info("[END_ROW]");
-                    ++i;
- 
+                    r++;
+                	}else{
+                		logger.info("[EMPTY_ROW]");
+                	}
                 }
-               	if(i % 4 == 0){
+               	if(r % 4 == 0){
             		if(isQuestion == false){
-            			//preparedSql.setString(6, UUID.randomUUID().toString().replaceAll("-", ""));
             			preparedSql.setLong(6, rowID);
-        				//preparedSql.setDate(8, new java.sql.Date(Calendar.getInstance().getTimeInMillis()));
-        				//preparedSql.setDate(9, new java.sql.Date(Calendar.getInstance().getTimeInMillis()));
                         preparedSql.addBatch();
                         logger.info("[Done_LAST_prepared_batch].");
             		}
             	}
-                
+               
                 
             } catch (Exception e) {
     			e.printStackTrace();
@@ -333,43 +325,60 @@ public class HomeController {
     			else
     				error = "You failed uploading test suite " + suitename;
     			logger.error(e.getMessage());
-                return new ModelAndView("result","result",error);
-            } finally{
-            	try {
-					parser.close();
-				} catch (IOException e1) {
+    			//Delete test suite record and any tests already inserted.
+    			try {
+					preparedSql.clearBatch();
+				} catch (SQLException e1) {
 					e1.printStackTrace();
+					preparedSql = null;
+					logger.error("[uploadtestsuite] Exception when clearBatch() of preparedSql.");
+				}
+    			
+    			String sql2 = "DELETE FROM testsuite WHERE pk = " + rowID;
+    			try {
+					conn.createStatement().executeUpdate(sql2);
+				} catch (SQLException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+					logger.error("[uploadtestsuite] Failed deleting testsuite record " + rowID);
+					error += ". Serious error, PLZ contact nikki.";
+				} 			
+                return new ModelAndView("result","result",error);
+            } 
+            
+        	try {
+				parser.close();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			} finally{
+				parser = null;
+			}
+            try {
+            	conn.setAutoCommit(false);
+	            preparedSql.executeBatch();
+	            conn.commit();
+	            conn.setAutoCommit(true);
+            } catch (SQLException e) {
+    			e.printStackTrace();
+    			logger.error("[uploadtestsuite] " + e.getMessage());
+    			new ModelAndView("result","result","Error: " + e.getMessage());
+    		} finally{
+	            try {
+					preparedSql.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
 				} finally{
-					parser = null;
+					preparedSql = null;
 				}
 	            try {
-	            	if(conn == null)
-	            		conn = dataSource.getConnection();
-		            conn.setAutoCommit(false);
-		            preparedSql.executeBatch();
-		            conn.commit();
-		            conn.setAutoCommit(true);
-	            } catch (SQLException e) {
-	    			e.printStackTrace();
-	    			logger.error("[uploadtestsuite] " + e.getMessage());
-	    			new ModelAndView("result","result","Error: " + e.getMessage());
-	    		} finally{
-		            try {
-						preparedSql.close();
-					} catch (SQLException e) {
-						e.printStackTrace();
-					} finally{
-						preparedSql = null;
-					}
-		            try {
-						conn.close();
-					} catch (SQLException e) {
-						e.printStackTrace();
-					} finally{
-						conn = null;
-					}
-	    		}
-            }
+					conn.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				} finally{
+					conn = null;
+				}
+    		}
+            
             return new ModelAndView("result","result","Successfully uploaded test suite " + suitename);
 
         } else {
@@ -388,57 +397,10 @@ public class HomeController {
 			@PathVariable String tid) {
 		logger.info(request.getRequestURL().toString());
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
-		byte [] decodeCipherText = Base64.decodeBase64(tid);//16 bit iv + suite + serial.
-		byte [] iv = Arrays.copyOfRange(decodeCipherText, 0, AES_KEYLENGTH / 8);
-		byte [] realDecodeCipherText = Arrays.copyOfRange(decodeCipherText, AES_KEYLENGTH / 8, decodeCipherText.length);
-		Cipher aesCipherForDecryption = null;
-		try {
-			aesCipherForDecryption = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-			e.printStackTrace();
-			return new ModelAndView("result","result","[ERROR] " + e.getMessage());
-		}				
 	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-	    String curUser = auth.getName();		
-		String key = curUser + "MendezMasterTrainingCenter6454";//TODO: move string literal to config file.
-	    MessageDigest md = null;
-	    try {
-			md = MessageDigest.getInstance("SHA");
-		} catch (NoSuchAlgorithmException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-			logger.error("[DEADLy] SHA not found in security algorithms!!!");
-			return null;
-		}
-		md.update(key.getBytes());
-		byte[] aesKey = md.digest();
-		aesKey = Arrays.copyOf(aesKey, 16);
-		String strKey = new String(aesKey);
-		logger.info("[KEY2] " + strKey);
-		logger.info("[iv len] " + String.valueOf(iv.length));
-
-		SecretKeySpec keySpec = new SecretKeySpec(aesKey,"AES");
-		
-		try {
-			aesCipherForDecryption.init(Cipher.DECRYPT_MODE, keySpec,new IvParameterSpec(iv));
-		} catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return new ModelAndView("result","result","[ERROR] " + e.getMessage());			
-		}
-		
-		byte[] byteDecryptedText = null;
-		try {
-			byteDecryptedText = aesCipherForDecryption.doFinal(realDecodeCipherText);
-		} catch (IllegalBlockSizeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (BadPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		String strDecryptedText = new String(byteDecryptedText);
-		logger.info(" Decrypted Text message is " + strDecryptedText + "/" + tid);
+	    String curUser = auth.getName();
+		String suiteAndTest = decryptTestID(curUser + "MendezMasterTrainingCenter6454",tid);
+		logger.info("[DEcrypted] " + suiteAndTest);
 		
 		//request.getSession().setAttribute("totalNumberOfQuizQuestions",);
 		request.getSession().setAttribute("quizDuration",5);
@@ -495,15 +457,6 @@ public class HomeController {
 		Connection conn = null;
 	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 	    String curUser = auth.getName();
-	    MessageDigest md = null;
-		byte[] iv = new byte[AES_KEYLENGTH / 8];	// Save the IV bytes or send it in plaintext with the encrypted data so you can decrypt the data later
-	    try {
-			md = MessageDigest.getInstance("SHA");
-		} catch (NoSuchAlgorithmException e1) {
-			e1.printStackTrace();
-			logger.error("[DEADLy] SHA not found in security algorithms!!!");
-			return null;
-		}
 		try{
 			conn = dataSource.getConnection();
 			preparedSql = conn.prepareStatement(sql);
@@ -516,27 +469,7 @@ public class HomeController {
 				serial = Integer.toString(s.getInt("serial"));
 				found.setQuestion(serial + "." + s.getString("question"));
 				found.setOptions(s.getString("options"));
-				String key = curUser + "MendezMasterTrainingCenter6454";//TODO: move string literal to config file.
-				md.update(key.getBytes());
-				byte[] aesKey = md.digest();
-				aesKey = Arrays.copyOf(aesKey, 16);
-				String strKey = new String(aesKey);
-				logger.info("[KEY1] " + strKey);
-				SecretKeySpec keySpec = new SecretKeySpec(aesKey,"AES");
-				SecureRandom prng = new SecureRandom();
-				prng.nextBytes(iv);
-				Cipher aesCipherForEncryption = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-				aesCipherForEncryption.init(Cipher.ENCRYPT_MODE, keySpec, new IvParameterSpec(iv));
-				String strIv = new String(iv);//The first 16 bits is iv, followed by suite + serial.
-				byte[] byteDataToEncrypt = (suite + "-" + serial).getBytes();
-				byte[] byteCipherText = aesCipherForEncryption.doFinal(byteDataToEncrypt);
-				int l = iv.length + byteCipherText.length;
-				int delta = iv.length;
-				byte[] finalCipherText = new byte[iv.length + byteCipherText.length];
-				System.arraycopy(iv, 0, finalCipherText, 0, iv.length);
-				System.arraycopy(byteCipherText, 0, finalCipherText, iv.length, byteCipherText.length);
-				String strFinalCipherText = new String(Base64.encodeBase64(finalCipherText,false,true));//BASE64Encoder().encode(byteCipherText);
-				found.setId(strFinalCipherText);
+				found.setId(encrypt(curUser + "MendezMasterTrainingCenter6454",suite + "-" + serial));
 				tests.add(found);
 			}
 			conn.close();
@@ -545,6 +478,113 @@ public class HomeController {
 			logger.error("[testsuite] " + e.getMessage());			
 		}
 		return tests;
+		
+	}
+	
+	private String encrypt(String key, String secret2Encrypt){
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+	    String curUser = auth.getName();
+	    MessageDigest md = null;
+		byte[] iv = new byte[AES_KEYLENGTH / 8];	// Save the IV bytes or send it in plaintext with the encrypted data so you can decrypt the data later
+	    try {
+			md = MessageDigest.getInstance("SHA");
+		} catch (NoSuchAlgorithmException e1) {
+			e1.printStackTrace();
+			logger.error("[DEADLy] SHA not found in security algorithms!!!");
+			return null;
+		}		
+	    md.update(key.getBytes());
+		byte[] aesKey = md.digest();
+		aesKey = Arrays.copyOf(aesKey, 16);
+		String strKey = new String(aesKey);
+		//logger.info("[KEY1] " + strKey);
+		SecretKeySpec keySpec = new SecretKeySpec(aesKey,"AES");
+		SecureRandom prng = new SecureRandom();
+		prng.nextBytes(iv);
+		Cipher aesCipherForEncryption = null;
+		try {
+			aesCipherForEncryption = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
+		try {
+			aesCipherForEncryption.init(Cipher.ENCRYPT_MODE, keySpec, new IvParameterSpec(iv));
+		} catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
+		String strIv = new String(iv);//The first 16 bits is iv, followed by suite + serial.
+		byte[] byteDataToEncrypt = secret2Encrypt.getBytes();
+		byte[] byteCipherText = null;
+		try {
+			byteCipherText = aesCipherForEncryption.doFinal(byteDataToEncrypt);
+		} catch (IllegalBlockSizeException | BadPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
+		int l = iv.length + byteCipherText.length;
+		int delta = iv.length;
+		byte[] finalCipherText = new byte[iv.length + byteCipherText.length];
+		System.arraycopy(iv, 0, finalCipherText, 0, iv.length);
+		System.arraycopy(byteCipherText, 0, finalCipherText, iv.length, byteCipherText.length);
+		String strFinalCipherText = new String(Base64.encodeBase64(finalCipherText,false,true));//BASE64Encoder().encode(byteCipherText);		
+		return strFinalCipherText;
+	}
+	
+	private String decryptTestID(String key, String encryptedData){
+		byte [] decodeCipherText = Base64.decodeBase64(encryptedData);//16 bit iv + suite + serial.
+		byte [] iv = Arrays.copyOfRange(decodeCipherText, 0, AES_KEYLENGTH / 8);
+		byte [] realDecodeCipherText = Arrays.copyOfRange(decodeCipherText, AES_KEYLENGTH / 8, decodeCipherText.length);
+		Cipher aesCipherForDecryption = null;
+		try {
+			aesCipherForDecryption = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+			e.printStackTrace();
+			return null;
+		}				
+	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+	    String curUser = auth.getName();		
+	    MessageDigest md = null;
+	    try {
+			md = MessageDigest.getInstance("SHA");
+		} catch (NoSuchAlgorithmException e1) {
+			e1.printStackTrace();
+			logger.error("[DEADLy] SHA not found in security algorithms!!!");
+			return null;
+		}
+		md.update(key.getBytes());
+		byte[] aesKey = md.digest();
+		aesKey = Arrays.copyOf(aesKey, 16);
+		String strKey = new String(aesKey);
+		//logger.info("[KEY2] " + strKey);
+		//logger.info("[iv len] " + String.valueOf(iv.length));
+
+		SecretKeySpec keySpec = new SecretKeySpec(aesKey,"AES");
+		
+		try {
+			aesCipherForDecryption.init(Cipher.DECRYPT_MODE, keySpec,new IvParameterSpec(iv));
+		} catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
+			e.printStackTrace();
+			return null;
+		}
+		
+		byte[] byteDecryptedText = null;
+		try {
+			byteDecryptedText = aesCipherForDecryption.doFinal(realDecodeCipherText);
+		} catch (IllegalBlockSizeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (BadPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		String strDecryptedText = new String(byteDecryptedText);
+		logger.info(" Decrypted Text message is " + strDecryptedText + "/" + encryptedData);
+		return strDecryptedText;
 		
 	}
 }
