@@ -3,6 +3,8 @@ package com.mmtc.exam;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
@@ -33,8 +35,10 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.csv.CSVFormat;
@@ -64,7 +68,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
 import com.mmtc.exam.dao.Test;
 import com.mmtc.exam.dao.TestSuite;
 
@@ -72,11 +80,15 @@ import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
 
 //http://springinpractice.com/2010/07/06/spring-security-database-schemas-for-mysql
+//http://www.jsptut.com/
+//http://docs.spring.io/spring/docs/current/spring-framework-reference/html/spring-form-tld.html
 /**
  * Handles requests for the application home page.
  */
 @Controller
 public class HomeController {
+	@Autowired
+	ServletContext servletCtx;
 	@Autowired
 	private JndiObjectFactoryBean jndiObjFactoryBean;		
 	
@@ -159,11 +171,133 @@ public class HomeController {
 			HttpServletResponse response){
 		logger.info(request.getRequestURL().toString());
 		logger.info("[GOT_TS] " + ts.getName());
-		ArrayList<String> suites = getTestSuites();	
+		//ArrayList<String> suites = getTestSuites();	
 		
-        return new ModelAndView("listtest","tests",getTests(ts.getName()));
+        return new ModelAndView("listtest","tests",getTestsForSuite(ts.getName()));
 	}
-	
+
+	@RequestMapping(value = "/edittest/{tid}", method = RequestMethod.GET)
+	public @ResponseBody ModelAndView editTestGET(Locale locale, Model model,
+			HttpServletRequest request, 
+			HttpServletResponse response,
+			@PathVariable String tid) {
+		logger.info(request.getRequestURL().toString());
+		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
+	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+	    String curUser = auth.getName();
+		String suiteAndTest = decryptTestID(curUser + "MendezMasterTrainingCenter6454",tid);
+		logger.info("[DEcrypted] " + suiteAndTest);
+		Test ts = new Test();
+		String[] s_t = suiteAndTest.split("-");
+		ArrayList<Test> tests = getTestBySuiteAndID(s_t[0],s_t[1]);	
+		if(tests.size() > 1){
+			//TODO:No good.....duplicated test records. => Delete all of them and keep only 1?
+			String err = new Throwable().getStackTrace()[0].getMethodName();
+			err += " => Duplicated test records of suite {} test {}!!!";
+			logger.error(err,s_t[0],s_t[1]);
+		}
+		if(tests.isEmpty() == true){
+			String msg = "No test found for suite " + s_t[0];
+			msg += " and test " + s_t[1];
+			return new ModelAndView("result","result",msg);
+		}
+		ModelAndView resultView = new ModelAndView();
+		resultView.setViewName("edittest");
+		Test found = tests.get(0);
+		resultView.addObject("ts", ts);
+		resultView.addObject("id",tid);
+		resultView.addObject("ste",found.getSuite());
+		resultView.addObject("sn",found.getSerialNo());
+		resultView.addObject("q",found.getQuestion());
+		resultView.addObject("ans",found.getAnsArrayList());
+		resultView.addObject("opt",found.getOptArrayList());
+		//resultView.addObject("pic",found.getPic());
+		return resultView;
+	}
+
+	@RequestMapping(value = "/getmg/{imgid}", method = RequestMethod.GET)
+	public @ResponseBody byte[] getImgGET(
+			Locale locale,
+			Model model,
+			HttpSession session,
+			HttpServletRequest request, 
+			HttpServletResponse response,
+			@PathVariable String imgid){
+		byte[] rawImg = null;
+		
+		return rawImg;
+	}
+			
+	@RequestMapping(value = "/edittest/{tid}", method = RequestMethod.POST)
+	public @ResponseBody ModelAndView editTestPOST(
+			Locale locale,
+			Model model,
+			HttpSession session,
+			HttpServletRequest request, 
+			HttpServletResponse response,
+			@PathVariable String tid,
+			@RequestParam("file") MultipartFile file) {
+		logger.info(request.getRequestURL().toString());
+		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
+	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+	    String curUser = auth.getName();
+		String suiteAndTest = decryptTestID(curUser + "MendezMasterTrainingCenter6454",tid);
+		logger.info("[DEcrypted] " + suiteAndTest);
+		
+		if(file.getSize() > 0){
+			//Save image locally.
+			String destDir = request.getSession().getServletContext().getRealPath("/");//servletCtx.getRealPath("/");
+			destDir += "resources";
+			logger.info("[2_save_img_2] " + destDir);
+			String encFileName = encrypt(curUser + "MendezMasterTrainingCenter6454_testpickey",suiteAndTest);
+			FileInputStream in = null;
+			try {
+				in = (FileInputStream) file.getInputStream();
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+				return new ModelAndView("result","result","Failed getting INPUT STREAM.");
+
+			}
+			FileOutputStream out = null;
+			try {
+				out = new FileOutputStream(destDir+encFileName);
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return new ModelAndView("result","result","Failed getting OUTPUT STREAM.");
+			}
+			
+			int readBytes = 0;
+			byte[] buffer = new byte[8192];
+			try {
+				while ((readBytes = in.read(buffer, 0, 8192)) != -1) {
+					logger.info("===ddd=======");
+					out.write(buffer, 0, readBytes);
+				}
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			} 
+			
+			try {
+				in.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			try {
+				out.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			session.setAttribute("uploadFile", destDir + file.getOriginalFilename());
+		}else{
+			return new ModelAndView("result","result","Empty file uploaded.");
+		}
+		return new ModelAndView("picuploadindex");
+	}
 	@RequestMapping(value="/uploadtestsuite", method=RequestMethod.POST)
     public @ResponseBody ModelAndView uploadTestSuitePOST(
     		@RequestParam("name") String suitename,
@@ -390,22 +524,6 @@ public class HomeController {
 		
     }
 	
-	@RequestMapping(value = "/edittest/{tid}", method = RequestMethod.GET)
-	public @ResponseBody ModelAndView editTestPOST(Locale locale, Model model,
-			HttpServletRequest request, 
-			HttpServletResponse response,
-			@PathVariable String tid) {
-		logger.info(request.getRequestURL().toString());
-		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
-	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-	    String curUser = auth.getName();
-		String suiteAndTest = decryptTestID(curUser + "MendezMasterTrainingCenter6454",tid);
-		logger.info("[DEcrypted] " + suiteAndTest);
-		
-		//request.getSession().setAttribute("totalNumberOfQuizQuestions",);
-		request.getSession().setAttribute("quizDuration",5);
-		return new ModelAndView("result","result","");
-	}
 	
 	@RequestMapping(value = "/exam/{examname}", method = RequestMethod.GET)
 	public @ResponseBody ModelAndView examPOST(Locale locale, Model model,
@@ -447,9 +565,56 @@ public class HomeController {
 		return suites;
 		
 	}
-	
-	private ArrayList<Test> getTests(String suite){
-		logger.info("getTests()!");
+	private ArrayList<Test> getTestBySuiteAndID(String suite, String testsn){
+		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
+		ArrayList<Test> tests = new ArrayList<Test>();
+		String sql = "SELECT serial, pic ,updatedat, question, options,answer FROM test "
+				+"WHERE testsuite_pk IN (SELECT pk FROM testsuite WHERE name=?)"
+				+" AND serial = ?";
+		PreparedStatement preparedSql = null;
+		Connection conn = null;
+	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+	    String curUser = auth.getName();
+		try{
+			conn = dataSource.getConnection();
+			preparedSql = conn.prepareStatement(sql);
+			preparedSql.setString(1, suite);
+			preparedSql.setString(2, testsn);
+			ResultSet s = preparedSql.executeQuery();
+			String serial = null;			
+			JsonParser jp = new JsonParser();
+			Gson gs = new Gson();
+
+			while(s.next()){
+				Test found = new Test();
+				JsonElement elem = jp.parse(s.getString("answer"));
+				JsonArray jsonArr = elem.getAsJsonArray();
+				found.setAnsJsonArr(jsonArr);
+				found.setAnsArrayList(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
+				//found.setAnswer(s.getString("answer"));
+				serial = Integer.toString(s.getInt("serial"));
+				found.setQuestion(serial + "." + s.getString("question"));
+				elem = jp.parse(s.getString("options"));
+				jsonArr = elem.getAsJsonArray();
+				found.setOptJsonArr(jsonArr);
+				found.setOptArrayList(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
+
+				//found.setOptions(s.getString("options"));
+				found.setPic(s.getString("pic"));
+				found.setId(encrypt(curUser + "MendezMasterTrainingCenter6454",suite + "-" + serial));
+				found.setSuite(suite);
+				found.setSerialNo(Integer.valueOf(testsn));
+				tests.add(found);
+			}
+			conn.close();
+		}catch(Exception e){
+			e.printStackTrace();
+			logger.error("[getTestBySuiteAndID()] " + e.getMessage());			
+		}
+		return tests;
+	}
+	private ArrayList<Test> getTestsForSuite(String suite){
+		logger.info("getTestForSuite()!");
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		ArrayList<Test> tests = new ArrayList<Test>();
 		String sql = "SELECT serial, updatedat, question, options,answer FROM test WHERE testsuite_pk IN (SELECT pk FROM testsuite WHERE name=?)";
@@ -463,12 +628,21 @@ public class HomeController {
 			preparedSql.setString(1, suite);
 			ResultSet s = preparedSql.executeQuery();
 			String serial = null;
+			JsonParser jp = new JsonParser();
+			Gson gs = new Gson();
 			while(s.next()){
 				Test found = new Test();
-				found.setAnswer(s.getString("answer"));
+				JsonElement elem = jp.parse(s.getString("answer"));
+				JsonArray jsonArr = elem.getAsJsonArray();
+				found.setAnsJsonArr(jsonArr);
+				found.setAnsArrayList(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
 				serial = Integer.toString(s.getInt("serial"));
 				found.setQuestion(serial + "." + s.getString("question"));
-				found.setOptions(s.getString("options"));
+				elem = jp.parse(s.getString("options"));
+				jsonArr = elem.getAsJsonArray();
+				found.setOptJsonArr(jsonArr);
+				found.setOptArrayList(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
+				//found.setOptions(s.getString("options"));
 				found.setId(encrypt(curUser + "MendezMasterTrainingCenter6454",suite + "-" + serial));
 				tests.add(found);
 			}
@@ -480,7 +654,7 @@ public class HomeController {
 		return tests;
 		
 	}
-	
+	//https://www.owasp.org/index.php/Using_the_Java_Cryptographic_Extensions
 	private String encrypt(String key, String secret2Encrypt){
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 	    String curUser = auth.getName();
