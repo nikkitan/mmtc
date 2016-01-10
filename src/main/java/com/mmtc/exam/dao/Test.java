@@ -1,5 +1,9 @@
 package com.mmtc.exam.dao;
 
+import java.util.ArrayList;
+
+import com.google.gson.JsonArray;
+
 public class Test {
 	public Test(){}
 	
@@ -58,11 +62,65 @@ public class Test {
 		this.lastUpdateTimestamp = lastUpdateTimestamp;
 	}
 
+	public String getPic() {
+		return pic;
+	}
+
+	public void setPic(String pic) {
+		this.pic = pic;
+	}
+
+	public String getSuite() {
+		return suite;
+	}
+
+	public void setSuite(String suite) {
+		this.suite = suite;
+	}
+
+	public JsonArray getAnsJsonArr() {
+		return ansJsonArr;
+	}
+
+	public void setAnsJsonArr(JsonArray ansJsonArr) {
+		this.ansJsonArr = ansJsonArr;
+	}
+
+	public JsonArray getOptJsonArr() {
+		return optJsonArr;
+	}
+
+	public void setOptJsonArr(JsonArray optJsonArr) {
+		this.optJsonArr = optJsonArr;
+	}
+
+	public ArrayList<String> getAnsArrayList() {
+		return ansArrayList;
+	}
+
+	public void setAnsArrayList(ArrayList<String> ansArrayList) {
+		this.ansArrayList = ansArrayList;
+	}
+
+	public ArrayList<String> getOptArrayList() {
+		return optArrayList;
+	}
+
+	public void setOptArrayList(ArrayList<String> optArrayList) {
+		this.optArrayList = optArrayList;
+	}
+
+	private JsonArray ansJsonArr;
+	private JsonArray optJsonArr;
+	private ArrayList<String> ansArrayList;
+	private ArrayList<String> optArrayList;
+	private String suite;
 	private String question;
 	private Integer serialNo;
-	private String options;
-	private String answer;
+	private String options;//Stringified JSON array.
+	private String answer;//Stringified JSON array.
 	private String keywords;
+	private String pic;//picture file name.
 	private String id;//AES encryption for publicly usage in web pages.
 	private long lastUpdateTimestamp;
 }
