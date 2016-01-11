@@ -1,6 +1,5 @@
 package com.mmtc.exam;
 
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -21,14 +20,9 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
-import java.util.Map;
-import java.util.UUID;
-
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -41,9 +35,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVRecord;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -75,9 +66,6 @@ import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import com.mmtc.exam.dao.Test;
 import com.mmtc.exam.dao.TestSuite;
-
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
 
 //http://springinpractice.com/2010/07/06/spring-security-database-schemas-for-mysql
 //http://www.jsptut.com/
@@ -177,7 +165,10 @@ public class HomeController {
 	}
 
 	@RequestMapping(value = "/edittest/{tid}", method = RequestMethod.GET)
-	public @ResponseBody ModelAndView editTestGET(Locale locale, Model model,
+	public @ResponseBody ModelAndView editTestGET(
+			Locale locale, 
+			Model model,
+			HttpSession session,
 			HttpServletRequest request, 
 			HttpServletResponse response,
 			@PathVariable String tid) {
@@ -211,7 +202,14 @@ public class HomeController {
 		resultView.addObject("q",found.getQuestion());
 		resultView.addObject("ans",found.getAnsArrayList());
 		resultView.addObject("opt",found.getOptArrayList());
-		//resultView.addObject("pic",found.getPic());
+		resultView.addObject("kwd", found.getKwdArrayList());
+		String parentDir = File.separator;
+		parentDir += "resources" + File.separator;
+		parentDir += "pic";
+		parentDir += File.separator;
+		String pic = found.getPic();
+		resultView.addObject("pic",pic);
+		session.setAttribute("uploadFile", parentDir + pic);
 		return resultView;
 	}
 
@@ -238,16 +236,19 @@ public class HomeController {
 			@PathVariable String tid,
 			@RequestParam("file") MultipartFile file) {
 		logger.info(request.getRequestURL().toString());
-		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
-	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-	    String curUser = auth.getName();
-		String suiteAndTest = decryptTestID(curUser + "MendezMasterTrainingCenter6454",tid);
-		logger.info("[DEcrypted] " + suiteAndTest);
+
 		
 		if(file.getSize() > 0){
-			//Save image locally.
+		    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		    String curUser = auth.getName();
+			String suiteAndTest = decryptTestID(curUser + "MendezMasterTrainingCenter6454",tid);
+			logger.info("[DEcrypted] " + suiteAndTest);
+			//Save image locally.			
 			String destDir = request.getSession().getServletContext().getRealPath("/");//servletCtx.getRealPath("/");
 			destDir += "resources";
+			destDir += File.separator;
+			destDir += "pic";
+			destDir += File.separator;
 			logger.info("[2_save_img_2] " + destDir);
 			String encFileName = encrypt(curUser + "MendezMasterTrainingCenter6454_testpickey",suiteAndTest);
 			FileInputStream in = null;
@@ -279,7 +280,7 @@ public class HomeController {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			} 
-			
+			logger.info("[DONE_SAVING_IMG]");
 			try {
 				in.close();
 			} catch (IOException e) {
@@ -292,7 +293,54 @@ public class HomeController {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			session.setAttribute("uploadFile", destDir + file.getOriginalFilename());
+				
+			//Save pic dir info to SQL.
+			DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
+			Connection conn = null;
+    		PreparedStatement preparedSql = null;
+    		String sql = "UPDATE test SET pic=? WHERE testsuite_pk IN (SELECT pk FROM testsuite WHERE name = ?) AND serial = ?";
+    		String[] s_t = suiteAndTest.split("-");
+    		try {
+    			conn = dataSource.getConnection();					
+    			preparedSql = conn.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS);
+    			preparedSql.setString(1, encFileName);
+    			preparedSql.setString(2,s_t[0]);
+    			preparedSql.setInt(3, Integer.valueOf(s_t[1]));
+    			preparedSql.executeUpdate();
+    			ResultSet r = preparedSql.getGeneratedKeys();
+    			r.next();
+    			//rowID = r.getLong(1);
+    		} catch (SQLException e) {
+    			e.printStackTrace();
+    			String err = new Throwable().getStackTrace()[0].getMethodName();
+    			err += " => ";
+    			err += e.getMessage();
+    			logger.error(err);
+    			return new ModelAndView("result","result","Error: " + e.getMessage());
+    		} finally{
+        		sql = null;
+    			try {
+					preparedSql.close();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} finally{
+					preparedSql = null;
+				}
+    			try {
+					conn.close();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} finally{
+					conn = null;
+				}   			
+    		}			
+    		String parentDir = File.separator;
+    		parentDir += "resources" + File.separator;
+    		parentDir += "pic";
+    		parentDir += File.separator;
+			session.setAttribute("uploadFile", parentDir + encFileName);
 		}else{
 			return new ModelAndView("result","result","Empty file uploaded.");
 		}
@@ -524,16 +572,38 @@ public class HomeController {
 		
     }
 	
-	
+	/*
+	 * {
+  "suite" : "A",
+  "tests": [
+    {
+      "q":"",
+      "opt":[],
+      "ans":[],
+      "kwd":[],
+      "p":""
+    },
+    {
+      "q":"",
+      "opt":[],
+      "ans":[],
+      "kwd":[],
+      "p":""      
+    }
+  ]
+}
+	 * */
 	@RequestMapping(value = "/exam/{examname}", method = RequestMethod.GET)
-	public @ResponseBody ModelAndView examPOST(Locale locale, Model model,
+	public @ResponseBody ModelAndView examGET(
+			Locale locale, 
+			Model model,
+			HttpSession session,
 			HttpServletRequest request, 
 			HttpServletResponse response,
 			@PathVariable String examname) {
 		logger.info(request.getRequestURL().toString());
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
-		//request.getSession().setAttribute("totalNumberOfQuizQuestions",);
-		request.getSession().setAttribute("quizDuration",5);
+		session.setAttribute("quizDuration",5);
 		return new ModelAndView("result","result",examname);
 	}
 	
@@ -568,7 +638,7 @@ public class HomeController {
 	private ArrayList<Test> getTestBySuiteAndID(String suite, String testsn){
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		ArrayList<Test> tests = new ArrayList<Test>();
-		String sql = "SELECT serial, pic ,updatedat, question, options,answer FROM test "
+		String sql = "SELECT serial, pic ,updatedat, question, options,answer,keywords FROM test "
 				+"WHERE testsuite_pk IN (SELECT pk FROM testsuite WHERE name=?)"
 				+" AND serial = ?";
 		PreparedStatement preparedSql = null;
@@ -592,14 +662,20 @@ public class HomeController {
 				found.setAnsJsonArr(jsonArr);
 				found.setAnsArrayList(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
 				//found.setAnswer(s.getString("answer"));
-				serial = Integer.toString(s.getInt("serial"));
-				found.setQuestion(serial + "." + s.getString("question"));
+
 				elem = jp.parse(s.getString("options"));
 				jsonArr = elem.getAsJsonArray();
 				found.setOptJsonArr(jsonArr);
 				found.setOptArrayList(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
+				
+				elem = jp.parse(s.getString("keywords"));
+				jsonArr = elem.getAsJsonArray();
+				found.setKwdJsonArr(jsonArr);
+				found.setKwdArrayList(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
 
 				//found.setOptions(s.getString("options"));
+				serial = Integer.toString(s.getInt("serial"));
+				found.setQuestion(serial + "." + s.getString("question"));
 				found.setPic(s.getString("pic"));
 				found.setId(encrypt(curUser + "MendezMasterTrainingCenter6454",suite + "-" + serial));
 				found.setSuite(suite);
@@ -632,16 +708,24 @@ public class HomeController {
 			Gson gs = new Gson();
 			while(s.next()){
 				Test found = new Test();
+				serial = Integer.toString(s.getInt("serial"));
+				found.setQuestion(serial + "." + s.getString("question"));
+				
 				JsonElement elem = jp.parse(s.getString("answer"));
 				JsonArray jsonArr = elem.getAsJsonArray();
 				found.setAnsJsonArr(jsonArr);
 				found.setAnsArrayList(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
-				serial = Integer.toString(s.getInt("serial"));
-				found.setQuestion(serial + "." + s.getString("question"));
+
 				elem = jp.parse(s.getString("options"));
 				jsonArr = elem.getAsJsonArray();
 				found.setOptJsonArr(jsonArr);
 				found.setOptArrayList(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
+				
+				elem = jp.parse(s.getString("keywords"));
+				jsonArr = elem.getAsJsonArray();
+				found.setKwdJsonArr(jsonArr);
+				found.setKwdArrayList(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));				
+				
 				//found.setOptions(s.getString("options"));
 				found.setId(encrypt(curUser + "MendezMasterTrainingCenter6454",suite + "-" + serial));
 				tests.add(found);
