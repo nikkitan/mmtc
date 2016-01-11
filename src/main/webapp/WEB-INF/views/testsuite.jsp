@@ -8,6 +8,8 @@
 </head>
 <body>
 <table>
+<tr>
+<td>
 	<c:if test="${not empty suites}">
 
 		<ul>
@@ -17,6 +19,8 @@
 		</ul>
 
 	</c:if>
-    </table>
+	</td>
+</tr>
+</table>
 </body>
 </html>

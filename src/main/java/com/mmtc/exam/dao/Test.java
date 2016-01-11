@@ -110,16 +110,34 @@ public class Test {
 		this.optArrayList = optArrayList;
 	}
 
+	public JsonArray getKwdJsonArr() {
+		return kwdJsonArr;
+	}
+
+	public void setKwdJsonArr(JsonArray kwdJsonArr) {
+		this.kwdJsonArr = kwdJsonArr;
+	}
+
+	public ArrayList<String> getKwdArrayList() {
+		return kwdArrayList;
+	}
+
+	public void setKwdArrayList(ArrayList<String> kwdArrayList) {
+		this.kwdArrayList = kwdArrayList;
+	}
+
 	private JsonArray ansJsonArr;
 	private JsonArray optJsonArr;
 	private ArrayList<String> ansArrayList;
 	private ArrayList<String> optArrayList;
+	private JsonArray kwdJsonArr;
+	private ArrayList<String> kwdArrayList;
 	private String suite;
 	private String question;
 	private Integer serialNo;
 	private String options;//Stringified JSON array.
 	private String answer;//Stringified JSON array.
-	private String keywords;
+	private String keywords;//Stringified JSON array.
 	private String pic;//picture file name.
 	private String id;//AES encryption for publicly usage in web pages.
 	private long lastUpdateTimestamp;
