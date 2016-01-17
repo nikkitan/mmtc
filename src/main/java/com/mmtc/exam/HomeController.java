@@ -62,6 +62,7 @@ import org.springframework.web.servlet.ModelAndView;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import com.mmtc.exam.dao.Test;
@@ -593,18 +594,42 @@ public class HomeController {
   ]
 }
 	 * */
-	@RequestMapping(value = "/exam/{examname}", method = RequestMethod.GET)
-	public @ResponseBody ModelAndView examGET(
+	@RequestMapping(value = "/runsuite/{s}", method = RequestMethod.GET)
+	public @ResponseBody ModelAndView runSuiteGET(
 			Locale locale, 
 			Model model,
 			HttpSession session,
 			HttpServletRequest request, 
 			HttpServletResponse response,
-			@PathVariable String examname) {
+			@PathVariable String s) {
 		logger.info(request.getRequestURL().toString());
-		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
+		TestSuite ts = new TestSuite();
+		ModelAndView resultView = new ModelAndView("preexecsuite");
+		resultView.addObject("ts", ts);
+		resultView.addObject("su", s);
+		return resultView;
+	}
+	
+	@RequestMapping(value = "/runsuite/{s}", method = RequestMethod.POST)
+	public @ResponseBody ModelAndView runSuitePOST(
+			Locale locale, 
+			Model model,
+			HttpSession session,
+			HttpServletRequest request, 
+			HttpServletResponse response,
+			@PathVariable String s,
+			@ModelAttribute("ts") TestSuite suite) {
+		logger.info(request.getRequestURL().toString());
+		ArrayList<Test> tests = getTestsForSuite(s);
+		JsonObject jSuite = new JsonObject();
+		jSuite.addProperty("suite", s);
+		Gson gson = new Gson();
+		JsonArray jTests = (JsonArray)gson.toJsonTree(tests, new TypeToken<ArrayList<Test>>(){}.getType());
+		jSuite.add("tests", jTests);
 		session.setAttribute("quizDuration",5);
-		return new ModelAndView("result","result",examname);
+
+		session.setAttribute("tests", jSuite);
+		return new ModelAndView("result","result",jSuite.toString());
 	}
 	
 	@RequestMapping(value = "/timeout", method = RequestMethod.GET)
@@ -693,7 +718,7 @@ public class HomeController {
 		logger.info("getTestForSuite()!");
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		ArrayList<Test> tests = new ArrayList<Test>();
-		String sql = "SELECT serial, updatedat, question, options,answer FROM test WHERE testsuite_pk IN (SELECT pk FROM testsuite WHERE name=?)";
+		String sql = "SELECT serial, updatedat, question, options,answer,keywords,pic FROM test WHERE testsuite_pk IN (SELECT pk FROM testsuite WHERE name=?)";
 		PreparedStatement preparedSql = null;
 		Connection conn = null;
 	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -726,8 +751,10 @@ public class HomeController {
 				found.setKwdJsonArr(jsonArr);
 				found.setKwdArrayList(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));				
 				
-				//found.setOptions(s.getString("options"));
+				found.setPic(s.getString("pic"));
 				found.setId(encrypt(curUser + "MendezMasterTrainingCenter6454",suite + "-" + serial));
+				found.setSuite(suite);
+				found.setSerialNo(Integer.valueOf(serial));	
 				tests.add(found);
 			}
 			conn.close();
