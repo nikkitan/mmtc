@@ -14,7 +14,7 @@
 
 		<ul>
 			<c:forEach var="i" items="${suites}">
-				<li><a href="${pageContext.request.contextPath}/exam/${i}">${i}</a></li>
+				<li><a href="${pageContext.request.contextPath}/runsuite/${i}">${i}</a></li>
 			</c:forEach>
 		</ul>
 

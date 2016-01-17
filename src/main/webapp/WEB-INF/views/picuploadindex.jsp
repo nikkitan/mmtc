@@ -6,10 +6,13 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/css/style0.css">
+<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/css/style1.css">
 <title>MMTC</title>
 </head>
 <body>
+<table class="root">
+<tr>
+<td class="root">
 <table>
 <%
 if (session.getAttribute("uploadFile") != null
@@ -27,5 +30,9 @@ session.removeAttribute("uploadFile");
 </td>
 </tr>
 </table>
+</td>
+</tr>
+</table>
+
 </body>
 </html>
