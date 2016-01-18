@@ -12,7 +12,7 @@
 <body>
 <table class="root">
 <tr>
-<td class="root">
+<td style="width:70%;">
 <table>
 <%
 if (session.getAttribute("uploadFile") != null
@@ -21,7 +21,7 @@ if (session.getAttribute("uploadFile") != null
 <caption>File Uploaded Successfully.</caption>
 <tr>
 <td>
-<img src="${pageContext.request.contextPath}<%=session.getAttribute("uploadFile")%>" alt="Upload Image" />
+<img src="<%=session.getAttribute("uploadFile")%>" alt="Upload Image" />
 
 <%
 session.removeAttribute("uploadFile");
@@ -31,8 +31,14 @@ session.removeAttribute("uploadFile");
 </tr>
 </table>
 </td>
+<td style="vertical-align:top;">
+<nav>
+<a href="${pageContext.request.contextPath}/">Home</a> |
+<a href="${pageContext.request.contextPath}/login?logout">Signout</a>
+</nav>
+</td>
 </tr>
 </table>
-
+<div align="center">@2016 Mendez Master Training Center. All rights reserved.</div>
 </body>
 </html>

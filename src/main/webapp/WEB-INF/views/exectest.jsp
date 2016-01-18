@@ -40,6 +40,6 @@
 </tr>
 
 </table><!-- ROOT TABLE -->
-
+<div align="center">@2016 Mendez Master Training Center. All rights reserved.</div>
 </body>
 </html>
