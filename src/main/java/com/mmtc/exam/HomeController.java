@@ -93,13 +93,7 @@ public class HomeController {
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 
 		int i = dataSource.getPoolSize();
-		logger.info("Pool size: " + i);		
-		Date date = new Date();
-		DateFormat dateFormat = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG, locale);
-		
-		String formattedDate = dateFormat.format(date);
-		
-		model.addAttribute("serverTime", formattedDate );
+		logger.info("Pool size: " + i);
 		
 		return "home";
 	}
@@ -204,9 +198,9 @@ public class HomeController {
 		resultView.addObject("ans",found.getAnsArrayList());
 		resultView.addObject("opt",found.getOptArrayList());
 		resultView.addObject("kwd", found.getKwdArrayList());
-		String parentDir = File.separator;
-		parentDir += "resources" + File.separator;
-		parentDir += "pic";
+		String parentDir = System.getProperty("catalina.home");
+		parentDir += File.separator;
+		parentDir += "mmtctestpic";	
 		parentDir += File.separator;
 		String pic = found.getPic();
 		resultView.addObject("pic",pic);
@@ -245,10 +239,10 @@ public class HomeController {
 			String suiteAndTest = decryptTestID(curUser + "MendezMasterTrainingCenter6454",tid);
 			logger.info("[DEcrypted] " + suiteAndTest);
 			//Save image locally.			
-			String destDir = request.getSession().getServletContext().getRealPath("/");//servletCtx.getRealPath("/");
-			destDir += "resources";
+			//String destDir = request.getSession().getServletContext().getRealPath("/");//servletCtx.getRealPath("/");
+			String destDir = System.getProperty("catalina.home");
 			destDir += File.separator;
-			destDir += "pic";
+			destDir += "mmtctestpic";	
 			destDir += File.separator;
 			logger.info("[2_save_img_2] " + destDir);
 			String encFileName = encrypt(curUser + "MendezMasterTrainingCenter6454_testpickey",suiteAndTest);
@@ -267,6 +261,10 @@ public class HomeController {
 			} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+				File f = new File(destDir);
+				if(f.mkdir() == false){
+					logger.error("[VERY BAD] Failed creating picture folder in CATALINA_HOME.");
+				}
 				return new ModelAndView("result","result","Failed getting OUTPUT STREAM.");
 			}
 			
@@ -337,9 +335,9 @@ public class HomeController {
 					conn = null;
 				}   			
     		}			
-    		String parentDir = File.separator;
-    		parentDir += "resources" + File.separator;
-    		parentDir += "pic";
+    		String parentDir = System.getProperty("catalina.home");
+    		parentDir += File.separator;
+    		parentDir += "mmtctestpic";	
     		parentDir += File.separator;
 			session.setAttribute("uploadFile", parentDir + encFileName);
 		}else{
@@ -582,14 +580,16 @@ public class HomeController {
       "opt":[],
       "ans":[],
       "kwd":[],
-      "p":""
+      "p":"",
+      "cursel":""
     },
     {
       "q":"",
       "opt":[],
       "ans":[],
       "kwd":[],
-      "p":""      
+      "p":"",
+      "cursel":""     
     }
   ]
 }
@@ -718,7 +718,7 @@ public class HomeController {
 		logger.info("getTestForSuite()!");
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		ArrayList<Test> tests = new ArrayList<Test>();
-		String sql = "SELECT serial, updatedat, question, options,answer,keywords,pic FROM test WHERE testsuite_pk IN (SELECT pk FROM testsuite WHERE name=?)";
+		String sql = "SELECT serial, updatedat, question, options,answer,keywords,pic FROM test WHERE testsuite_pk IN (SELECT pk FROM testsuite WHERE name=?)  ";
 		PreparedStatement preparedSql = null;
 		Connection conn = null;
 	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();

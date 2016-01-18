@@ -103,7 +103,7 @@ table tbody tr:{
     </td>  
     <td>
     	<label for="pic_input">
-    		<img src="${pageContext.request.contextPath}<%=session.getAttribute("uploadFile")%>"/>
+    		<img src="<%=session.getAttribute("uploadFile")%>"/>
     	</label>
     	<input id="pic_input" type="file" name="file"/>
     </td>  

@@ -1,4 +1,61 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Context>
-    <Resource auth="Container" driverClassName="com.mysql.jdbc.Driver"  factory="org.apache.tomcat.jdbc.pool.DataSourceFactory" maxActive="100" maxIdle="19" maxTotal="1000" maxWaitMillis="10000" minIdle="1" name="jdbc/mmtcMySQLDataSource" password="mysqlmmtc(6454)" type="javax.sql.DataSource" url="jdbc:mysql://mmtc-db-dev.cjmff6hkiqpv.us-west-2.rds.amazonaws.com:3306/mmtc?autoReconnect=true" username="root"/>
+	<!-- <Resources allowLinking="true">
+		<PreResources	
+          className="org.apache.catalina.webresources.DirResourceSet"
+          base="/usr/share/mmtc"
+          webAppMount="/resources"
+          internalPath="/"/>
+	</Resources> -->
+    <Resource auth="Container" 
+    driverClassName="com.mysql.jdbc.Driver"  
+    factory="org.apache.tomcat.jdbc.pool.DataSourceFactory" 
+    maxActive="100" 
+    maxIdle="19" 
+    maxTotal="1000" 
+    maxWaitMillis="10000" 
+    minIdle="1" 
+    name="jdbc/mmtcMySQLDataSource" 
+    password="mysqlmmtc(6454)" 
+    type="javax.sql.DataSource" 
+    url="jdbc:mysql://mmtc-db-dev.cjmff6hkiqpv.us-west-2.rds.amazonaws.com:3306/mmtc?autoReconnect=true" 
+    username="root"
+    />
 </Context>
+
+<!-- To start with, every J2EE webapp has 2 deployment configuration files: 
+the server-independent Deployment Descriptor (web.xml) and the server-dependent 
+Deployment Descriptor (context.xml). More on this in a minute. 
+
+The Tomcat server.xml file is the configuration of the Tomcat server itself. 
+Tomcat is actually a series of components that are wired together to create a 
+server by a master Tomcat JavaBean that reads (digests) the server.xml file in 
+order to know what components to include, how to configure them, and how to interconnect
+ them to create a working server. The server.xml file can contain server-dependent 
+ deployment descriptors as sub-elements, although that has been discouraged for a long,
+  long time now. Among other reasons, because it required restarting the entire Tomcat server to modify a single webapp. 
+
+The server-dependent deployment descriptors can reside in a directory of their 
+own (conf/Catalina/localhost) or be embedded within a webapp's WAR (META-INF/context.xml). 
+Incidentally, the "localhost" in the tomcat Catalina directory is merely the default. 
+For Tomcat servers where a single Tomcat runs multiple hosts, there is a separate config 
+directory under Catalina for each host. 
+
+So you have server.xml for Tomcat itself and a context.xml/web.xml pair for each webapp 
+deployed in tomcat. The context.xml and web.xml in the Tomcat conf directory are used to 
+guide the default behavior of Tomcat. For example, when you submit a URL which resolves 
+to a static resource such as an image, Tomcat doesn't simply "know" how to convert that 
+image URL into a response stream containing that image, it determines that the URL 
+doesn't match any of the patterns defined in the web.xml for the webapp context ID of 
+that URL and bounces the request up to the default environment where the Tomcat DefaultServlet 
+takes care of the actual details of converting the URL to a resource location, 
+opening the resource (image file) and transmitting the resource to the client. 
+All of that is under the control of the master context and web-inf config files in the Tomcat conf directory. 
+
+Certain resources can be defined per-application or shared between multiple applications. 
+The most common ones are security Realms and Connection Pools. 
+When you want a per-application definition of one of those resources, you'd do it in the Context xml file. 
+When you want it common between apps, you'd define it in the server.xml, 
+since it's the only common configuration between all webapps. 
+There are precedence rules when 2 definitions conflict,
+ but those rules are enumerated in the Tomcat docs. -->

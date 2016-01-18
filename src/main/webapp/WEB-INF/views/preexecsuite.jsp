@@ -53,7 +53,10 @@ tbody.root td:nth-child(1){
 </table>
 </form:form>
 <td style="vertical-align:top;">
-<div><a href="${pageContext.request.contextPath}/home.jsp">Home</a></div>
+<nav>
+<a href="${pageContext.request.contextPath}/">Home</a> |
+<a href="${pageContext.request.contextPath}/login?logout">SignOut</a>
+</nav>
 </td>
 </tr>
 </table><!-- ROOT TABLE -->
