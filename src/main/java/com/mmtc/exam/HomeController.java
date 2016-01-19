@@ -59,6 +59,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.amazonaws.auth.InstanceProfileCredentialsProvider;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -220,7 +225,7 @@ public class HomeController {
 		
 		return rawImg;
 	}
-			
+	//http://docs.aws.amazon.com/AWSSdkDocsJava/latest/DeveloperGuide/java-dg-roles.html
 	@RequestMapping(value = "/edittest/{tid}", method = RequestMethod.POST)
 	public @ResponseBody ModelAndView editTestPOST(
 			Locale locale,
@@ -233,19 +238,20 @@ public class HomeController {
 		logger.info(request.getRequestURL().toString());
 
 		
-		if(file.getSize() > 0){
+		if(file.getSize() > 0){			
+			
 		    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		    String curUser = auth.getName();
 			String suiteAndTest = decryptTestID(curUser + "MendezMasterTrainingCenter6454",tid);
 			logger.info("[DEcrypted] " + suiteAndTest);
 			//Save image locally.			
-			//String destDir = request.getSession().getServletContext().getRealPath("/");//servletCtx.getRealPath("/");
-			String destDir = System.getProperty("catalina.home");
+			String destDir = request.getSession().getServletContext().getRealPath("/");//servletCtx.getRealPath("/");
+			//String destDir = System.getProperty("catalina.home");
 			destDir += File.separator;
 			destDir += "mmtctestpic";	
 			destDir += File.separator;
 			logger.info("[2_save_img_2] " + destDir);
-			String encFileName = encrypt(curUser + "MendezMasterTrainingCenter6454_testpickey",suiteAndTest);
+			String encFileName = encrypt(curUser + "MendezMasterTrainingCenter6454_testpickey",suiteAndTest);			
 			FileInputStream in = null;
 			try {
 				in = (FileInputStream) file.getInputStream();
@@ -255,6 +261,11 @@ public class HomeController {
 				return new ModelAndView("result","result","Failed getting INPUT STREAM.");
 
 			}
+			AmazonS3 s3Client = new AmazonS3Client(new InstanceProfileCredentialsProvider());
+			ObjectMetadata metadata = new ObjectMetadata();
+			metadata.setContentLength(file.);
+			s3Client.putObject("mmtctestpic",encFileName,in);
+
 			FileOutputStream out = null;
 			try {
 				out = new FileOutputStream(destDir+encFileName);
