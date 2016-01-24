@@ -23,6 +23,8 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.concurrent.Future;
+
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -46,6 +48,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jndi.JndiObjectFactoryBean;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -63,7 +67,7 @@ import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.PutObjectResult;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -76,6 +80,7 @@ import com.mmtc.exam.dao.TestSuite;
 //http://springinpractice.com/2010/07/06/spring-security-database-schemas-for-mysql
 //http://www.jsptut.com/
 //http://docs.spring.io/spring/docs/current/spring-framework-reference/html/spring-form-tld.html
+//http://danielkvist.net/wiki/spring-mvc-fundamentals
 /**
  * Handles requests for the application home page.
  */
@@ -203,9 +208,10 @@ public class HomeController {
 		resultView.addObject("ans",found.getAnsArrayList());
 		resultView.addObject("opt",found.getOptArrayList());
 		resultView.addObject("kwd", found.getKwdArrayList());
-		String parentDir = System.getProperty("catalina.home");
+		String parentDir = "/mmtcexam";
 		parentDir += File.separator;
-		parentDir += "mmtctestpic";	
+		parentDir += "resources" + File.separator;
+		parentDir += "pic";
 		parentDir += File.separator;
 		String pic = found.getPic();
 		resultView.addObject("pic",pic);
@@ -225,6 +231,16 @@ public class HomeController {
 		
 		return rawImg;
 	}
+	
+	@Async
+	public Future<PutObjectResult> uploadS3(File file){
+		AmazonS3 s3Client = new AmazonS3Client(new InstanceProfileCredentialsProvider());
+		ObjectMetadata metadata = new ObjectMetadata();
+		metadata.setContentType("image/png");
+		PutObjectResult pr = s3Client.putObject("mmtctestpic",file.getName(),file);
+		return new AsyncResult<PutObjectResult>(pr);	
+	}
+	//http://www.jayway.com/2014/09/09/asynchronous-spring-service/
 	//http://docs.aws.amazon.com/AWSSdkDocsJava/latest/DeveloperGuide/java-dg-roles.html
 	@RequestMapping(value = "/edittest/{tid}", method = RequestMethod.POST)
 	public @ResponseBody ModelAndView editTestPOST(
@@ -246,9 +262,9 @@ public class HomeController {
 			logger.info("[DEcrypted] " + suiteAndTest);
 			//Save image locally.			
 			String destDir = request.getSession().getServletContext().getRealPath("/");//servletCtx.getRealPath("/");
-			//String destDir = System.getProperty("catalina.home");
+			destDir += "resources";
 			destDir += File.separator;
-			destDir += "mmtctestpic";	
+			destDir += "pic";
 			destDir += File.separator;
 			logger.info("[2_save_img_2] " + destDir);
 			String encFileName = encrypt(curUser + "MendezMasterTrainingCenter6454_testpickey",suiteAndTest);			
@@ -261,11 +277,6 @@ public class HomeController {
 				return new ModelAndView("result","result","Failed getting INPUT STREAM.");
 
 			}
-			AmazonS3 s3Client = new AmazonS3Client(new InstanceProfileCredentialsProvider());
-			ObjectMetadata metadata = new ObjectMetadata();
-			metadata.setContentLength(file.);
-			s3Client.putObject("mmtctestpic",encFileName,in);
-
 			FileOutputStream out = null;
 			try {
 				out = new FileOutputStream(destDir+encFileName);
@@ -303,7 +314,7 @@ public class HomeController {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-				
+			
 			//Save pic dir info to SQL.
 			DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 			Connection conn = null;
@@ -345,12 +356,21 @@ public class HomeController {
 				} finally{
 					conn = null;
 				}   			
-    		}			
-    		String parentDir = System.getProperty("catalina.home");
+    		}	
+    		
+    		String parentDir = "mmtcexam";
     		parentDir += File.separator;
-    		parentDir += "mmtctestpic";	
-    		parentDir += File.separator;
+    		parentDir += "resources" + File.separator;
+    		parentDir += "pic";
 			session.setAttribute("uploadFile", parentDir + encFileName);
+			
+			//Prepare file to S3.
+			File outFile = new File(destDir+encFileName); 
+			if(!outFile.exists()){
+				logger.error(destDir+encFileName + " doesn't exists.");
+			}else{
+				uploadS3(outFile);
+			}
 		}else{
 			return new ModelAndView("result","result","Empty file uploaded.");
 		}
