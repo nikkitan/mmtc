@@ -208,14 +208,16 @@ public class HomeController {
 		resultView.addObject("ans",found.getAnsArrayList());
 		resultView.addObject("opt",found.getOptArrayList());
 		resultView.addObject("kwd", found.getKwdArrayList());
-		String parentDir = "/mmtcexam";
+		
+		String parentDir = File.separator;
+		parentDir += "mmtcexam";
 		parentDir += File.separator;
 		parentDir += "resources" + File.separator;
 		parentDir += "pic";
 		parentDir += File.separator;
 		String pic = found.getPic();
 		resultView.addObject("pic",pic);
-		session.setAttribute("uploadFile", parentDir + pic);
+		session.setAttribute("uploadFile", parentDir + pic + ".png");
 		return resultView;
 	}
 
@@ -279,7 +281,7 @@ public class HomeController {
 			}
 			FileOutputStream out = null;
 			try {
-				out = new FileOutputStream(destDir+encFileName);
+				out = new FileOutputStream(destDir+encFileName+".png");
 			} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -358,11 +360,13 @@ public class HomeController {
 				}   			
     		}	
     		
-    		String parentDir = "mmtcexam";
+    		String parentDir = File.separator;
+    		parentDir += "mmtcexam";
     		parentDir += File.separator;
     		parentDir += "resources" + File.separator;
     		parentDir += "pic";
-			session.setAttribute("uploadFile", parentDir + encFileName);
+    		parentDir += File.separator;
+			session.setAttribute("uploadFile", parentDir + encFileName + ".png");
 			
 			//Prepare file to S3.
 			File outFile = new File(destDir+encFileName); 

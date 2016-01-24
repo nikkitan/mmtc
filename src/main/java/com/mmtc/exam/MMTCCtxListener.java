@@ -10,6 +10,7 @@ import java.util.ArrayList;
 
 import javax.servlet.ServletContextEvent;
 
+import org.apache.tomcat.jdbc.pool.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,8 @@ import com.amazonaws.services.s3.model.S3ObjectInputStream;
 public class MMTCCtxListener extends ContextLoaderListener {
 
 	private static final Logger logger = LoggerFactory.getLogger(MMTCCtxListener.class);
+	@Autowired
+	private JndiObjectFactoryBean jndiObjFactoryBean;		
 	
 	private class S3DownloadThread extends Thread{
 		
@@ -47,15 +50,17 @@ public class MMTCCtxListener extends ContextLoaderListener {
 				logger.error("[S3DoWNload] " + obj);
 			}
 			if(dlObj == null){
-				logger.info("S3 Download NULL=> " + obj);
+				logger.info("[S3DoWNload] NULL=> " + obj);
 			}else{
 				//save to /resources/pic.
 				
 				S3ObjectInputStream dlStream = dlObj.getObjectContent();
                 int totalBytesRead = 0;
+                Long blen = dlObj.getObjectMetadata().getContentLength();
+                blen += 1L;
 				byte[] buffer =
-							new byte[(int) dlObj.getObjectMetadata()
-                                        .getContentLength()];
+							new byte[(int)(long)blen];
+				logger.info("[S3DoWNload] buffer len: " + blen.toString() + " / " + String.valueOf(buffer.length));
 
 		        int bytesRead = -1;
 		        //Save locally.
@@ -66,6 +71,7 @@ public class MMTCCtxListener extends ContextLoaderListener {
 				dir2Save += "pic";
 				dir2Save += File.separator;	
 				dir2Save += dlObj.getKey();
+				dir2Save += ".png";
 				try {
 					out = new FileOutputStream(dir2Save);
 				} catch (FileNotFoundException e) {
@@ -78,16 +84,27 @@ public class MMTCCtxListener extends ContextLoaderListener {
 							                buffer,
 							                totalBytesRead,
 							                buffer.length - totalBytesRead);
-							out.write(buffer,0,bytesRead);
 						} catch (IOException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 							logger.error("[S3DoWNload] failed reading S3ObjectInputStream: " + obj);
+							break;
 						}
 		                if (bytesRead == -1) {
 		                        break;
 		                } else {
-		                        totalBytesRead += bytesRead;
+		                        
+								logger.info("[S3DoWNload] totalRead: " + String.valueOf(totalBytesRead));
+								logger.info("[S3DoWNload] bytesRead: " + String.valueOf(bytesRead));
+								try {
+									out.write(buffer,totalBytesRead,bytesRead);
+								} catch (IOException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+									logger.error("[S3DoWNload] FileOutputStream failed writing S3ObjectInputStream: " + obj);
+								}
+								totalBytesRead += bytesRead;
+
 		                }
 		        }
 
@@ -97,6 +114,7 @@ public class MMTCCtxListener extends ContextLoaderListener {
 				} catch (IOException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
+					logger.error("[S3DoWNload] S3ObjectInputStream.close() failed: " + obj );
 				}
 				try {
 					dlObj.close();
@@ -110,7 +128,7 @@ public class MMTCCtxListener extends ContextLoaderListener {
 		}
 	}
 	public MMTCCtxListener(){
-		logger.info("[MMTCCtxListner]!");
+		logger.info("[MMTCCtxListner_CTOR]!");
 	}
 	
 	@Override
@@ -120,6 +138,7 @@ public class MMTCCtxListener extends ContextLoaderListener {
 				new DriverManagerDataSource(
 						"jdbc:mysql://mmtc-db-dev.cjmff6hkiqpv.us-west-2.rds.amazonaws.com:3306/mmtc?autoReconnect=true",
 						"root","mysqlmmtc(6454)");
+
 		ArrayList<String> pics = null;
 		try {
 			Connection conn = dataSource.getConnection();
