@@ -10,6 +10,9 @@
 </head>
 <body>
 <form:form method="POST" action="listtest" commandName="ts" >  
+<table><!-- ROOT -->
+<tr>
+<td stype="width:70%;">
 <table>  
     <tbody><tr>  
     <td>  
@@ -25,5 +28,16 @@
     </tr>  
 </tbody></table>    
 </form:form>
+</td>
+
+<td style="vertical-align:top;">
+<nav>
+<a href="${pageContext.request.contextPath}/">Home</a> |
+<a href="${pageContext.request.contextPath}/login?logout">Signout</a>
+</nav>
+</td>
+</tr>
+</table><!-- ROOT -->
+<div align="center">@2016 Mendez Master Training Center. All rights reserved.</div>
 </body>
 </html>

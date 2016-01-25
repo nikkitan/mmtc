@@ -63,8 +63,9 @@
 					<td><input type='password' name='password' /></td>
 				</tr>
 				<tr>
-					<td colspan='2'><input name="submit" type="submit"
-						value="submit" /></td>
+					<td><input name="submit" type="submit"
+						value="Submit" /></td>
+					<td><a href="${pageContext.request.contextPath}/newuser">Create New Account</a></td>
 				</tr>
 			</table>
 
@@ -73,6 +74,6 @@
 
 		</form>
 	</div>
-
+<div align="center">@2016 Mendez Master Training Center. All rights reserved.</div>
 </body>
 </html>
