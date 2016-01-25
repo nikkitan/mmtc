@@ -113,7 +113,9 @@ table tbody tr:{
             <input type="submit" value="Submit"/>  
         </td>  
     </tr>  
-</tbody></table>    
+</tbody></table> 
+			<input type="hidden" name="${_csrf.parameterName}"
+				value="${_csrf.token}" />   
 </form:form>
 </body>
 </html>

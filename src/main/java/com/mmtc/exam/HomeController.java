@@ -97,7 +97,7 @@ public class HomeController {
 	/**
 	 * Simply selects the home view to render by returning its name.
 	 */
-	@RequestMapping(value = "/", method = RequestMethod.GET)
+	@RequestMapping(value = {"/","/home"}, method = RequestMethod.GET)
 	public String home(Locale locale, Model model) {
 		logger.info("Welcome home! The client locale is {}.", locale);
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
@@ -107,6 +107,8 @@ public class HomeController {
 		
 		return "home";
 	}
+	
+	
 	@RequestMapping(value = "/testsuite", method = RequestMethod.GET)
 	public @ResponseBody ModelAndView examGET(Locale locale, Model model,
 			HttpServletRequest request, 
@@ -232,6 +234,20 @@ public class HomeController {
 		byte[] rawImg = null;
 		
 		return rawImg;
+	}
+	
+	@RequestMapping(value = "/newuser", 
+			method = RequestMethod.GET,
+			produces = "application/json; charset=utf-8")
+	public @ResponseBody ModelAndView newUserGET(
+			Locale locale,
+			Model model,
+			HttpSession session,
+			HttpServletRequest request, 
+			HttpServletResponse response){
+		ModelAndView view = new ModelAndView("newuser");
+		
+		return view;
 	}
 	
 	@Async

@@ -8,7 +8,8 @@
 	<debug/>
 	<http auto-config="true" use-expressions="true">
 		<!--  <intercept-url pattern="/admin**" access="ROLE_USER" /> -->
-		
+		<intercept-url pattern="/resources/js/*" access="isAnonymous() or hasAnyRole('ROLE_ADMIN','ROLE_USER')" />		
+		<intercept-url pattern="/newuser" access="isAnonymous() or hasAnyRole('ROLE_ADMIN','ROLE_USER')" />		
 		<intercept-url pattern="/login" access="isAnonymous() or hasAnyRole('ROLE_ADMIN','ROLE_USER')" />
 		<intercept-url pattern="/**" access="hasAnyRole('ROLE_ADMIN','ROLE_USER')" />
 		<form-login 
@@ -18,8 +19,11 @@
 			username-parameter="username"
 			password-parameter="password" />
 		<logout logout-success-url="/login?logout"  />
-		<!-- enable csrf protection <csrf/>-->
-		<csrf disabled="false"/>
+		<session-management>
+			<concurrency-control max-sessions="1" error-if-maximum-exceeded="true" />
+		</session-management>
+		<!-- enable csrf protection <csrf disabled="false"/>-->
+		<csrf/>
 	</http>
 
 	<authentication-manager>
