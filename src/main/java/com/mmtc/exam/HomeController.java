@@ -52,6 +52,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -74,8 +76,10 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
+import com.mmtc.exam.dao.MMTCUser;
 import com.mmtc.exam.dao.Test;
 import com.mmtc.exam.dao.TestSuite;
+import com.mmtc.exam.dao.User;
 
 //http://springinpractice.com/2010/07/06/spring-security-database-schemas-for-mysql
 //http://www.jsptut.com/
@@ -89,7 +93,9 @@ public class HomeController {
 	@Autowired
 	ServletContext servletCtx;
 	@Autowired
-	private JndiObjectFactoryBean jndiObjFactoryBean;		
+	private JndiObjectFactoryBean jndiObjFactoryBean;
+	@Autowired
+	private JdbcUserDetailsManager jdbcDaoMgr;
 	
 	private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");	
@@ -144,6 +150,33 @@ public class HomeController {
 		return "addsuite";
 	}
 	//http://www.codejava.net/frameworks/spring/spring-mvc-form-handling-tutorial-and-example
+	@RequestMapping(value="/adduser", method=RequestMethod.GET)
+    public @ResponseBody ModelAndView addUserGET(
+			HttpServletRequest request, 
+			HttpServletResponse response){
+		logger.info(request.getRequestURL().toString());
+		MMTCUser user = new MMTCUser();
+		ModelAndView view = new ModelAndView();
+		view.setViewName("newuser");
+		view.addObject("user", user);
+        return view;
+	}
+	
+	@RequestMapping(value="/adduser", method=RequestMethod.POST)
+    public @ResponseBody ModelAndView addUserPOST(
+    		@ModelAttribute("user") MMTCUser user,
+			HttpServletRequest request, 
+			HttpServletResponse response){
+		logger.info(request.getRequestURL().toString());
+		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
+		jdbcDaoMgr.createUser(new User());
+		ModelAndView view = new ModelAndView();
+		view.setViewName("result");
+		view.addObject("result", "New user added successfully.");
+        return view;
+	}
+	
+	
 	@RequestMapping(value="/edittests", method=RequestMethod.GET)
     public @ResponseBody ModelAndView editTestSuiteGET(
 			HttpServletRequest request, 

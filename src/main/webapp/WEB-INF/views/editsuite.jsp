@@ -12,7 +12,7 @@
 <form:form method="POST" action="listtest" commandName="ts" >  
 <table><!-- ROOT -->
 <tr>
-<td stype="width:70%;">
+<td style="width:70%;">
 <table>  
     <tbody><tr>  
     <td>  
@@ -33,7 +33,7 @@
 <td style="vertical-align:top;">
 <nav>
 <a href="${pageContext.request.contextPath}/">Home</a> |
-<a href="${pageContext.request.contextPath}/login?logout">Signout</a>
+<a href="${pageContext.request.contextPath}/login?logout">LogOut</a>
 </nav>
 </td>
 </tr>

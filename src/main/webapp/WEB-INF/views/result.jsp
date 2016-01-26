@@ -12,11 +12,19 @@
 <title>Insert title here</title>
 </head>
 <body>
-<!-- <script>
-hello();
-</script> -->
-
-<p>${result}</p>
-<p>You have ${sessionScope.quizDuration} seconds</p>
+<table style="width=100%;"><!-- ROOT -->
+<tr>
+<td>
+${result}
+</td>
+<td style="vertical-align:top;">
+<nav>
+<a href="${pageContext.request.contextPath}/">Home</a> |
+<a href="${pageContext.request.contextPath}/login?logout">LogOut</a>
+</nav>
+</td>
+</tr>
+</table><!-- ROOT -->
 </body>
+<div align="center">@2016 Mendez Master Training Center. All rights reserved.</div>
 </html>

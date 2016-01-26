@@ -29,12 +29,18 @@ tbody.root td:nth-child(1){
 <body>
 <table class="root"><!-- ROOT TABLE -->
 <tr style="width:100%;">
-<td style="width:100%;">
+<td style="width:70%;">
 		<ul>
 			<li><a href="${pageContext.request.contextPath}/testsuite">Exam Simulations</a></li>
 			<li><a href="${pageContext.request.contextPath}/addtestsuite">Add Exams</a></li>
 			<li><a href="${pageContext.request.contextPath}/edittests">Edit Exams</a></li>
 		</ul>
+</td>
+<td style="vertical-align:top;">
+<nav>
+<a href="${pageContext.request.contextPath}/">Home</a> |
+<a href="${pageContext.request.contextPath}/login?logout">LogOut</a>
+</nav>
 </td>
 </tr>
 </table><!-- ROOT TABLE -->

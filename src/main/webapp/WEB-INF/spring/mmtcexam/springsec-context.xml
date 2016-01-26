@@ -25,13 +25,11 @@
 		<!-- enable csrf protection <csrf disabled="false"/>-->
 		<csrf/>
 	</http>
-
+    <beans:bean id="bcryptEncoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder" />
+	<beans:bean id="jdbcDaoMgr" class="org.springframework.security.provisioning.JdbcUserDetailsManager"/>
 	<authentication-manager>
-		<authentication-provider>
-			<user-service>
-				<user name="nikki" password="nikki" authorities="ROLE_ADMIN" />
-				<user name="mkyong" password="123456" authorities="ROLE_USER" />
-			</user-service>
+		<authentication-provider user-service-ref="jdbcDaoMgr">
+			<password-encoder ref="bcryptEncoder"/>
 		</authentication-provider>
 	</authentication-manager>
 
