@@ -1,4 +1,5 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 <%@page session="true"%>
 <!DOCTYPE html>
 <html>
@@ -56,26 +57,48 @@ $(document).ready(function(){
 
 <table><!-- ROOT -->
 <tr>
-<td stype="width:70%;">
-<form:form method="POST" action="listtest" commandName="ts" >  
+<td style="width:70%;">
+<form:form method="POST" action="adduser" commandName="user" >  
 <table>  
     <tbody>
     <tr>  
     <td>  
-        
+        User Name:
     </td>  
+    <td>
+    	<form:input path="username" />
+    </td>
     </tr>
     <tr>  
     <td>  
-        
+        Password:
     </td>  
+    <td>
+    	<form:password path="password" />
+    </td> 
+    </tr> 
+    <tr>  
+    <td>  
+        Email:
+    </td>  
+    <td>
+    	<form:input path="email" />
+    </td> 
+    </tr>
+    <tr>  
+    <td>  
+        Email Password:
+    </td>  
+    <td>
+    	<form:password path="emailpw" />
+    </td> 
     </tr>  
     <tr>  
         <td>  
             <input type="submit" value="Register">  
         </td>  
     </tr>  
-</tbody>
+	</tbody>
 </table>    
 </form:form>
 </td>
@@ -83,7 +106,7 @@ $(document).ready(function(){
 <td style="vertical-align:top;">
 <nav>
 <a href="${pageContext.request.contextPath}/">Home</a> |
-<a href="${pageContext.request.contextPath}/login?logout">Signout</a>
+<a href="${pageContext.request.contextPath}/login?logout">LogOut</a>
 </nav>
 </td>
 </tr>
