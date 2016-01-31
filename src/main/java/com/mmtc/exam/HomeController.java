@@ -51,6 +51,8 @@ import org.springframework.jndi.JndiObjectFactoryBean;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
@@ -79,7 +81,6 @@ import com.google.gson.reflect.TypeToken;
 import com.mmtc.exam.dao.MMTCUser;
 import com.mmtc.exam.dao.Test;
 import com.mmtc.exam.dao.TestSuite;
-import com.mmtc.exam.dao.User;
 
 //http://springinpractice.com/2010/07/06/spring-security-database-schemas-for-mysql
 //http://www.jsptut.com/
@@ -103,7 +104,16 @@ public class HomeController {
 	/**
 	 * Simply selects the home view to render by returning its name.
 	 */
-	@RequestMapping(value = {"/","/home"}, method = RequestMethod.GET)
+	@RequestMapping(value = "/", method = RequestMethod.GET)
+	public @ResponseBody ModelAndView root(Locale locale, Model model) {
+		logger.info("Welcome home! The client locale is {}.", locale);
+		MMTCUser user = new MMTCUser();
+		ModelAndView view = new ModelAndView();
+		view.addObject("us",user);
+		view.setViewName("newuser");		
+		return view;
+	}
+	@RequestMapping(value = "/home", method = RequestMethod.GET)
 	public String home(Locale locale, Model model) {
 		logger.info("Welcome home! The client locale is {}.", locale);
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
@@ -112,8 +122,7 @@ public class HomeController {
 		logger.info("Pool size: " + i);
 		
 		return "home";
-	}
-	
+	}	
 	
 	@RequestMapping(value = "/testsuite", method = RequestMethod.GET)
 	public @ResponseBody ModelAndView examGET(Locale locale, Model model,
@@ -158,18 +167,20 @@ public class HomeController {
 		MMTCUser user = new MMTCUser();
 		ModelAndView view = new ModelAndView();
 		view.setViewName("newuser");
-		view.addObject("user", user);
+		view.addObject("us", user);
         return view;
 	}
 	
 	@RequestMapping(value="/adduser", method=RequestMethod.POST)
     public @ResponseBody ModelAndView addUserPOST(
-    		@ModelAttribute("user") MMTCUser user,
+    		@ModelAttribute("us") MMTCUser user,
 			HttpServletRequest request, 
 			HttpServletResponse response){
 		logger.info(request.getRequestURL().toString());
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
-		jdbcDaoMgr.createUser(new User());
+		ArrayList<SimpleGrantedAuthority> authorities = new ArrayList<SimpleGrantedAuthority>();
+		authorities.add(new SimpleGrantedAuthority("STU"));
+		jdbcDaoMgr.createUser(new MMTCUser(user.getUsername(),user.getPassword(), authorities));
 		ModelAndView view = new ModelAndView();
 		view.setViewName("result");
 		view.addObject("result", "New user added successfully.");
@@ -213,7 +224,6 @@ public class HomeController {
 			HttpServletResponse response,
 			@PathVariable String tid) {
 		logger.info(request.getRequestURL().toString());
-		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 	    String curUser = auth.getName();
 		String suiteAndTest = decryptTestID(curUser + "MendezMasterTrainingCenter6454",tid);
@@ -441,7 +451,6 @@ public class HomeController {
 
         if (!file.isEmpty()) {            
             DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
-    		String sqlTemplate = null;
     		String sql = "INSERT INTO testsuite (`name`) VALUES (?)";
     		PreparedStatement preparedSql = null;
     		Long rowID = null;

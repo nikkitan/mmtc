@@ -1,6 +1,6 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
-<%@page session="true"%>
+<%@page session="false"%>
 <!DOCTYPE html>
 <html>
 <head>
@@ -58,7 +58,7 @@ $(document).ready(function(){
 <table><!-- ROOT -->
 <tr>
 <td style="width:70%;">
-<form:form method="POST" action="adduser" commandName="user" >  
+<form:form method="POST" action="adduser" commandName="us" >  
 <table>  
     <tbody>
     <tr>  
@@ -106,7 +106,7 @@ $(document).ready(function(){
 <td style="vertical-align:top;">
 <nav>
 <a href="${pageContext.request.contextPath}/">Home</a> |
-<a href="${pageContext.request.contextPath}/login?logout">LogOut</a>
+<a href="${pageContext.request.contextPath}/login">LogIn</a>
 </nav>
 </td>
 </tr>
