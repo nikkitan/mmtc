@@ -120,7 +120,7 @@ public class HomeController {
 
 		int i = dataSource.getPoolSize();
 		logger.info("Pool size: " + i);
-		
+		dataSource.close();
 		return "home";
 	}	
 	

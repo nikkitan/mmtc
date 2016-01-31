@@ -5,12 +5,16 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jndi.JndiObjectFactoryBean;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -30,7 +34,9 @@ public class MMTCJdbcUserDetailsMgr implements UserDetailsService {
 	}
 
 	@Override
-	public UserDetails loadUserByUsername(String name) throws UsernameNotFoundException {
+	public UserDetails loadUserByUsername(String name)
+			throws UsernameNotFoundException,
+			AuthorityNotFoundException {
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		String sql = "SELECT username, password, enabled FROM users WHERE username=?";
 		PreparedStatement preparedSql = null;
@@ -44,7 +50,8 @@ public class MMTCJdbcUserDetailsMgr implements UserDetailsService {
 			String username = r.getString("username");
 			String password = r.getString("password");
 			Boolean enabled = r.getBoolean("enabled");
-			user = new MMTCUser(username, password,enabled,true,true,true)
+			ArrayList<SimpleGrantedAuthority> authoList = loadUserAuthorities(username);
+			user = new MMTCUser(username, password,enabled,true,true,true,authoList);
 		} catch (SQLException e) {
 			e.printStackTrace();
 			logger.error("[loadUserByUsername] " + e.getMessage());
@@ -69,6 +76,46 @@ public class MMTCJdbcUserDetailsMgr implements UserDetailsService {
 			}   			
 		}		
 		return null;
+	}
+	
+	public ArrayList<SimpleGrantedAuthority> loadUserAuthorities(String username) throws AuthorityNotFoundException {
+		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
+		String sql = "SELECT authority FROM authorities WHERE username=?";
+		PreparedStatement preparedSql = null;
+		Connection conn = null;
+		ArrayList<SimpleGrantedAuthority> authoList = new ArrayList<SimpleGrantedAuthority>();
+		try {
+			conn = dataSource.getConnection();					
+			preparedSql = conn.prepareStatement(sql);
+			preparedSql.setString(1, username);
+			ResultSet r = preparedSql.executeQuery();
+			String autho = r.getString("authority");
+			authoList.add(new SimpleGrantedAuthority(autho));
+		} catch (SQLException e) {
+			e.printStackTrace();
+			logger.error("[loadUserAuthorities] " + e.getMessage());
+			throw new AuthorityNotFoundException(username + "'s authorities not found.");
+		} finally{
+    		sql = null;
+			try {
+				preparedSql.close();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} finally{
+				preparedSql = null;
+			}
+			try {
+				conn.close();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} finally{
+				conn = null;
+			}   			
+		}		
+		return null;
+		
 	}
 
 }
