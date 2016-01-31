@@ -1,5 +1,5 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
-<%@page session="true"%>
+<%@page session="false"%>
 <html>
 <head>
 <title>Login Page</title>
@@ -65,7 +65,7 @@
 				<tr>
 					<td><input name="submit" type="submit"
 						value="Submit" /></td>
-					<td><a href="${pageContext.request.contextPath}/newuser">Create New Account</a></td>
+					<td><a href="${pageContext.request.contextPath}/login?newu">Create New Account</a></td>
 				</tr>
 			</table>
 
