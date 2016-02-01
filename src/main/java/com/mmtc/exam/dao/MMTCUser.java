@@ -73,37 +73,37 @@ public class MMTCUser implements UserDetails{
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
 		// TODO Auto-generated method stub
-		return null;
+		return this.authorities;
 	}
 	@Override
 	public String getPassword() {
 		// TODO Auto-generated method stub
-		return null;
+		return this.password;
 	}
 	@Override
 	public String getUsername() {
 		// TODO Auto-generated method stub
-		return null;
+		return this.username;
 	}
 	@Override
 	public boolean isAccountNonExpired() {
 		// TODO Auto-generated method stub
-		return false;
+		return this.accountNonExpired;
 	}
 	@Override
 	public boolean isAccountNonLocked() {
 		// TODO Auto-generated method stub
-		return false;
+		return this.accountNonLocked;
 	}
 	@Override
 	public boolean isCredentialsNonExpired() {
 		// TODO Auto-generated method stub
-		return false;
+		return this.credentialsNonExpired;
 	}
 	@Override
 	public boolean isEnabled() {
 		// TODO Auto-generated method stub
-		return false;
+		return enabled;
 	}
 	public void setUsername(String username) {
 		this.username = username;
@@ -171,7 +171,9 @@ public class MMTCUser implements UserDetails{
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString()).append(": ");
 		sb.append("Username: ").append(this.username).append("; ");
-		sb.append("Password: [PROTECTED]; ");
+		sb.append("Password: ").append(this.password).append("; ");
+		sb.append("Email: ").append(email).append("; ");
+		sb.append("Email Password: ").append(this.emailpw).append("; ");
 		sb.append("Enabled: ").append(this.enabled).append("; ");
 		sb.append("AccountNonExpired: ").append(this.accountNonExpired).append("; ");
 		sb.append("credentialsNonExpired: ").append(this.credentialsNonExpired)

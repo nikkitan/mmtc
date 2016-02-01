@@ -48,7 +48,7 @@ tbody.color td:nth-child(1){
 </td>
 <td style="vertical-align:top;">
 <nav>
-<a href="${pageContext.request.contextPath}/">Home</a> |
+<a href="${pageContext.request.contextPath}/home">Home</a> |
 <a href="${pageContext.request.contextPath}/login?logout">LogOut</a>
 </nav>
 </td>

@@ -117,5 +117,6 @@ table tbody tr:{
 			<input type="hidden" name="${_csrf.parameterName}"
 				value="${_csrf.token}" />   
 </form:form>
+<div align="center">@2016 Mendez Master Training Center. All rights reserved.</div>    
 </body>
 </html>
