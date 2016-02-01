@@ -53,7 +53,7 @@ $(document).ready(function(){
 </head>
 <body>
 
-<h1>Registration Form</h1>
+<h1>Welcome to MMTC!</h1>
 
 <table><!-- ROOT -->
 <tr>
@@ -99,13 +99,15 @@ $(document).ready(function(){
         </td>  
     </tr>  
 	</tbody>
-</table>    
+</table>  
+<input type="hidden" name="${_csrf.parameterName}"
+	value="${_csrf.token}" />  
 </form:form>
 </td>
 
 <td style="vertical-align:top;">
 <nav>
-<a href="${pageContext.request.contextPath}/">Home</a> |
+<a href="${pageContext.request.contextPath}/home">Home</a> |
 <a href="${pageContext.request.contextPath}/login">LogIn</a>
 </nav>
 </td>

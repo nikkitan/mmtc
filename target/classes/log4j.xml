@@ -12,12 +12,20 @@
 	
 	<!-- Application Loggers -->
 	<logger name="com.mmtc.exam">
-		<level value="info" />
+		<level value="debug" />
 	</logger>
 	
 	<!-- 3rdparty Loggers -->
 	<logger name="org.springframework.core">
-		<level value="info" />
+		<level value="all" />
+	</logger>
+	
+	<logger name="org.springframework.security">
+		<level value="all" />
+	</logger>
+	
+	<logger name="org.springframework.security.core">
+		<level value="all" />
 	</logger>
 	
 	<logger name="org.springframework.beans">
@@ -34,7 +42,7 @@
 
 	<!-- Root Logger -->
 	<root>
-		<priority value="warn" />
+		<priority value="all" />
 		<appender-ref ref="console" />
 	</root>
 	

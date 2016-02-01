@@ -4,12 +4,14 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-<title>Insert title here</title>
+<title>Select test suite</title>
 </head>
 <body>
-<table>
+<table><!-- ROOT -->
 <tr>
+<td style="width=70%;">
 <td>
+<h3>Select test suite:</h3>
 	<c:if test="${not empty suites}">
 
 		<ul>
@@ -20,7 +22,17 @@
 
 	</c:if>
 	</td>
+</td>
+<td>
+<nav>
+<a href="${pageContext.request.contextPath}/home">Home</a> |
+<a href="${pageContext.request.contextPath}/login?logout">LogOut</a>
+</nav>
+</td>
 </tr>
-</table>
+
+</table><!-- ROOT -->
+<div align="center">@2016 Mendez Master Training Center. All rights reserved.</div>
+
 </body>
 </html>

@@ -29,7 +29,9 @@ public class LoginController {
 		logger.info("[login]!");
 		ModelAndView model = new ModelAndView();
 		model.setViewName("login");
-		
+		if(newuser != null){
+			
+		}
 		if (error != null) {
 			model.addObject("error", "Invalid username and password!");
 		}
@@ -44,7 +46,7 @@ public class LoginController {
 	
 	}
 	
-	/*@RequestMapping(value = "/login", method = RequestMethod.POST)
+	@RequestMapping(value = "/login", method = RequestMethod.POST)
 	public ModelAndView loginPOST(Locale locale,
 			Model model,
 			@RequestParam(value = "error", required = false) String error,
@@ -60,5 +62,5 @@ public class LoginController {
 		}
 		resultModel.setViewName("login");
 		return resultModel;
-	}*/
+	}
 }

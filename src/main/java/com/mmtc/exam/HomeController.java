@@ -78,6 +78,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
+import com.mmtc.exam.auth.MMTCJdbcUserDetailsMgr;
 import com.mmtc.exam.dao.MMTCUser;
 import com.mmtc.exam.dao.Test;
 import com.mmtc.exam.dao.TestSuite;
@@ -96,7 +97,7 @@ public class HomeController {
 	@Autowired
 	private JndiObjectFactoryBean jndiObjFactoryBean;
 	@Autowired
-	private JdbcUserDetailsManager jdbcDaoMgr;
+	private MMTCJdbcUserDetailsMgr jdbcDaoMgr;
 	
 	private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");	
@@ -120,7 +121,7 @@ public class HomeController {
 
 		int i = dataSource.getPoolSize();
 		logger.info("Pool size: " + i);
-		dataSource.close();
+		
 		return "home";
 	}	
 	
