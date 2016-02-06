@@ -155,47 +155,30 @@ implements UserDetailsService, UserDetailsManager  {
 		conn.close();
 		dataSource.close(); 
 	}
-	@Override
-	public void createUser(UserDetails userDetail) {
-		logger.info("[createUser]");
+	
+	public void createMMTCUser(MMTCUser newUser) throws SQLException{
+		logger.info("[createMMTCUser]!");
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		String sql = "INSERT INTO users (username, password, email, emailpw, enabled) VALUES (?,?,?,?,?)";
 		PreparedStatement preparedSql = null;
-		Connection conn = null;
-		MMTCUser mmtcUser = (MMTCUser)userDetail;
-		try {
-			conn = dataSource.getConnection();					
-			preparedSql = conn.prepareStatement(sql);
-			preparedSql.setString(1, mmtcUser.getUsername());
-			preparedSql.setString(2, mmtcUser.getPassword());
-			preparedSql.setString(3, mmtcUser.getEmail());
-			preparedSql.setString(4, mmtcUser.getEmailpw());
-			preparedSql.setInt(5, 1);
-			preparedSql.executeUpdate();
-		} catch (SQLException e) {
-			e.printStackTrace();
-			logger.error("[createUser] Creation Failed: " + e.getMessage());
-		} finally{
-    		sql = null;
-			try {
-				preparedSql.close();
-			} catch (SQLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} finally{
-				preparedSql = null;
-			}
-			try {
-				conn.close();
-			} catch (SQLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} finally{
-				conn = null;
-			} 
-			dataSource.close();
-		}
-		logger.info("[createUser] New user: " + mmtcUser.toString());		
+		Connection conn = null;		
+		conn = dataSource.getConnection();					
+		preparedSql = conn.prepareStatement(sql);
+		preparedSql.setString(1, newUser.getUsername());
+		preparedSql.setString(2, newUser.getPassword());
+		preparedSql.setString(3, newUser.getEmail());
+		preparedSql.setString(4, newUser.getEmailpw());
+		preparedSql.setInt(5, 1);
+		preparedSql.executeUpdate();
+		preparedSql.close();
+		conn.close();
+		dataSource.close();
+		logger.info("[createMMTCUser] New user: " + newUser.toString());		
+		
+	}
+	@Override
+	public void createUser(UserDetails userDetail) {
+		logger.info("[createUser] DO NOT USE THIS FUNCTION. ABANDONED!!!");
 	}
 
 	@Override
