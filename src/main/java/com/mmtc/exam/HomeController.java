@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.Properties;
 import java.util.concurrent.Future;
 
 import javax.crypto.BadPaddingException;
@@ -48,6 +49,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jndi.JndiObjectFactoryBean;
+import org.springframework.mail.MailException;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.security.core.Authentication;
@@ -99,22 +103,25 @@ public class HomeController {
 	@Autowired
 	private MMTCJdbcUserDetailsMgr jdbcDaoMgr;
 	
+	@Autowired
+	private JavaMailSenderImpl mailSender;
+	
+	@Autowired
+	private SimpleMailMessage emailRegMsgTemplate;
+	
 	private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");	
     private final int AES_KEYLENGTH = 128;	// change this as desired for the security level you want
 	/**
 	 * Simply selects the home view to render by returning its name.
-	 */
+	 
 	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public @ResponseBody ModelAndView root(Locale locale, Model model) {
 		logger.info("Welcome home! The client locale is {}.", locale);
-		MMTCUser user = new MMTCUser();
-		ModelAndView view = new ModelAndView();
-		view.addObject("us",user);
-		view.setViewName("newuser");		
-		return view;
-	}
-	@RequestMapping(value = "/home", method = RequestMethod.GET)
+			
+		reut
+	}*/
+	@RequestMapping(value = {"/","/home"}, method = RequestMethod.GET)
 	public String home(Locale locale, Model model) {
 		logger.info("Welcome home! The client locale is {}.", locale);
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
@@ -178,13 +185,41 @@ public class HomeController {
 			HttpServletRequest request, 
 			HttpServletResponse response){
 		logger.info(request.getRequestURL().toString());
-		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
+		boolean hasError = false;
 		ArrayList<SimpleGrantedAuthority> authorities = new ArrayList<SimpleGrantedAuthority>();
 		authorities.add(new SimpleGrantedAuthority("STU"));
-		jdbcDaoMgr.createUser(new MMTCUser(user.getUsername(),user.getPassword(), authorities));
+		try {
+			jdbcDaoMgr.createMMTCUser(new MMTCUser(user.getUsername(),user.getPassword(), authorities));
+		} catch (SQLException e) {
+			e.printStackTrace();
+			logger.error("[adduser] FAILED create NEW user!!!!");
+			hasError = true;
+		}
+		
+		//Send confirmation email.
+		Properties props = new Properties();
+		props.put("mail.smtp.starttls.enable", "true");
+		mailSender.setJavaMailProperties(props);
+        SimpleMailMessage msg = new SimpleMailMessage(this.emailRegMsgTemplate);
+        msg.setTo(user.getEmail());
+        msg.setText(
+            "Dear " + user.getUsername()
+                + ", thank you for registering with MMTC! Your user name is your email. ");
+        try{
+            this.mailSender.send(msg);
+        }
+        catch (MailException ex) {
+            // simply log it and go on...
+            logger.error(ex.getMessage());
+            hasError = true;
+        }
+        
 		ModelAndView view = new ModelAndView();
 		view.setViewName("result");
-		view.addObject("result", "New user added successfully.");
+		if(hasError == false)
+			view.addObject("result", "New user added successfully. Please check you email for confirmation!");
+		else
+			view.addObject("result", "Failed adding new user. Please try again.");
         return view;
 	}
 	

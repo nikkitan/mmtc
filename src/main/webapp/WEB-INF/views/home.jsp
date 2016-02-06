@@ -34,6 +34,7 @@ tbody.root td:nth-child(1){
 			<li><a href="${pageContext.request.contextPath}/testsuite">Exam Simulations</a></li>
 			<li><a href="${pageContext.request.contextPath}/addtestsuite">Add Exams</a></li>
 			<li><a href="${pageContext.request.contextPath}/edittests">Edit Exams</a></li>
+			<li><a href="${pageContext.request.contextPath}/adduser">Add New Student</a></li>
 		</ul>
 </td>
 <td style="vertical-align:top;">

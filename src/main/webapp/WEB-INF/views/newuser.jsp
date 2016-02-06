@@ -63,7 +63,7 @@ $(document).ready(function(){
     <tbody>
     <tr>  
     <td>  
-        User Name:
+        <font color="red">*</font>User Name:
     </td>  
     <td>
     	<form:input path="username" />
@@ -71,7 +71,7 @@ $(document).ready(function(){
     </tr>
     <tr>  
     <td>  
-        Password:
+        <font color="red">*</font>Password:
     </td>  
     <td>
     	<form:password path="password" />
@@ -79,7 +79,7 @@ $(document).ready(function(){
     </tr> 
     <tr>  
     <td>  
-        Email:
+        <font color="red">*</font>Email:
     </td>  
     <td>
     	<form:input path="email" />
@@ -87,7 +87,7 @@ $(document).ready(function(){
     </tr>
     <tr>  
     <td>  
-        Email Password:
+        <font color="red">*</font>Email Password:
     </td>  
     <td>
     	<form:password path="emailpw" />
