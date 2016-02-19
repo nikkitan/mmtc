@@ -91,6 +91,7 @@ import com.mmtc.exam.dao.TestSuite;
 //http://www.jsptut.com/
 //http://docs.spring.io/spring/docs/current/spring-framework-reference/html/spring-form-tld.html
 //http://danielkvist.net/wiki/spring-mvc-fundamentals
+//http://www.ibm.com/developerworks/library/ws-springjava/
 /**
  * Handles requests for the application home page.
  */
@@ -112,16 +113,16 @@ public class HomeController {
 	private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");	
     private final int AES_KEYLENGTH = 128;	// change this as desired for the security level you want
-	/**
-	 * Simply selects the home view to render by returning its name.
 	 
 	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public @ResponseBody ModelAndView root(Locale locale, Model model) {
 		logger.info("Welcome home! The client locale is {}.", locale);
-			
-		reut
-	}*/
-	@RequestMapping(value = {"/","/home"}, method = RequestMethod.GET)
+		ModelAndView view = new ModelAndView();
+		view.setViewName("index");
+		return view;
+
+	}
+	@RequestMapping(value = {"/home"}, method = RequestMethod.GET)
 	public String home(Locale locale, Model model) {
 		logger.info("Welcome home! The client locale is {}.", locale);
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();

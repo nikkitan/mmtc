@@ -27,13 +27,23 @@ public class LoginController {
 	public ModelAndView login(
 			HttpServletRequest request, 
 			HttpServletResponse response) {
-		logger.info("[login]!");
-		//MMTCUser user = new MMTCUser();
+		logger.info("[login]! " + request.getRequestedSessionId());
 		ModelAndView view = new ModelAndView();
-		//view.addObject("us",user);
 		view.setViewName("login");
 		return view;
 	
+	}
+	
+	@RequestMapping(value = "/logout", method = RequestMethod.GET)
+	public ModelAndView logout(
+			HttpServletRequest request, 
+			HttpServletResponse response) {
+		logger.info("[logout]! " + request.getRequestedSessionId());
+		logger.info("[logout]! " + request.getSession().getId());
+		request.getSession().invalidate();
+		ModelAndView view = new ModelAndView();
+		view.setViewName("login");
+		return view;
 	}
 	
 	@RequestMapping(value = "/login", method = RequestMethod.POST)
