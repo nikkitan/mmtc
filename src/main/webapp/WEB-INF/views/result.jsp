@@ -20,7 +20,7 @@ ${result}
 <td style="vertical-align:top;">
 <nav>
 <a href="${pageContext.request.contextPath}/home">Home</a> |
-<a href="${pageContext.request.contextPath}/login?logout">LogOut</a>
+<a href="${pageContext.request.contextPath}/logout">LogOut</a>
 </nav>
 </td>
 </tr>
