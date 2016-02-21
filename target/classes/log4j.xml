@@ -32,6 +32,17 @@
 		<level value="all" />
 	</logger>
 	
+	<logger name="org.springframework.security.web.authentication.logout.LogoutBeanDefinitionParser">
+		<level value="all" />
+	</logger>
+	<logger name="org.springframework.security.web.authentication.logout.LogoutFilter">
+		<level value="all" />
+	</logger>
+	
+	<logger name="org.springframework.web.filter.GenericFilterBean.LogoutFilter">
+		<level value="all" />
+	</logger>
+	
 	<logger name="org.springframework.beans">
 		<level value="info" />
 	</logger>

@@ -114,7 +114,7 @@ public class HomeController {
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");	
     private final int AES_KEYLENGTH = 128;	// change this as desired for the security level you want
 	 
-	@RequestMapping(value = "/", method = RequestMethod.GET)
+	@RequestMapping(value = {"/","/index"}, method = RequestMethod.GET)
 	public @ResponseBody ModelAndView root(Locale locale, Model model) {
 		logger.info("Welcome home! The client locale is {}.", locale);
 		ModelAndView view = new ModelAndView();
