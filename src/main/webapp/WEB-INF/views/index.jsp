@@ -2,14 +2,13 @@
 <%@ page contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8" session="false"%>
 <!DOCTYPE html>
-<html>
 <head>
 <meta charset="utf8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <script src="${pageContext.request.contextPath}/resources/js/jquery-2.1.4.min.js" type="text/javascript"></script>
 <script src="${pageContext.request.contextPath}/resources/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
 <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/bootstrap/css/bootstrap.min.css">
-<title>Login Page</title>
+<title>MMTC</title>
 <style>
   body {
       font: 20px Montserrat, sans-serif;
@@ -50,6 +49,9 @@
   .navbar-nav  li a:hover {
       color: #1abc9c !important;
   }
+  .btn-signup {
+  	.button-variant(@btn-primary-color; #ff0000, #e60000);
+  }
   </style>
 </head>
 <body>
@@ -63,13 +65,12 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>                        
       </button>
-      <a class="navbar-brand" href="#">Me</a>
+      <a class="navbar-brand" href="#">MMTC 一条龙按摩培训</a>
     </div>
     <div class="collapse navbar-collapse" id="myNavbar">
       <ul class="nav navbar-nav navbar-right">
         <li><a href="${pageContext.request.contextPath}/login">LogIn</a></li>
-        <li><a href="#">WHAT</a></li>
-        <li><a href="#">WHERE</a></li>
+        <li><a href="#" class="btn navbar-btn btn-signup">SignUp</a></li>
       </ul>
     </div>
   </div>
