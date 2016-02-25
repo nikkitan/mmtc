@@ -287,9 +287,9 @@ public class HomeController {
 		resultView.addObject("ste",found.getSuite());
 		resultView.addObject("sn",found.getSerialNo());
 		resultView.addObject("q",found.getQuestion());
-		resultView.addObject("ans",found.getAnsArrayList());
-		resultView.addObject("opt",found.getOptArrayList());
-		resultView.addObject("kwd", found.getKwdArrayList());
+		resultView.addObject("ans",found.getAnswers());
+		resultView.addObject("opt",found.getOptions());
+		resultView.addObject("kwd", found.getKeywords());
 		
 		String parentDir = File.separator;
 		parentDir += "mmtcexam";
@@ -756,10 +756,8 @@ public class HomeController {
 		Gson gson = new Gson();
 		JsonArray jTests = (JsonArray)gson.toJsonTree(tests, new TypeToken<ArrayList<Test>>(){}.getType());
 		jSuite.add("tests", jTests);
-		session.setAttribute("quizDuration",5);
-
-		session.setAttribute("tests", jSuite);
-		return new ModelAndView("result","result",jSuite.toString());
+		request.setAttribute("tests",gson.toJson(jSuite));
+		return new ModelAndView("exectest");
 	}
 	
 	@RequestMapping(value = "/timeout", method = RequestMethod.GET)
@@ -814,19 +812,19 @@ public class HomeController {
 				Test found = new Test();
 				JsonElement elem = jp.parse(s.getString("answer"));
 				JsonArray jsonArr = elem.getAsJsonArray();
-				found.setAnsJsonArr(jsonArr);
-				found.setAnsArrayList(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
+				//found.setAnsJsonArr(jsonArr);
+				found.setAnswers(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
 				//found.setAnswer(s.getString("answer"));
 
 				elem = jp.parse(s.getString("options"));
 				jsonArr = elem.getAsJsonArray();
-				found.setOptJsonArr(jsonArr);
-				found.setOptArrayList(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
+				//found.setOptJsonArr(jsonArr);
+				found.setOptions(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
 				
 				elem = jp.parse(s.getString("keywords"));
 				jsonArr = elem.getAsJsonArray();
-				found.setKwdJsonArr(jsonArr);
-				found.setKwdArrayList(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
+				//found.setKwdJsonArr(jsonArr);
+				found.setKeywords(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
 
 				//found.setOptions(s.getString("options"));
 				serial = Integer.toString(s.getInt("serial"));
@@ -843,6 +841,12 @@ public class HomeController {
 			logger.error("[getTestBySuiteAndID()] " + e.getMessage());			
 		}
 		return tests;
+	}
+	private ArrayList<Test> getTestsForSuiteAsJSON(String suite){
+		
+		
+		return null;
+		
 	}
 	private ArrayList<Test> getTestsForSuite(String suite){
 		logger.info("getTestForSuite()!");
@@ -868,18 +872,18 @@ public class HomeController {
 				
 				JsonElement elem = jp.parse(s.getString("answer"));
 				JsonArray jsonArr = elem.getAsJsonArray();
-				found.setAnsJsonArr(jsonArr);
-				found.setAnsArrayList(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
+				//found.setAnsJsonArr(jsonArr);
+				found.setAnswers(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
 
 				elem = jp.parse(s.getString("options"));
 				jsonArr = elem.getAsJsonArray();
-				found.setOptJsonArr(jsonArr);
-				found.setOptArrayList(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
+				//found.setOptJsonArr(jsonArr);
+				found.setOptions(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
 				
 				elem = jp.parse(s.getString("keywords"));
 				jsonArr = elem.getAsJsonArray();
-				found.setKwdJsonArr(jsonArr);
-				found.setKwdArrayList(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));				
+				//found.setKwdJsonArr(jsonArr);
+				found.setKeywords(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));				
 				
 				found.setPic(s.getString("pic"));
 				found.setId(encrypt(curUser + "MendezMasterTrainingCenter6454",suite + "-" + serial));
