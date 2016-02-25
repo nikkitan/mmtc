@@ -22,30 +22,6 @@ public class Test {
 		this.serialNo = serialNo;
 	}
 
-	public String getOptions() {
-		return options;
-	}
-
-	public void setOptions(String options) {
-		this.options = options;
-	}
-
-	public String getAnswer() {
-		return answer;
-	}
-
-	public void setAnswer(String answer) {
-		this.answer = answer;
-	}
-
-	public String getKeywords() {
-		return keywords;
-	}
-
-	public void setKeywords(String keywords) {
-		this.keywords = keywords;
-	}
-
 	public String getId() {
 		return id;
 	}
@@ -78,7 +54,7 @@ public class Test {
 		this.suite = suite;
 	}
 
-	public JsonArray getAnsJsonArr() {
+	/*public JsonArray getAnsJsonArr() {
 		return ansJsonArr;
 	}
 
@@ -93,23 +69,7 @@ public class Test {
 	public void setOptJsonArr(JsonArray optJsonArr) {
 		this.optJsonArr = optJsonArr;
 	}
-
-	public ArrayList<String> getAnsArrayList() {
-		return ansArrayList;
-	}
-
-	public void setAnsArrayList(ArrayList<String> ansArrayList) {
-		this.ansArrayList = ansArrayList;
-	}
-
-	public ArrayList<String> getOptArrayList() {
-		return optArrayList;
-	}
-
-	public void setOptArrayList(ArrayList<String> optArrayList) {
-		this.optArrayList = optArrayList;
-	}
-
+	
 	public JsonArray getKwdJsonArr() {
 		return kwdJsonArr;
 	}
@@ -117,27 +77,41 @@ public class Test {
 	public void setKwdJsonArr(JsonArray kwdJsonArr) {
 		this.kwdJsonArr = kwdJsonArr;
 	}
+	*/
 
-	public ArrayList<String> getKwdArrayList() {
-		return kwdArrayList;
+	public ArrayList<String> getAnswers() {
+		return answers;
 	}
 
-	public void setKwdArrayList(ArrayList<String> kwdArrayList) {
-		this.kwdArrayList = kwdArrayList;
+	public void setAnswers(ArrayList<String> ansArrayList) {
+		this.answers = ansArrayList;
 	}
 
-	private JsonArray ansJsonArr;
-	private JsonArray optJsonArr;
-	private ArrayList<String> ansArrayList;
-	private ArrayList<String> optArrayList;
-	private JsonArray kwdJsonArr;
-	private ArrayList<String> kwdArrayList;
+	public ArrayList<String> getOptions() {
+		return options;
+	}
+
+	public void setOptions(ArrayList<String> optArrayList) {
+		this.options = optArrayList;
+	}
+
+	public ArrayList<String> getKeywords() {
+		return kwds;
+	}
+
+	public void setKeywords(ArrayList<String> kwdArrayList) {
+		this.kwds = kwdArrayList;
+	}
+
+	//private JsonArray ansJsonArr;
+	//private JsonArray optJsonArr;
+	private ArrayList<String> answers;
+	private ArrayList<String> options;
+	//private JsonArray kwdJsonArr;
+	private ArrayList<String> kwds;
 	private String suite;
 	private String question;
 	private Integer serialNo;
-	private String options;//Stringified JSON array.
-	private String answer;//Stringified JSON array.
-	private String keywords;//Stringified JSON array.
 	private String pic;//picture file name.
 	private String id;//AES encryption for publicly usage in web pages.
 	private long lastUpdateTimestamp;
