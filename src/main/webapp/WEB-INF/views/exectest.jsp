@@ -54,7 +54,20 @@ p {font-size: 16px;}
 </style>
 <script type="text/javascript">
 $(document).ready(function() {
+	<% String origTest=(String)request.getAttribute("tests");%>
+	var oo = '<%=origTest%>';
 	window.localStorage.setItem('tests','<%=(String)request.getAttribute("tests")%>');
+	var tt = window.localStorage.getItem('tests');//jQuery.parseJSON('<%=(String)request.getAttribute("tests")%>');
+	var p = jQuery.parseJSON(oo);
+	alert(p.suite);
+	$('#testrootpanel #qh').append("<h4>Item " + p.tests[0].serialNo + " of 100</h4>");
+	$('#testrootpanel #qthb').append("<img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[0].pic+ "\"/>")
+	$('#testrootpanel #ques').append("<h4>" + p.tests[0].question + "</h4>");
+	var opts = p.tests[0].options;
+	for(var i = 0; i < opts.length; ++i){
+		var opt = opts[i];
+		$('#testrootpanel #optcol').append("<div class=\"radio\"><label><input type=\"radio\" name=\"optradio\">" + opt + "</label></div>");
+	}
 });
 </script>
 <title>MMTC</title>
@@ -80,29 +93,58 @@ $(document).ready(function() {
 	    </div>
 	  </div>
 	</nav>
-<!--<mmtc:jsonparser></mmtc:jsonparser>-->
-<div class="container-fluid">
+<div class="container-fluid bg-3" id="testrootpanel">
 <form:form method="POST" action="${s}?${_csrf.parameterName}=${_csrf.token}" commandName="ts" enctype="multipart/form-data"> 
 <div class="row">
-<div class="col-sm-12">
-<h3></h3>
+<div class="col-sm-5"><!-- MARK --></div>
+<div class="col-sm-5">
+<!-- COUNTDOWN -->
+<label>Time Remaining:</label>
+<label id="hh">12</label><label>:</label>
+<label id="mm">34</label><label>:</label>
+<label id="ss">55</label>
 </div>
 </div>
 <div class="row">
-<div class="col-sm-12">
+<div class="col-sm-8">
+<div id="qh"></div>
 </div>
+<div class="col-sm-4">
+<button>Show Answer</button>
+<button>Calculator</button>
+</div>
+</div>
+<hr>
+<div class="row">
+<div class="col-sm-8">
+<div class="thumbnail" id="qthb"></div>
+<div class="caption" id="ques"></div>
+</div>
+
 </div>
 <div class="row">
-<div class="col-sm-12">
+<div class="col-sm-8" id="optcol">
+<!-- radio buttons -->
 </div>
 </div>
+
 <div class="row">
-<div class="col-sm-12">
+<div class="col-sm-8">
+<!-- prev,next,review,pause,end exam -->
+<button>Prev</button>
+<button>Next</button>
+<button>Pause</button>
+</div>
+<div class="col-sm-4">
+<!-- prev,next,review,pause,end exam -->
+<button>Pause</button>
 <input type="submit" value="Submit"/> 
+
 </div>
-</div> 
+</div>
 </form:form>
 </div>
+
 <!-- Footer -->
 <footer class="container-fluid bg-4 text-center">
   <p>@2016 Mendez Master Training Center. All rights reserved.</p> 
