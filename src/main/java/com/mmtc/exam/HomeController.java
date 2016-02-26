@@ -750,13 +750,15 @@ public class HomeController {
 			@PathVariable String s,
 			@ModelAttribute("ts") TestSuite suite) {
 		logger.info(request.getRequestURL().toString());
-		ArrayList<Test> tests = getTestsForSuite(s);
+		ArrayList<Test> tests = getTestBySuiteAndID(s,"10");//getTestsForSuite(s);
 		JsonObject jSuite = new JsonObject();
 		jSuite.addProperty("suite", s);
 		Gson gson = new Gson();
 		JsonArray jTests = (JsonArray)gson.toJsonTree(tests, new TypeToken<ArrayList<Test>>(){}.getType());
 		jSuite.add("tests", jTests);
-		request.setAttribute("tests",gson.toJson(jSuite));
+		//String strJ = gson.toJson(jSuite);
+		String strJ = gson.toJson(jSuite).replace("\\", "\\\\");
+		request.setAttribute("tests",strJ);
 		return new ModelAndView("exectest");
 	}
 	
@@ -812,19 +814,19 @@ public class HomeController {
 				Test found = new Test();
 				JsonElement elem = jp.parse(s.getString("answer"));
 				JsonArray jsonArr = elem.getAsJsonArray();
-				//found.setAnsJsonArr(jsonArr);
-				found.setAnswers(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
+				found.setAnswers(jsonArr);
+				//found.setAnswers(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
 				//found.setAnswer(s.getString("answer"));
 
 				elem = jp.parse(s.getString("options"));
 				jsonArr = elem.getAsJsonArray();
-				//found.setOptJsonArr(jsonArr);
-				found.setOptions(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
+				found.setOptions(jsonArr);
+				//found.setOptions(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
 				
 				elem = jp.parse(s.getString("keywords"));
 				jsonArr = elem.getAsJsonArray();
-				//found.setKwdJsonArr(jsonArr);
-				found.setKeywords(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
+				found.setKeywords(jsonArr);
+				//found.setKeywords(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
 
 				//found.setOptions(s.getString("options"));
 				serial = Integer.toString(s.getInt("serial"));
@@ -852,7 +854,7 @@ public class HomeController {
 		logger.info("getTestForSuite()!");
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		ArrayList<Test> tests = new ArrayList<Test>();
-		String sql = "SELECT serial, updatedat, question, options,answer,keywords,pic FROM test WHERE testsuite_pk IN (SELECT pk FROM testsuite WHERE name=?)  ";
+		String sql = "SELECT serial, updatedat, question, options,answer,keywords,pic FROM test WHERE testsuite_pk IN (SELECT pk FROM testsuite WHERE name=?)";
 		PreparedStatement preparedSql = null;
 		Connection conn = null;
 	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -872,18 +874,18 @@ public class HomeController {
 				
 				JsonElement elem = jp.parse(s.getString("answer"));
 				JsonArray jsonArr = elem.getAsJsonArray();
-				//found.setAnsJsonArr(jsonArr);
-				found.setAnswers(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
+				found.setAnswers(jsonArr);
+				//found.setAnswers(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
 
 				elem = jp.parse(s.getString("options"));
 				jsonArr = elem.getAsJsonArray();
-				//found.setOptJsonArr(jsonArr);
-				found.setOptions(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
+				found.setOptions(jsonArr);
+				//found.setOptions(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
 				
 				elem = jp.parse(s.getString("keywords"));
 				jsonArr = elem.getAsJsonArray();
-				//found.setKwdJsonArr(jsonArr);
-				found.setKeywords(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));				
+				found.setKeywords(jsonArr);
+				//found.setKeywords(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));				
 				
 				found.setPic(s.getString("pic"));
 				found.setId(encrypt(curUser + "MendezMasterTrainingCenter6454",suite + "-" + serial));

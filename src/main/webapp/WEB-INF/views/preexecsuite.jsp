@@ -75,7 +75,7 @@ p {font-size: 16px;}
 	  </div>
 	</nav>
 <!--<mmtc:jsonparser></mmtc:jsonparser>-->
-<div class="container-fluid">
+<div class="container-fluid bg-3">
 <form:form method="POST" action="${s}?${_csrf.parameterName}=${_csrf.token}" commandName="ts" enctype="multipart/form-data"> 
 <div class="row">
 <div class="col-sm-12">

@@ -79,36 +79,36 @@ public class Test {
 	}
 	*/
 
-	public ArrayList<String> getAnswers() {
+	public JsonArray getAnswers() {
 		return answers;
 	}
 
-	public void setAnswers(ArrayList<String> ansArrayList) {
+	public void setAnswers(JsonArray ansArrayList) {
 		this.answers = ansArrayList;
 	}
 
-	public ArrayList<String> getOptions() {
+	public JsonArray getOptions() {
 		return options;
 	}
 
-	public void setOptions(ArrayList<String> optArrayList) {
+	public void setOptions(JsonArray optArrayList) {
 		this.options = optArrayList;
 	}
 
-	public ArrayList<String> getKeywords() {
+	public JsonArray getKeywords() {
 		return kwds;
 	}
 
-	public void setKeywords(ArrayList<String> kwdArrayList) {
+	public void setKeywords(JsonArray kwdArrayList) {
 		this.kwds = kwdArrayList;
 	}
 
-	//private JsonArray ansJsonArr;
-	//private JsonArray optJsonArr;
-	private ArrayList<String> answers;
-	private ArrayList<String> options;
-	//private JsonArray kwdJsonArr;
-	private ArrayList<String> kwds;
+	private JsonArray answers;
+	private JsonArray options;
+	//private ArrayList<String> answers;
+	//private ArrayList<String> options;
+	private JsonArray kwds;
+	//private ArrayList<String> kwds;
 	private String suite;
 	private String question;
 	private Integer serialNo;
