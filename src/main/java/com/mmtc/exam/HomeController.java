@@ -750,7 +750,7 @@ public class HomeController {
 			@PathVariable String s,
 			@ModelAttribute("ts") TestSuite suite) {
 		logger.info(request.getRequestURL().toString());
-		ArrayList<Test> tests = getTestBySuiteAndID(s,"10");//getTestsForSuite(s);
+		ArrayList<Test> tests = getTestsForSuite(s);//getTestBySuiteAndID(s,"10");
 		JsonObject jSuite = new JsonObject();
 		jSuite.addProperty("suite", s);
 		Gson gson = new Gson();
