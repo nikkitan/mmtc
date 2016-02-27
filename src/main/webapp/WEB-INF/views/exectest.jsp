@@ -58,7 +58,7 @@ p {font-size: 16px;}
 </style>
 <script type="text/javascript">
 function updateRemainingTime(endTime){
-	console.log("[updateRemain]: " + endTime);
+	//console.log("[updateRemain]: " + endTime);
 	var dur = Date.parse(endTime) - Date.parse(new Date());
 	var seconds = Math.floor( (dur/1000) % 60 );
 	var minutes = Math.floor( (dur/1000/60) % 60 );
@@ -74,10 +74,16 @@ function updateRemainingTime(endTime){
 }
 $(document).on("contextmenu", function (event) { event.preventDefault(); });
 $(document).ready(function() {
+	//Get and save in JSON.
+	<% String origTest=(String)request.getAttribute("tests");%>
+	var oo = '<%=origTest%>';
+	var p = jQuery.parseJSON(oo);
+	window.localStorage.setItem('tests',oo);	
+	var total = p.tests.length;
 	//Initialize timer.
 	var startTime = new Date();
 	var endTime = startTime;
-	console.log("[ENDTIME 1]: " + endTime);
+	//console.log("[ENDTIME 1]: " + endTime);
 	var pauseTime;
 	var resumeTime;
 	endTime.setHours(endTime.getHours() + 2);
@@ -107,8 +113,8 @@ $(document).ready(function() {
 		var prevEndTime = Date.parse(endTime);
 		prevEndTime += Date.parse(resumeTime) - Date.parse(pauseTime);
 		endTime = new Date(prevEndTime);
-		console.log("[ENDTIME 2]: " + endTime);
-		console.log("resume!");
+		//console.log("[ENDTIME 2]: " + endTime);
+		//console.log("resume!");
 		updateTimer();
 		timerIntervalObj = setInterval(updateTimer,1000);	
 	});
@@ -118,31 +124,46 @@ $(document).ready(function() {
 	$('#nxtbtn').on('click', function (e) {
 		curTest += 1;
 		showTest();
-		console.log("next! " + curTest);
+		//console.log("next! " + curTest);
 	});	
 	
 	//Prev test.
 	$('#prvbtn').on('click', function (e) {
 		curTest -= 1;
 		showTest();
-		console.log("prev! " + curTest);
+		//console.log("prev! " + curTest);
 	});
 	
+	//Show/Hide answer.
+	$('#ansbtn').on('click', function (e) {
+		console.log("answer!" + curTest);
+		if($(this).html() == "Show Answer"){
+			$(this).html("Hide Answer");
+			$("#ansrow").append("<div class=\"col-sm-12\"><div class=\"well\">Answer:"
+					+ p.tests[curTest].answers[0] + "</div></div>");
+		}else{
+			$(this).html("Show Answer");
+			$("#ansrow").children().last().remove();
+		}
+	});	
+	
 	//Display tests.
-	<% String origTest=(String)request.getAttribute("tests");%>
-	var oo = '<%=origTest%>';
-	//window.localStorage.setItem('tests','<%=(String)request.getAttribute("tests")%>');
-	//var tt = window.localStorage.getItem('tests');//jQuery.parseJSON('<%=(String)request.getAttribute("tests")%>');
-	var p = jQuery.parseJSON(oo);
 	function showTest(){
-		if(curTest > -1 && curTest < p.tests.length){
+		if(curTest > -1 && curTest < total){
 			$('#testrootpanel #qh').children().last().remove();
-			$('#testrootpanel #qthb').children().last().remove();
-			$('#testrootpanel #ques').children().last().remove();
+			//$('#testrootpanel #qthb').children().last().remove();
+			//$('#testrootpanel #ques').children().last().remove();
+			$('#testrootpanel #quescol').html('');
 			$('#testrootpanel #optcol').html('');
-			$('#testrootpanel #qh').append("<h4>Item " + p.tests[curTest].serialNo + " of 100</h4>");
-			$('#testrootpanel #qthb').append("<img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[curTest].pic+ "\"/>")
-			$('#testrootpanel #ques').append("<h4>" + p.tests[curTest].question + "</h4>");
+			var curSN = curTest + 1;
+			$('#testrootpanel #qh').append("<h4>Item " + curSN + " of "+ total +"</h4>");
+			if(typeof p.tests[curTest].pic != 'undefined'){
+				$('#testrootpanel #quescol').append("<div class=\"thumbnail\"><img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[curTest].pic+ "\"/></div>")
+				$('#testrootpanel #quescol').append("<div class=\"caption\"><h4>" + p.tests[curTest].question + "</h4>");
+			}else{
+				$('#testrootpanel #quescol').append("<div class=\"caption\"><h4>" 
+						+ p.tests[curTest].question +"</h4></div>")
+			}
 			var opts = p.tests[curTest].options;
 			for(var i = 0; i < opts.length; ++i){
 				var opt = opts[i];
@@ -150,6 +171,7 @@ $(document).ready(function() {
 				$('#testrootpanel #optcol').children().last().on('click',
 					function(){
 						//onclicked, cache clicked option to local storage.
+						var tt = window.localStorage.getItem('tests');
 						
 				});
 			}
@@ -213,15 +235,14 @@ $(document).ready(function() {
 <div id="qh"></div>
 </div>
 <div style="text-align:right" class="col-sm-4">
-<button>Show Answer</button>
+<button type="button" id="ansbtn">Show Answer</button>
 <button>Calculator</button>
 </div>
 </div>
 <hr>
 <div class="row">
-<div class="col-sm-8">
-<div class="thumbnail" id="qthb"></div>
-<div class="caption" id="ques"></div>
+<div class="col-sm-8" id="quescol">
+
 </div>
 
 </div>
@@ -230,7 +251,10 @@ $(document).ready(function() {
 <!-- radio buttons -->
 </div>
 </div>
+<div class="row" id="ansrow">
+<!-- ANSWER -->
 
+</div>
 <div class="row">
 <div class="col-sm-8">
 <!-- prev,next,review -->

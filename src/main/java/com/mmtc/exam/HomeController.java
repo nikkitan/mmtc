@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Properties;
+import java.util.Random;
 import java.util.concurrent.Future;
 
 import javax.crypto.BadPaddingException;
@@ -81,6 +82,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import com.google.gson.reflect.TypeToken;
 import com.mmtc.exam.auth.MMTCJdbcUserDetailsMgr;
 import com.mmtc.exam.dao.MMTCUser;
@@ -330,6 +332,18 @@ public class HomeController {
 		return view;
 	}
 	
+	@RequestMapping(value = "/submitans", method = RequestMethod.POST)
+	public @ResponseBody ModelAndView submitAnsPOST(
+			Locale locale,
+			Model model,
+			HttpSession session,
+			HttpServletRequest request, 
+			HttpServletResponse response){
+		ModelAndView v = new ModelAndView();
+		
+		return v;
+	}
+
 	@Async
 	public Future<PutObjectResult> uploadS3(File file){
 		AmazonS3 s3Client = new AmazonS3Client(new InstanceProfileCredentialsProvider());
@@ -750,7 +764,109 @@ public class HomeController {
 			@PathVariable String s,
 			@ModelAttribute("ts") TestSuite suite) {
 		logger.info(request.getRequestURL().toString());
-		ArrayList<Test> tests = getTestsForSuite(s);//getTestBySuiteAndID(s,"10");
+		ArrayList<Test> tests = getTestsForSuite(s);
+		Random random = new Random();
+		if(suite.getIsQuestionRandom() != null){
+			Test lastUnStruck = null;
+			Test randomPickTest = null;
+			String fullQues = null;
+			int dotPos = 0;
+			//Randomize.
+			 int r = 0;
+			 int i = tests.size() - 1;
+			 for(; i >= 1; --i){
+				 r = random.nextInt(i);
+				 lastUnStruck = tests.get(i);
+				 randomPickTest = tests.get(r);
+				 /*
+				 fullQues = lastUnStruck.getQuestion();
+				 dotPos = fullQues.indexOf(".");
+				 if(dotPos != -1){
+					 String ques = fullQues.substring(dotPos);
+					 fullQues = String.valueOf(r+1) + ques;
+				 }else{
+					 logger.error("[runSuitePOST]: Found question not beginning with serial!");
+					 //Make it right: random + "." + question.
+					 fullQues = String.valueOf(r+1) + "." + fullQues;					 
+				 }				 
+				 lastUnStruck.setQuestion(fullQues);
+				 */
+				 fullQues = randomPickTest.getQuestion();
+				 dotPos = fullQues.indexOf(".");
+				 if(dotPos != -1){
+					 String ques = fullQues.substring(dotPos);
+					 fullQues = String.valueOf(i+1) + ques;
+				 }else{
+					 logger.error("[runSuitePOST]: Found question not beginning with serial!");
+					 //Make it right: random + "." + question.
+					 fullQues = String.valueOf(i+1) + "." + fullQues;					 
+				 }			
+				 randomPickTest.setQuestion(fullQues);
+				 
+				 tests.set(i, randomPickTest);
+				 tests.set(r, lastUnStruck);
+				 
+			 }
+			 
+			 
+			 fullQues = tests.get(i).getQuestion();
+			 dotPos = fullQues.indexOf(".");
+			 if(dotPos != -1){
+				 String ques = fullQues.substring(dotPos);
+				 fullQues = String.valueOf(i+1) + ques;
+			 }else{
+				 logger.error("[runSuitePOST]: Found question not beginning with serial!");
+				 //Make it right: random + "." + question.
+				 fullQues = String.valueOf(i+1) + "." + fullQues;					 
+			 }	
+			 tests.get(i).setQuestion(fullQues);
+		}
+		if(suite.getIsChoiceRandom() != null){			
+			int r = 0;
+			int dotPos = -1;
+			String strTemp1;
+			JsonElement jElemTemp;
+			JsonElement jElemRandom;
+			for(int i = 0; i < tests.size(); ++i){
+				Test curTest = tests.get(i);
+				JsonArray curOptions = curTest.getOptions();
+				JsonArray randomOptions = curOptions;
+				int len = randomOptions.size();
+
+				int j = len - 1;
+				for(; j >= 1; --j){
+					r = random.nextInt(j);		
+					jElemTemp = randomOptions.get(j);
+					jElemRandom = randomOptions.get(r);
+					strTemp1 = jElemRandom.getAsString();
+					dotPos = strTemp1.indexOf(".");
+					if(dotPos != -1){
+						strTemp1 = String.valueOf((char)(j+65)) + strTemp1.substring(dotPos);
+					}else{
+						logger.error("[runSuitePOST]: Found bad formatted option without dot between A|B|C|D and rest!");
+						strTemp1 = String.valueOf((char)(j+65)) + "." + strTemp1.substring(dotPos);
+					}
+					randomOptions.set(j, new JsonPrimitive(strTemp1));
+					randomOptions.set(r, jElemTemp);
+				}
+				
+				//Adjust A|B|C|D after randomization for j-th value.
+				strTemp1 = randomOptions.get(j).getAsString();
+				dotPos = strTemp1.indexOf(".");
+				if(dotPos != -1){
+					strTemp1 = String.valueOf((char)(j+65)) + strTemp1.substring(dotPos);
+				}else{
+					logger.error("[runSuitePOST]: Found bad formatted option without dot between A|B|C|D and rest!");
+					strTemp1 = String.valueOf((char)(j+65)) + "." + strTemp1.substring(dotPos);
+				}
+				randomOptions.set(j, new JsonPrimitive(strTemp1));				
+				
+				curTest.setOptions(randomOptions);
+			}
+			
+		}
+		
+		
 		JsonObject jSuite = new JsonObject();
 		jSuite.addProperty("suite", s);
 		Gson gson = new Gson();
