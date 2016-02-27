@@ -16,6 +16,10 @@ body {
     font: 20px Montserrat, sans-serif;
     line-height: 1.8;
     color: #f5f6f7;
+ 	-webkit-user-select: none;
+    -moz-user-select: -moz-none;
+    -ms-user-select: none;
+    user-select: none;
 }
 p {font-size: 16px;}
 .margin {margin-bottom: 45px;}
@@ -53,21 +57,106 @@ p {font-size: 16px;}
 }
 </style>
 <script type="text/javascript">
+function updateRemainingTime(endTime){
+	console.log("[updateRemain]: " + endTime);
+	var dur = Date.parse(endTime) - Date.parse(new Date());
+	var seconds = Math.floor( (dur/1000) % 60 );
+	var minutes = Math.floor( (dur/1000/60) % 60 );
+	var hours = Math.floor( (dur/(1000*60*60)) % 24 );
+	var days = Math.floor( dur/(1000*60*60*24) );
+	return {
+	  'dur': dur,
+	  'days': days,
+	  'hours': hours,
+	  'minutes': minutes,
+	  'seconds': seconds
+	};
+}
+$(document).on("contextmenu", function (event) { event.preventDefault(); });
 $(document).ready(function() {
+	//Initialize timer.
+	var startTime = new Date();
+	var endTime = startTime;
+	console.log("[ENDTIME 1]: " + endTime);
+	var pauseTime;
+	var resumeTime;
+	endTime.setHours(endTime.getHours() + 2);
+	function updateTimer(){
+		//console.log("[updateTimer]: " + endTime);
+		var d = updateRemainingTime(endTime);
+		//console.log("[updateTimer]: " + JSON.stringify(d));
+		$('#rt').html("Time Remaining:" + ('0'+d.hours).slice(-2) + ":" + ('0'+d.minutes).slice(-2) + ":" + ('0' + d.seconds).slice(-2));
+		if(d.dur <= 0){
+			clearInterval(timerIntervalObj);
+		}
+	}
+	
+	updateTimer();
+	var timerIntervalObj = setInterval(updateTimer,1000);	
+	
+	//Pause Timer.
+	$('#paubtn').on('click', function (e) {
+		pauseTime = new Date();
+		console.log("pause!");
+		clearInterval(timerIntervalObj);
+	})	
+	
+	//Resume Timer.
+	$('#unpausebtn').on('click', function (e) {
+		resumeTime = new Date();
+		var prevEndTime = Date.parse(endTime);
+		prevEndTime += Date.parse(resumeTime) - Date.parse(pauseTime);
+		endTime = new Date(prevEndTime);
+		console.log("[ENDTIME 2]: " + endTime);
+		console.log("resume!");
+		updateTimer();
+		timerIntervalObj = setInterval(updateTimer,1000);	
+	});
+	
+	//Next test.
+	var curTest = 0;
+	$('#nxtbtn').on('click', function (e) {
+		curTest += 1;
+		showTest();
+		console.log("next! " + curTest);
+	});	
+	
+	//Prev test.
+	$('#prvbtn').on('click', function (e) {
+		curTest -= 1;
+		showTest();
+		console.log("prev! " + curTest);
+	});
+	
+	//Display tests.
 	<% String origTest=(String)request.getAttribute("tests");%>
 	var oo = '<%=origTest%>';
-	window.localStorage.setItem('tests','<%=(String)request.getAttribute("tests")%>');
-	var tt = window.localStorage.getItem('tests');//jQuery.parseJSON('<%=(String)request.getAttribute("tests")%>');
+	//window.localStorage.setItem('tests','<%=(String)request.getAttribute("tests")%>');
+	//var tt = window.localStorage.getItem('tests');//jQuery.parseJSON('<%=(String)request.getAttribute("tests")%>');
 	var p = jQuery.parseJSON(oo);
-	alert(p.suite);
-	$('#testrootpanel #qh').append("<h4>Item " + p.tests[0].serialNo + " of 100</h4>");
-	$('#testrootpanel #qthb').append("<img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[0].pic+ "\"/>")
-	$('#testrootpanel #ques').append("<h4>" + p.tests[0].question + "</h4>");
-	var opts = p.tests[0].options;
-	for(var i = 0; i < opts.length; ++i){
-		var opt = opts[i];
-		$('#testrootpanel #optcol').append("<div class=\"radio\"><label><input type=\"radio\" name=\"optradio\">" + opt + "</label></div>");
+	function showTest(){
+		if(curTest > -1 && curTest < p.tests.length){
+			$('#testrootpanel #qh').children().last().remove();
+			$('#testrootpanel #qthb').children().last().remove();
+			$('#testrootpanel #ques').children().last().remove();
+			$('#testrootpanel #optcol').html('');
+			$('#testrootpanel #qh').append("<h4>Item " + p.tests[curTest].serialNo + " of 100</h4>");
+			$('#testrootpanel #qthb').append("<img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[curTest].pic+ "\"/>")
+			$('#testrootpanel #ques').append("<h4>" + p.tests[curTest].question + "</h4>");
+			var opts = p.tests[curTest].options;
+			for(var i = 0; i < opts.length; ++i){
+				var opt = opts[i];
+				$('#testrootpanel #optcol').append("<div class=\"radio\"><label><input type=\"radio\" name=\"optradio\">" + opt + "</label></div>");
+				$('#testrootpanel #optcol').children().last().on('click',
+					function(){
+						//onclicked, cache clicked option to local storage.
+						
+				});
+			}
+		}
 	}
+	
+	showTest();
 });
 </script>
 <title>MMTC</title>
@@ -75,41 +164,55 @@ $(document).ready(function() {
 <body>
 
 <!-- Navbar -->
-	<nav class="navbar navbar-default">
-	  <div class="container">
-	    <div class="navbar-header">
-	      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
-	        <span class="icon-bar"></span>
-	        <span class="icon-bar"></span>
-	        <span class="icon-bar"></span>                        
-	      </button>
-	      <a class="navbar-brand" href="#">MMTC 全方位专业按摩培训</a>
-	    </div>
-	    <div class="collapse navbar-collapse" id="myNavbar">
-	      <ul class="nav navbar-nav navbar-right">
-	        <li><a href="${pageContext.request.contextPath}/index">Home</a></li>
-	        <li><a href="${pageContext.request.contextPath}/logout">LogOut</a></li>
-	      </ul>
-	    </div>
-	  </div>
-	</nav>
+<nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>                        
+      </button>
+      <a class="navbar-brand" href="#">MMTC 全方位专业按摩培训</a>
+    </div>
+    <div class="collapse navbar-collapse" id="myNavbar">
+      <ul class="nav navbar-nav navbar-right">
+        <li><a href="${pageContext.request.contextPath}/index">Home</a></li>
+        <li><a href="${pageContext.request.contextPath}/logout">LogOut</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
 <div class="container-fluid bg-3" id="testrootpanel">
+<!-- Pause Modal -->
+<div class="modal fade" id="pauModal" role="dialog">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Modal Header</h4>
+      </div>
+      <div class="modal-body">
+        <p>Exam paused. Click OK to resume</p>
+      </div>
+      <div class="modal-footer">
+        <button id="unpausebtn" type="button" class="btn btn-default" data-dismiss="modal" >OK</button>
+      </div>
+    </div>
+  </div>
+</div>
 <form:form method="POST" action="${s}?${_csrf.parameterName}=${_csrf.token}" commandName="ts" enctype="multipart/form-data"> 
 <div class="row">
-<div class="col-sm-5"><!-- MARK --></div>
-<div class="col-sm-5">
-<!-- COUNTDOWN -->
-<label>Time Remaining:</label>
-<label id="hh">12</label><label>:</label>
-<label id="mm">34</label><label>:</label>
-<label id="ss">55</label>
+<div class="col-sm-8"><!-- MARK --></div>
+<div class="col-sm-4">
+<!-- COUNTDOWN -->	
+<h4 style="text-align:right" id="rt">Time Remaining:00:00:00</h4>
 </div>
 </div>
 <div class="row">
 <div class="col-sm-8">
 <div id="qh"></div>
 </div>
-<div class="col-sm-4">
+<div style="text-align:right" class="col-sm-4">
 <button>Show Answer</button>
 <button>Calculator</button>
 </div>
@@ -130,14 +233,14 @@ $(document).ready(function() {
 
 <div class="row">
 <div class="col-sm-8">
-<!-- prev,next,review,pause,end exam -->
-<button>Prev</button>
-<button>Next</button>
-<button>Pause</button>
+<!-- prev,next,review -->
+<button type="button" id="prvbtn">Prev</button>
+<button type="button" id="nxtbtn">Next</button>
+<button type="button" id="prvbtn">Review</button>
 </div>
-<div class="col-sm-4">
-<!-- prev,next,review,pause,end exam -->
-<button>Pause</button>
+<div style="text-align:right" class="col-sm-4">
+<!-- pause,end exam -->
+<button id="paubtn" type="button" data-toggle="modal" data-target="#pauModal">Pause</button>
 <input type="submit" value="Submit"/> 
 
 </div>
