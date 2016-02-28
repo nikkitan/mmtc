@@ -33,7 +33,7 @@
 
 #login-box {
 	padding: 20px;
-	margin: 100px auto;
+	margin: 1px auto;
 	background: #fff;
 	-webkit-border-radius: 2px;
 	-moz-border-radius: 2px;
@@ -101,12 +101,12 @@ p {font-size: 16px;}
 	    </div>
 	  </div>
 	</nav>
-	<div class="container-fluid bg-3 text-center">    
-	  <h3 class="margin">Login with Username and Password</h3><br>
+	<div class="container-fluid bg-3">    
 	  <div class="row">
-	    <div class="col-sm-2">
+	  	<h3 class="margin text-center">Login with Username and Password</h3>
+	    <div class="col-sm-4">
     	</div>
-	    <div class="col-sm-8">
+	    <div class="col-sm-4">
 			<div id="login-box">
 				<c:if test="${not empty error}">
 					<div class="error">${error}</div>
@@ -137,7 +137,7 @@ p {font-size: 16px;}
 				</form>
 			 </div>	      
 	    </div>
-	    <div class="col-sm-2">
+	    <div class="col-sm-4">
     	</div>
   </div>
 </div>	

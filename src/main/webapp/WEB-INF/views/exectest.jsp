@@ -7,6 +7,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <script src="${pageContext.request.contextPath}/resources/js/jquery-2.1.4.min.js" type="text/javascript"></script>
+<script src="${pageContext.request.contextPath}/resources/js/jquery.highlight.js" type="text/javascript"></script>
 <script src="${pageContext.request.contextPath}/resources/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
 <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/bootstrap/css/bootstrap.min.css">
 
@@ -55,6 +56,10 @@ p {font-size: 16px;}
 .navbar-nav  li a:hover {
     color: #1abc9c !important;
 }
+
+.highlight{
+	background-color: #FFFF88;
+}
 </style>
 <script type="text/javascript">
 function updateRemainingTime(endTime){
@@ -86,6 +91,7 @@ $(document).ready(function() {
 	//console.log("[ENDTIME 1]: " + endTime);
 	var pauseTime;
 	var resumeTime;
+	//endTime.setSeconds(endTime.getSeconds() + 10);
 	endTime.setHours(endTime.getHours() + 2);
 	function updateTimer(){
 		//console.log("[updateTimer]: " + endTime);
@@ -94,6 +100,7 @@ $(document).ready(function() {
 		$('#rt').html("Time Remaining:" + ('0'+d.hours).slice(-2) + ":" + ('0'+d.minutes).slice(-2) + ":" + ('0' + d.seconds).slice(-2));
 		if(d.dur <= 0){
 			clearInterval(timerIntervalObj);
+			$('#timeoutModal').modal();
 		}
 	}
 	
@@ -134,13 +141,32 @@ $(document).ready(function() {
 		//console.log("prev! " + curTest);
 	});
 	
+	
+	//TimeOut End test.
+	$('#endtestbtn').on('click', function (e) {
+		curTest -= 1;
+		showTest();
+		window.location.replace("${pageContext.request.contextPath}/index");
+		//console.log("prev! " + curTest);
+	});
+	
 	//Show/Hide answer.
 	$('#ansbtn').on('click', function (e) {
-		console.log("answer!" + curTest);
+		//.log("answer!" + curTest);
 		if($(this).html() == "Show Answer"){
 			$(this).html("Hide Answer");
-			$("#ansrow").append("<div class=\"col-sm-12\"><div class=\"well\">Answer:"
-					+ p.tests[curTest].answers[0] + "</div></div>");
+			if(typeof p.tests[curTest].kwds != 'undefined'){
+				var kwds = p.tests[curTest].kwds;
+				$("#ansrow").append("<div class=\"col-sm-12\"><div class=\"well\">Answer:"
+						+ p.tests[curTest].answers[0] + "<br>" + kwds + "</div></div>");
+				for(var i = 0; i < kwds.length; i+=2){
+					$('#testrootpanel #quescol #ques').highlight(kwds[i]);
+					$('#testrootpanel #optcol .radio .radiobtnopt').highlight(kwds[i]);					
+				}
+			}else{
+				$("#ansrow").append("<div class=\"col-sm-12\"><div class=\"well\">Answer:"
+						+ p.tests[curTest].answers[0] + "</div></div>");
+			}
 		}else{
 			$(this).html("Show Answer");
 			$("#ansrow").children().last().remove();
@@ -155,19 +181,21 @@ $(document).ready(function() {
 			//$('#testrootpanel #ques').children().last().remove();
 			$('#testrootpanel #quescol').html('');
 			$('#testrootpanel #optcol').html('');
+			$('#testrootpanel #ansrow').html('');
+			$('#testrootpanel #ansbtn').html('Show Answer');
 			var curSN = curTest + 1;
 			$('#testrootpanel #qh').append("<h4>Item " + curSN + " of "+ total +"</h4>");
 			if(typeof p.tests[curTest].pic != 'undefined'){
-				$('#testrootpanel #quescol').append("<div class=\"thumbnail\"><img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[curTest].pic+ "\"/></div>")
-				$('#testrootpanel #quescol').append("<div class=\"caption\"><h4>" + p.tests[curTest].question + "</h4>");
+				$('#testrootpanel #quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[curTest].pic+ "\"/></div>")
+				$('#testrootpanel #quescol').append("<div class=\"caption\" id=\"ques\"><h4>" + p.tests[curTest].question + "</h4>");
 			}else{
-				$('#testrootpanel #quescol').append("<div class=\"caption\"><h4>" 
+				$('#testrootpanel #quescol').append("<div class=\"caption\" id=\"ques\"><h4>" 
 						+ p.tests[curTest].question +"</h4></div>")
 			}
 			var opts = p.tests[curTest].options;
 			for(var i = 0; i < opts.length; ++i){
 				var opt = opts[i];
-				$('#testrootpanel #optcol').append("<div class=\"radio\"><label><input type=\"radio\" name=\"optradio\">" + opt + "</label></div>");
+				$('#testrootpanel #optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\"><input type=\"radio\" name=\"optradio\">" + opt + "</label></div>");
 				$('#testrootpanel #optcol').children().last().on('click',
 					function(){
 						//onclicked, cache clicked option to local storage.
@@ -198,7 +226,7 @@ $(document).ready(function() {
     </div>
     <div class="collapse navbar-collapse" id="myNavbar">
       <ul class="nav navbar-nav navbar-right">
-        <li><a href="${pageContext.request.contextPath}/index">Home</a></li>
+        <li><a href="${pageContext.request.contextPath}/home">Home</a></li>
         <li><a href="${pageContext.request.contextPath}/logout">LogOut</a></li>
       </ul>
     </div>
@@ -218,6 +246,23 @@ $(document).ready(function() {
       </div>
       <div class="modal-footer">
         <button id="unpausebtn" type="button" class="btn btn-default" data-dismiss="modal" >OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- TimeOut Modal -->
+<div class="modal fade" id="timeoutModal" role="dialog">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Modal Header</h4>
+      </div>
+      <div class="modal-body">
+        <p>Your time has expired. Press OK to end the exam.</p>
+      </div>
+      <div class="modal-footer">
+        <button id="endtestbtn" type="button" class="btn btn-default" data-dismiss="modal" >OK</button>
       </div>
     </div>
   </div>
