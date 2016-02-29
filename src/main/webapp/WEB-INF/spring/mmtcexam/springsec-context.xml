@@ -22,6 +22,7 @@
 
 		<intercept-url pattern="/" access="isAnonymous() or hasAnyRole('ROLE_ADMIN','ROLE_USER','ROLE_STU')" />
 		<intercept-url pattern="/home" access="hasAnyRole('ROLE_ADMIN','ROLE_USER','ROLE_STU')" />
+		<intercept-url pattern="/addtestsuite" access="hasAnyRole('ROLE_ADMIN','ROLE_USER')" />		
 		<intercept-url pattern="/testsuite" access="hasAnyRole('ROLE_ADMIN','ROLE_USER','ROLE_STU')" />
 		<intercept-url pattern="/runsuite/**" access="hasAnyRole('ROLE_ADMIN','ROLE_USER','ROLE_STU')" />
 		<intercept-url pattern="/addsuite" access="hasAnyRole('ROLE_ADMIN','ROLE_USER')" />
