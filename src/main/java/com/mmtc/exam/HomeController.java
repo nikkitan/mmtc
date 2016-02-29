@@ -94,6 +94,7 @@ import com.mmtc.exam.dao.TestSuite;
 //http://docs.spring.io/spring/docs/current/spring-framework-reference/html/spring-form-tld.html
 //http://danielkvist.net/wiki/spring-mvc-fundamentals
 //http://www.ibm.com/developerworks/library/ws-springjava/
+//https://docs.spring.io/spring-security/site/docs/current/reference/html/csrf.html#csrf-include-csrf-token-in-action
 /**
  * Handles requests for the application home page.
  */
@@ -537,7 +538,7 @@ public class HomeController {
 					conn = null;
 				}   			
     		}
-    		Integer pI = 0;
+    		Integer pI = 1;
     		int r  = 0;
     		String prevTestSerial = "0";
     		String curTestSerial = "0";
@@ -554,86 +555,115 @@ public class HomeController {
                 String curValue = null;
                 JsonArray jArr = null;
                 conn = dataSource.getConnection();
-                sql =  "INSERT INTO test (question, serial, answer, keywords, options, testsuite_pk, " + 
-                		"createdat, updatedat) VALUES (?,?,?,?,?,?,NOW(),NOW())";
+                sql =  "INSERT INTO test (serial, question, answer, keywords, options, watchword, tips, testsuite_pk, " + 
+                		"createdat, updatedat) VALUES (?,?,?,?,?,?,?,?,NOW(),NOW())";
     			preparedSql = conn.prepareStatement(sql);
                 while(rItor.hasNext()){
-                   	if(r % 4 == 0){
+                   	if(r % 7 == 0){
+                   		r=0;
                 		if(isQuestion == false){
                 			isQuestion = true;
-                			preparedSql.setLong(6, rowID);
+                			preparedSql.setLong(8, rowID);
+                			//++pI;
                             preparedSql.addBatch();
                             logger.info("[Done_prepared_batch].");
                 		}
-                	}else{
+                	}else{ 
                 		if(isQuestion == true){
+	                    	curValue = jArr.toString();
+	                    	preparedSql.setNString(pI, curValue);
+	                    	++pI;
+	                    	jArr = null;               			
                 			isQuestion = false;
+                		}else{
+	                    	curValue = jArr.toString();
+	                    	preparedSql.setNString(pI, curValue);
+	                    	++pI;
+	                    	if(pI == 8)
+	                    		pI = 1;
+	                    	jArr = null;              			
                 		}
                 	}
                 	Row row = rItor.next();//Row row = sheet1.getRow(i);
                 	if(row.getPhysicalNumberOfCells() > 0){
-                	++pI;
-                	//logger.info("[pI]: " + pI.toString());
-                	//For each row, iterate through all the columns
-                    Iterator<Cell> cellIterator = row.cellIterator();                	
-                    cellloop: while (cellIterator.hasNext())
-                    {
-                        Cell cell = cellIterator.next();
-                        //Check the cell type and format accordingly
-                        switch (cell.getCellType())
-                        {
-                            case Cell.CELL_TYPE_NUMERIC:
-                            	logger.info("[CELL_TYPE_NUMERIC]!");                           	
-                                System.out.print(cell.getNumericCellValue() + ",");
-                                break;
-                            case Cell.CELL_TYPE_STRING:
-                            	curValue = cell.getStringCellValue();
-                            	logger.info("{},",curValue);
-                            	if(isQuestion == true){                            	
-                            		int dotPos = curValue.indexOf('.');
-                            		if(dotPos != -1){
-                            			curTestSerial = curValue.substring(0, dotPos);
-                                		preparedSql.setNString(pI, curValue.substring(dotPos+1));
-                            			pI++;
-                            			Integer c = Integer.parseInt(curTestSerial);
-                            			Integer p = Integer.parseInt(prevTestSerial);
-                            			if(c-p > 1)
-                            				c-=1;
-                            			preparedSql.setInt(pI, c);           
-                            			prevTestSerial = c.toString();//curTestSerial;
-                            		}else{
-                            			//Error: Question doesn't begin with serial number followed by '.'.
-                            			throw new Exception("Missing serial number and '.' in front of question after question " + curTestSerial);
-                            		}
-                            		break cellloop;//We only allow 1 cell for question.
-                            	}else{
-                                	if(jArr == null)
-                                		jArr = new  JsonArray();
-                            		jArr.add(cell.getStringCellValue());
-                            	}
-                                break;
-                            case Cell.CELL_TYPE_BLANK:
-                            	logger.info("[CELL_TYPE_BLANK]!");
-                            default:
-                            	logger.error("[UNKnown cell type]!!");
-                            	break;
-                            
-                        }
-                    }
-                    if(jArr != null){
-                    	curValue = jArr.toString();
-                    	preparedSql.setNString(pI, curValue);
-                    	if(pI == 5)
-                    		pI = 0;
-                    	jArr = null;
-                    }
-                    logger.info("[END_ROW]");
-                    r++;
+	                	//++pI;
+	                	//logger.info("[pI]: " + pI.toString());
+	                	//For each row, iterate through all the columns
+	                    Iterator<Cell> cellIterator = row.cellIterator();                	
+	                    //cellloop: while (cellIterator.hasNext())
+	                    while (cellIterator.hasNext())
+	                    {
+	                        Cell cell = cellIterator.next();
+	                        //Check the cell type and format accordingly
+	                        switch (cell.getCellType())
+	                        {
+	                            case Cell.CELL_TYPE_NUMERIC:
+	                            	logger.info("[CELL_TYPE_NUMERIC]!");                           	
+	                                System.out.print(cell.getNumericCellValue() + ",");
+	                                break;
+	                            case Cell.CELL_TYPE_STRING:
+	                            	curValue = cell.getStringCellValue();
+	                            	logger.info("{},",curValue);
+	                            	if(isQuestion == true){                            	
+	                            		int dotPos = curValue.indexOf('.');
+	                            		if(dotPos != -1){
+	                            			curTestSerial = curValue.substring(0, dotPos);
+	                                		//preparedSql.setNString(pI, curValue.substring(dotPos+1));
+	                            			Integer c = Integer.parseInt(curTestSerial);
+	                            			Integer p = Integer.parseInt(prevTestSerial);
+	                            			if(c-p > 1)
+	                            				c-=1;
+	                            			preparedSql.setInt(pI, c);
+	                            			pI++;
+	                            			prevTestSerial = c.toString();//curTestSerial;
+		                            		if(jArr == null)
+		                                		jArr = new  JsonArray();
+		                            		jArr.add(curValue.substring(dotPos+1));	
+	                            		}else{
+	                            			//Error: Question doesn't begin with serial number followed by '.'.
+	                            			//Check if this cell has chinese translation of question.
+	                            			boolean isEnglish = curValue.matches("\\w+");
+	                            			if(isEnglish == true){
+	                            				throw new Exception("Missing serial number and '.' in front of question after question OR bad translation." + curTestSerial);
+	                            			}else{
+	                            				//Chinese.
+			                            		if(jArr == null)
+			                                		jArr = new  JsonArray();
+			                            		jArr.add(curValue);	                            				
+	                            			}
+	                            		}                            		
+	                            		//break cellloop;//We only allow 1 cell for question.
+	                            	}else{
+	                                	if(jArr == null)
+	                                		jArr = new  JsonArray();
+	                            		jArr.add(cell.getStringCellValue());
+	                            	}
+	                                break;
+	                            case Cell.CELL_TYPE_BLANK:
+	                            	logger.info("[CELL_TYPE_BLANK]!");
+	                            	break;
+	                            default:
+	                            	logger.error("[UNKnown cell type]!!");
+	                            	break;
+	                            
+	                        }
+	                    }
+	                    /*
+	                    if(jArr != null && isQuestion == false){
+	                    	curValue = jArr.toString();
+	                    	preparedSql.setNString(pI, curValue);
+	                    	if(pI == 5)
+	                    		pI = 0;
+	                    	jArr = null;
+	                    }
+	                    */
+	                    logger.info("[END_ROW]");
+	                    r++;
                 	}else{
                 		logger.info("[EMPTY_ROW]");
                 	}
                 }
-               	if(r % 4 == 0){
+               	if(r % 7 == 0){
             		if(isQuestion == false){
             			preparedSql.setLong(6, rowID);
                         preparedSql.addBatch();

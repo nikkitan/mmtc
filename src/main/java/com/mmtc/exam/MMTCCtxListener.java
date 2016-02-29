@@ -134,7 +134,7 @@ public class MMTCCtxListener extends ContextLoaderListener {
 	@Override
 	public void contextInitialized(ServletContextEvent event){
 		super.contextInitialized(event);
-		///*
+		/*
 		DriverManagerDataSource dataSource = 
 				new DriverManagerDataSource(
 						"jdbc:mysql://mmtc-db-dev.cjmff6hkiqpv.us-west-2.rds.amazonaws.com:3306/mmtc?autoReconnect=true",
@@ -167,7 +167,7 @@ public class MMTCCtxListener extends ContextLoaderListener {
 			S3DownloadThread dl = new S3DownloadThread(pic,event.getServletContext().getRealPath("/"));
 			dl.start();
 		}	
-		//*/	
+		*/	
 		
 	}
 	
