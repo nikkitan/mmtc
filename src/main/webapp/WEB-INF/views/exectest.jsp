@@ -155,7 +155,9 @@ $(document).ready(function() {
 		//.log("answer!" + curTest);
 		if($(this).html() == "Show Answer"){
 			$(this).html("Hide Answer");
-			if(typeof p.tests[curTest].kwds != 'undefined'){
+			if(typeof p.tests[curTest].kwds != 'undefined'
+					&& typeof p.tests[curTest].kwds != 'NOKEYWORD'
+					&& typeof p.tests[curTest].kwds != 'NOKEYWORDS'){
 				var kwds = p.tests[curTest].kwds;
 				$("#ansrow").append("<div class=\"col-sm-12\"><div class=\"well\">Answer:"
 						+ p.tests[curTest].answers[0] + "<br>" + kwds + "</div></div>");
@@ -187,10 +189,10 @@ $(document).ready(function() {
 			$('#testrootpanel #qh').append("<h4>Item " + curSN + " of "+ total +"</h4>");
 			if(typeof p.tests[curTest].pic != 'undefined'){
 				$('#testrootpanel #quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[curTest].pic+ "\"/></div>")
-				$('#testrootpanel #quescol').append("<div class=\"caption\" id=\"ques\"><h4>" + p.tests[curTest].question + "</h4>");
+				$('#testrootpanel #quescol').append("<div class=\"caption\" id=\"ques\"><h4>" + p.tests[curTest].question[0] + "</h4>");
 			}else{
 				$('#testrootpanel #quescol').append("<div class=\"caption\" id=\"ques\"><h4>" 
-						+ p.tests[curTest].question +"</h4></div>")
+						+ p.tests[curTest].question[0] +"</h4></div>")
 			}
 			var opts = p.tests[curTest].options;
 			for(var i = 0; i < opts.length; ++i){

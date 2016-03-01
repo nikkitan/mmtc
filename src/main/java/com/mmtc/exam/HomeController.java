@@ -821,7 +821,8 @@ public class HomeController {
 				 }				 
 				 lastUnStruck.setQuestion(fullQues);
 				 */
-				 fullQues = randomPickTest.getQuestion();
+				 JsonArray jArrQuestion = randomPickTest.getQuestion();
+				 fullQues = jArrQuestion.get(0).getAsString();
 				 dotPos = fullQues.indexOf(".");
 				 if(dotPos != -1){
 					 String ques = fullQues.substring(dotPos);
@@ -830,16 +831,19 @@ public class HomeController {
 					 logger.error("[runSuitePOST]: Found question not beginning with serial!");
 					 //Make it right: random + "." + question.
 					 fullQues = String.valueOf(i+1) + "." + fullQues;					 
-				 }			
-				 randomPickTest.setQuestion(fullQues);
+				 }		
+				 jArrQuestion.set(0, new JsonPrimitive(fullQues));
+				 randomPickTest.setQuestion(jArrQuestion);
 				 
 				 tests.set(i, randomPickTest);
 				 tests.set(r, lastUnStruck);
 				 
 			 }
 			 
-			 
-			 fullQues = tests.get(i).getQuestion();
+			 //We updated new random picks before, and always
+			 //have to update last i-th item after the loop.
+			 JsonArray jArrQuestion = tests.get(i).getQuestion();
+			 fullQues = jArrQuestion.get(0).getAsString();
 			 dotPos = fullQues.indexOf(".");
 			 if(dotPos != -1){
 				 String ques = fullQues.substring(dotPos);
@@ -849,7 +853,8 @@ public class HomeController {
 				 //Make it right: random + "." + question.
 				 fullQues = String.valueOf(i+1) + "." + fullQues;					 
 			 }	
-			 tests.get(i).setQuestion(fullQues);
+			 jArrQuestion.set(0, new JsonPrimitive(fullQues));
+			 tests.get(i).setQuestion(jArrQuestion);
 		}
 		if(suite.getIsChoiceRandom() != null){			
 			int r = 0;
@@ -939,7 +944,7 @@ public class HomeController {
 	private ArrayList<Test> getTestBySuiteAndID(String suite, String testsn){
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		ArrayList<Test> tests = new ArrayList<Test>();
-		String sql = "SELECT serial, pic ,updatedat, question, options,answer,keywords FROM test "
+		String sql = "SELECT serial, pic ,updatedat, question, options,answer,keywords,watchword,tips FROM test "
 				+"WHERE testsuite_pk IN (SELECT pk FROM testsuite WHERE name=?)"
 				+" AND serial = ?";
 		PreparedStatement preparedSql = null;
@@ -955,11 +960,22 @@ public class HomeController {
 			String serial = null;			
 			JsonParser jp = new JsonParser();
 			Gson gs = new Gson();
-
+			String temp;
 			while(s.next()){
 				Test found = new Test();
-				JsonElement elem = jp.parse(s.getString("answer"));
+				JsonElement elem = jp.parse(s.getString("question"));
 				JsonArray jsonArr = elem.getAsJsonArray();
+				temp = jsonArr.get(0).getAsString();
+				temp = serial + "." + temp;
+				jsonArr.set(0, new JsonPrimitive(temp));
+				found.setQuestion(jsonArr);
+
+				elem = jp.parse(s.getString("watchword"));
+				jsonArr = elem.getAsJsonArray();
+				found.setWatchword(jsonArr);				
+				
+				elem = jp.parse(s.getString("answer"));
+				jsonArr = elem.getAsJsonArray();
 				found.setAnswers(jsonArr);
 				//found.setAnswers(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
 				//found.setAnswer(s.getString("answer"));
@@ -976,8 +992,8 @@ public class HomeController {
 
 				//found.setOptions(s.getString("options"));
 				serial = Integer.toString(s.getInt("serial"));
-				found.setQuestion(serial + "." + s.getString("question"));
 				found.setPic(s.getString("pic"));
+				found.setTips(s.getString("tips"));
 				found.setId(encrypt(curUser + "MendezMasterTrainingCenter6454",suite + "-" + serial));
 				found.setSuite(suite);
 				found.setSerialNo(Integer.valueOf(testsn));
@@ -1000,7 +1016,7 @@ public class HomeController {
 		logger.info("getTestForSuite()!");
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		ArrayList<Test> tests = new ArrayList<Test>();
-		String sql = "SELECT serial, updatedat, question, options,answer,keywords,pic FROM test WHERE testsuite_pk IN (SELECT pk FROM testsuite WHERE name=?)";
+		String sql = "SELECT serial, updatedat, question, options,answer,keywords,pic,tips,watchword FROM test WHERE testsuite_pk IN (SELECT pk FROM testsuite WHERE name=?)";
 		PreparedStatement preparedSql = null;
 		Connection conn = null;
 	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -1013,13 +1029,23 @@ public class HomeController {
 			String serial = null;
 			JsonParser jp = new JsonParser();
 			Gson gs = new Gson();
+			String temp;
 			while(s.next()){
 				Test found = new Test();
 				serial = Integer.toString(s.getInt("serial"));
-				found.setQuestion(serial + "." + s.getString("question"));
-				
-				JsonElement elem = jp.parse(s.getString("answer"));
+				JsonElement elem = jp.parse(s.getString("question"));
 				JsonArray jsonArr = elem.getAsJsonArray();
+				temp = jsonArr.get(0).getAsString();
+				temp = serial + "." + temp;
+				jsonArr.set(0, new JsonPrimitive(temp));
+				found.setQuestion(jsonArr);
+
+				elem = jp.parse(s.getString("watchword"));
+				jsonArr = elem.getAsJsonArray();
+				found.setWatchword(jsonArr);
+				
+				elem = jp.parse(s.getString("answer"));
+				jsonArr = elem.getAsJsonArray();
 				found.setAnswers(jsonArr);
 				//found.setAnswers(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
 
@@ -1034,6 +1060,7 @@ public class HomeController {
 				//found.setKeywords(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));				
 				
 				found.setPic(s.getString("pic"));
+				found.setTips(s.getString("tips"));
 				found.setId(encrypt(curUser + "MendezMasterTrainingCenter6454",suite + "-" + serial));
 				found.setSuite(suite);
 				found.setSerialNo(Integer.valueOf(serial));	
