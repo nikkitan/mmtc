@@ -7,10 +7,10 @@ import com.google.gson.JsonArray;
 public class Test {
 	public Test(){}
 	
-	public String getQuestion() {
+	public JsonArray getQuestion() {
 		return question;
 	}
-	public void setQuestion(String question) {
+	public void setQuestion(JsonArray question) {
 		this.question = question;
 	}
 
@@ -102,7 +102,26 @@ public class Test {
 	public void setKeywords(JsonArray kwdArrayList) {
 		this.kwds = kwdArrayList;
 	}
+	
+	public JsonArray getWatchword() {
+		return watchword;
+	}
 
+	public void setWatchword(JsonArray watchword) {
+		this.watchword = watchword;
+	}
+
+	public String getTips() {
+		return tips;
+	}
+
+	public void setTips(String tips) {
+		this.tips = tips;
+	}
+
+	private String tips;
+	private JsonArray watchword;
+	private JsonArray question;
 	private JsonArray answers;
 	private JsonArray options;
 	//private ArrayList<String> answers;
@@ -110,7 +129,6 @@ public class Test {
 	private JsonArray kwds;
 	//private ArrayList<String> kwds;
 	private String suite;
-	private String question;
 	private Integer serialNo;
 	private String pic;//picture file name.
 	private String id;//AES encryption for publicly usage in web pages.
