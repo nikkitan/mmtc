@@ -113,6 +113,8 @@ public class HomeController {
 	@Autowired
 	private SimpleMailMessage emailRegMsgTemplate;
 	
+	private final int DataRows = 3;
+	
 	private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");	
     private final int AES_KEYLENGTH = 128;	// change this as desired for the security level you want
@@ -646,22 +648,28 @@ public class HomeController {
                 	}
                 	
                 	if(jArr != null){
-	                	if(r != 0 && r % 5 == 0){
+	                	if(r != 0 && r % DataRows == 0){
 	                   		r=0;
 	                		if(isQuestion == false){
 	                			isQuestion = true;
 	                			isBadQuestion = false;
 	                			isFirstCell = true;
+	                			
 		                    	curValue = jArr.toString();
 		                    	preparedSql.setNString(pI, curValue);
-		                    	jArr = null;
+		                    	++pI;
+	                			preparedSql.setNString(pI, "NOHIGHLIGHT");
+		                    	
+		                    	++pI;
+		                    	preparedSql.setNString(pI, "NOTIPS");
 		                    	++pI;
 	                			preparedSql.setLong(pI, rowID);
 		                    	if(pI == 8){
-		                    		//logger.info("[ROTATE pI].");
+		                    		logger.info("[ROTATE pI].");
 		                    		pI = 1;
 		                    	}
 	                            preparedSql.addBatch();
+	                            jArr = null;
 	                            logger.info("[Done_prepared_batch]: " + preparedSql.toString());
 	                		}
 	                	}else{ 
@@ -694,7 +702,7 @@ public class HomeController {
                 	}
                 	
                 }
-               	if(r % 5 == 0){
+               	if(r % DataRows == 0){
             		if(isQuestion == false){
             			preparedSql.setLong(8, rowID);
                         preparedSql.addBatch();
