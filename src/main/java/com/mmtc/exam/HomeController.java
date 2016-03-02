@@ -554,44 +554,19 @@ public class HomeController {
                 Boolean isQuestion = true;
                 String curValue = null;
                 JsonArray jArr = null;
+                Boolean isBadQuestion = false;
+                Boolean isFirstCell = true;
                 conn = dataSource.getConnection();
                 sql =  "INSERT INTO test (serial, question, answer, keywords, options, watchword, tips, testsuite_pk, " + 
                 		"createdat, updatedat) VALUES (?,?,?,?,?,?,?,?,NOW(),NOW())";
     			preparedSql = conn.prepareStatement(sql);
                 while(rItor.hasNext()){
-                   	if(r % 7 == 0){
-                   		r=0;
-                		if(isQuestion == false){
-                			isQuestion = true;
-                			preparedSql.setLong(8, rowID);
-                			//++pI;
-                            preparedSql.addBatch();
-                            logger.info("[Done_prepared_batch].");
-                		}
-                	}else{ 
-                		if(isQuestion == true){
-	                    	curValue = jArr.toString();
-	                    	preparedSql.setNString(pI, curValue);
-	                    	++pI;
-	                    	jArr = null;               			
-                			isQuestion = false;
-                		}else{
-	                    	curValue = jArr.toString();
-	                    	preparedSql.setNString(pI, curValue);
-	                    	++pI;
-	                    	if(pI == 8)
-	                    		pI = 1;
-	                    	jArr = null;              			
-                		}
-                	}
                 	Row row = rItor.next();//Row row = sheet1.getRow(i);
                 	if(row.getPhysicalNumberOfCells() > 0){
-	                	//++pI;
 	                	//logger.info("[pI]: " + pI.toString());
 	                	//For each row, iterate through all the columns
 	                    Iterator<Cell> cellIterator = row.cellIterator();                	
-	                    //cellloop: while (cellIterator.hasNext())
-	                    while (cellIterator.hasNext())
+	                    cellloop: while (cellIterator.hasNext())
 	                    {
 	                        Cell cell = cellIterator.next();
 	                        //Check the cell type and format accordingly
@@ -603,41 +578,49 @@ public class HomeController {
 	                                break;
 	                            case Cell.CELL_TYPE_STRING:
 	                            	curValue = cell.getStringCellValue();
-	                            	logger.info("{},",curValue);
-	                            	if(isQuestion == true){                            	
-	                            		int dotPos = curValue.indexOf('.');
-	                            		if(dotPos != -1){
-	                            			curTestSerial = curValue.substring(0, dotPos);
-	                                		//preparedSql.setNString(pI, curValue.substring(dotPos+1));
-	                            			Integer c = Integer.parseInt(curTestSerial);
-	                            			Integer p = Integer.parseInt(prevTestSerial);
-	                            			if(c-p > 1)
-	                            				c-=1;
-	                            			preparedSql.setInt(pI, c);
-	                            			pI++;
-	                            			prevTestSerial = c.toString();//curTestSerial;
-		                            		if(jArr == null)
-		                                		jArr = new  JsonArray();
-		                            		jArr.add(curValue.substring(dotPos+1));	
-	                            		}else{
-	                            			//Error: Question doesn't begin with serial number followed by '.'.
-	                            			//Check if this cell has chinese translation of question.
-	                            			boolean isEnglish = curValue.matches("\\w+");
-	                            			if(isEnglish == true){
-	                            				throw new Exception("Missing serial number and '.' in front of question after question OR bad translation." + curTestSerial);
+	                            	logger.info("{}",curValue);
+	                            	if(isBadQuestion == false){
+	                            		if(isQuestion == true){
+	                            			//boolean isEnglish = curValue.matches("[\\w\\s\\.\\?]+");
+	                            			//if(isEnglish == true){
+	                            			if(isFirstCell == true){
+	                            				isFirstCell = false;
+	                            				int dotPos = curValue.indexOf('.');
+	    	                            		if(dotPos != -1){
+	    	                            			curTestSerial = curValue.substring(0, dotPos);
+	    	                            			curValue = curValue.substring(dotPos+1);
+	    	                            			if(curValue.equals("NOQUESTION")){
+	    	                            				isBadQuestion = true;
+	    	                            				break cellloop;
+	    	                            			}
+	    	                            			Integer c = Integer.parseInt(curTestSerial);
+	    	                            			Integer p = Integer.parseInt(prevTestSerial);
+	    	                            			if(c-p > 1)
+	    	                            				c-=1;
+	    	                            			preparedSql.setInt(pI, c);
+	    	                            			pI++;
+	    	                            			prevTestSerial = c.toString();
+	    		                            		if(jArr == null)
+	    		                                		jArr = new  JsonArray();
+	    		                            		jArr.add(curValue);	
+	    	                            		}                           				
 	                            			}else{
+		                            			//Error: Question doesn't begin with serial number followed by '.'.
+		                            			//Check if this cell has chinese translation of question.
 	                            				//Chinese.
 			                            		if(jArr == null)
 			                                		jArr = new  JsonArray();
 			                            		jArr.add(curValue);	                            				
-	                            			}
-	                            		}                            		
-	                            		//break cellloop;//We only allow 1 cell for question.
-	                            	}else{
-	                                	if(jArr == null)
-	                                		jArr = new  JsonArray();
-	                            		jArr.add(cell.getStringCellValue());
+		                            			
+		                            		}                            		
+		                            		//break cellloop;//We only allow 1 cell for question.
+		                            	}else{
+		                                	if(jArr == null)
+		                                		jArr = new  JsonArray();
+		                            		jArr.add(cell.getStringCellValue());
+		                            	}	                            		
 	                            	}
+	                            	
 	                                break;
 	                            case Cell.CELL_TYPE_BLANK:
 	                            	logger.info("[CELL_TYPE_BLANK]!");
@@ -658,14 +641,62 @@ public class HomeController {
 	                    }
 	                    */
 	                    logger.info("[END_ROW]");
-	                    r++;
                 	}else{
                 		logger.info("[EMPTY_ROW]");
                 	}
+                	
+                	if(jArr != null){
+	                	if(r != 0 && r % 5 == 0){
+	                   		r=0;
+	                		if(isQuestion == false){
+	                			isQuestion = true;
+	                			isBadQuestion = false;
+	                			isFirstCell = true;
+		                    	curValue = jArr.toString();
+		                    	preparedSql.setNString(pI, curValue);
+		                    	jArr = null;
+		                    	++pI;
+	                			preparedSql.setLong(pI, rowID);
+		                    	if(pI == 8){
+		                    		//logger.info("[ROTATE pI].");
+		                    		pI = 1;
+		                    	}
+	                            preparedSql.addBatch();
+	                            logger.info("[Done_prepared_batch]: " + preparedSql.toString());
+	                		}
+	                	}else{ 
+	                		if(isQuestion == true){
+		                    	curValue = jArr.toString();
+		                    	preparedSql.setNString(pI, curValue);
+		                    	++pI;
+		                    	jArr = null;               			
+	                			isQuestion = false;
+	                		}else{
+		                    	curValue = jArr.toString();
+		                    	preparedSql.setNString(pI, curValue);
+		                    	++pI;
+		                    	jArr = null;              			
+	                		}
+	                		++r;
+	                		
+	                	}
+                	}else{
+                		if(isBadQuestion == true){
+	                		if(r != 0 && r % 5 == 0){
+	                			r = 0;
+	                			isQuestion = true;
+	                			isBadQuestion = false;
+	                			isFirstCell = true;
+	                		}else{
+	                			++r;
+	                		}
+                		}	
+                	}
+                	
                 }
-               	if(r % 7 == 0){
+               	if(r % 5 == 0){
             		if(isQuestion == false){
-            			preparedSql.setLong(6, rowID);
+            			preparedSql.setLong(8, rowID);
                         preparedSql.addBatch();
                         logger.info("[Done_LAST_prepared_batch].");
             		}
@@ -891,8 +922,8 @@ public class HomeController {
 				if(dotPos != -1){
 					strTemp1 = String.valueOf((char)(j+65)) + strTemp1.substring(dotPos);
 				}else{
-					logger.error("[runSuitePOST]: Found bad formatted option without dot between A|B|C|D and rest!");
-					strTemp1 = String.valueOf((char)(j+65)) + "." + strTemp1.substring(dotPos);
+					logger.error("[runSuitePOST]: Found bad formatted option without dot between A|B|C|D and rest! Test[" + String.valueOf(i) + "], Option[" + strTemp1 + "]");
+					strTemp1 = String.valueOf((char)(j+65)) + "." + strTemp1;
 				}
 				randomOptions.set(j, new JsonPrimitive(strTemp1));				
 				

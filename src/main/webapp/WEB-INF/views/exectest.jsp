@@ -155,7 +155,7 @@ $(document).ready(function() {
 		//.log("answer!" + curTest);
 		if($(this).html() == "Show Answer"){
 			$(this).html("Hide Answer");
-			if(typeof p.tests[curTest].kwds != 'undefined'
+			/*if(typeof p.tests[curTest].kwds != 'undefined'
 					&& typeof p.tests[curTest].kwds != 'NOKEYWORD'
 					&& typeof p.tests[curTest].kwds != 'NOKEYWORDS'){
 				var kwds = p.tests[curTest].kwds;
@@ -165,13 +165,18 @@ $(document).ready(function() {
 					$('#testrootpanel #quescol #ques').highlight(kwds[i]);
 					$('#testrootpanel #optcol .radio .radiobtnopt').highlight(kwds[i]);					
 				}
-			}else{
-				$("#ansrow").append("<div class=\"col-sm-12\"><div class=\"well\">Answer:"
-						+ p.tests[curTest].answers[0] + "</div></div>");
+			}*/
+
+			if(typeof p.tests[curTest].answer != 'undefined'
+					&& typeof p.tests[curTest].answer != 'NOANS'){
+				$('#ansrow #anscol #answell').removeClass('hidden');
+				$("#ansrow #anscol #answell").append("Answer:"+ p.tests[curTest].answers[0]);
 			}
 		}else{
 			$(this).html("Show Answer");
-			$("#ansrow").children().last().remove();
+			$('#ansrow #anscol #answell').addClass('hidden');
+
+			$("#ansrow #anscol #answell").children().last().remove();
 		}
 	});	
 	
@@ -300,7 +305,10 @@ $(document).ready(function() {
 </div>
 <div class="row" id="ansrow">
 <!-- ANSWER -->
-
+<div class="col-sm-12" id="anscol">
+<div class="well hidden" id="answell">
+</div>
+</div>
 </div>
 <div class="row">
 <div class="col-sm-8">
