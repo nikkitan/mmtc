@@ -658,10 +658,17 @@ public class HomeController {
 		                    	curValue = jArr.toString();
 		                    	preparedSql.setNString(pI, curValue);
 		                    	++pI;
-	                			preparedSql.setNString(pI, "NOHIGHLIGHT");
+		                    	for(int i = 0; i < jArr.size(); ++i){
+		                    		jArr.remove(i);
+		                    	}
 		                    	
+		                    	jArr.add("NOHIGHLIGHT");
+	                			preparedSql.setNString(pI, jArr.toString());
+		                    	
+	                			jArr.remove(0);
+	                			jArr.add("NOTIPS");
 		                    	++pI;
-		                    	preparedSql.setNString(pI, "NOTIPS");
+		                    	preparedSql.setNString(pI, jArr.toString());
 		                    	++pI;
 	                			preparedSql.setLong(pI, rowID);
 		                    	if(pI == 8){
@@ -669,6 +676,7 @@ public class HomeController {
 		                    		pI = 1;
 		                    	}
 	                            preparedSql.addBatch();
+	                            jArr.remove(0);
 	                            jArr = null;
 	                            logger.info("[Done_prepared_batch]: " + preparedSql.toString());
 	                		}
