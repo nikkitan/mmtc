@@ -155,28 +155,26 @@ $(document).ready(function() {
 		//.log("answer!" + curTest);
 		if($(this).html() == "Show Answer"){
 			$(this).html("Hide Answer");
-			/*if(typeof p.tests[curTest].kwds != 'undefined'
+			$('#ansrow #anscol #answell').removeClass('hidden');
+			if(typeof p.tests[curTest].kwds != 'undefined'
 					&& typeof p.tests[curTest].kwds != 'NOKEYWORD'
 					&& typeof p.tests[curTest].kwds != 'NOKEYWORDS'){
 				var kwds = p.tests[curTest].kwds;
-				$("#ansrow").append("<div class=\"col-sm-12\"><div class=\"well\">Answer:"
-						+ p.tests[curTest].answers[0] + "<br>" + kwds + "</div></div>");
+				$("#ansrow #anscol #answell").append("Keyword: " + kwds + "<br>");
 				for(var i = 0; i < kwds.length; i+=2){
 					$('#testrootpanel #quescol #ques').highlight(kwds[i]);
 					$('#testrootpanel #optcol .radio .radiobtnopt').highlight(kwds[i]);					
 				}
-			}*/
+			}
 
-			if(typeof p.tests[curTest].answer != 'undefined'
-					&& typeof p.tests[curTest].answer != 'NOANS'){
-				$('#ansrow #anscol #answell').removeClass('hidden');
+			if(typeof p.tests[curTest].answers != 'undefined'
+					&& typeof p.tests[curTest].answers != 'NOANS'){				
 				$("#ansrow #anscol #answell").append("Answer:"+ p.tests[curTest].answers[0]);
 			}
 		}else{
 			$(this).html("Show Answer");
+			$("#ansrow #anscol #answell").html('');
 			$('#ansrow #anscol #answell').addClass('hidden');
-
-			$("#ansrow #anscol #answell").children().last().remove();
 		}
 	});	
 	
@@ -188,7 +186,7 @@ $(document).ready(function() {
 			//$('#testrootpanel #ques').children().last().remove();
 			$('#testrootpanel #quescol').html('');
 			$('#testrootpanel #optcol').html('');
-			$('#testrootpanel #ansrow').html('');
+			$('#testrootpanel #ansrow #anscol #answell').html('');
 			$('#testrootpanel #ansbtn').html('Show Answer');
 			var curSN = curTest + 1;
 			$('#testrootpanel #qh').append("<h4>Item " + curSN + " of "+ total +"</h4>");
