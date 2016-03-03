@@ -542,6 +542,7 @@ public class HomeController {
     		}
     		Integer pI = 1;
     		int r  = 0;
+    		int jArrLen = 0;
     		String prevTestSerial = "0";
     		String curTestSerial = "0";
     		XSSFWorkbook parser = null;
@@ -577,6 +578,10 @@ public class HomeController {
 	                            case Cell.CELL_TYPE_NUMERIC:
 	                            	logger.info("[CELL_TYPE_NUMERIC]!");                           	
 	                                System.out.print(cell.getNumericCellValue() + ",");
+	                                curValue = String.valueOf(cell.getNumericCellValue());
+                                	if(jArr == null)
+                                		jArr = new  JsonArray();
+                            		jArr.add(curValue);	                                
 	                                break;
 	                            case Cell.CELL_TYPE_STRING:
 	                            	curValue = cell.getStringCellValue();
@@ -658,8 +663,9 @@ public class HomeController {
 		                    	curValue = jArr.toString();
 		                    	preparedSql.setNString(pI, curValue);
 		                    	++pI;
-		                    	for(int i = 0; i < jArr.size(); ++i){
-		                    		jArr.remove(i);
+		                    	jArrLen = jArr.size();
+		                    	for(int i = 0; i < jArrLen; ++i){
+		                    		jArr.remove(0);
 		                    	}
 		                    	
 		                    	jArr.add("NOHIGHLIGHT");
@@ -710,14 +716,34 @@ public class HomeController {
                 	}
                 	
                 }
-               	if(r % DataRows == 0){
-            		if(isQuestion == false){
-            			preparedSql.setLong(8, rowID);
-                        preparedSql.addBatch();
-                        logger.info("[Done_LAST_prepared_batch].");
-            		}
-            	}
-               
+                //Scoop up last item.
+               	if(jArr != null){
+	                curValue = jArr.toString();
+	            	preparedSql.setNString(pI, curValue);
+	            	++pI;
+	            	jArrLen = jArr.size();
+	            	for(int i = 0; i < jArrLen; ++i){
+	            		jArr.remove(0);
+	            	}
+	            	
+	            	jArr.add("NOHIGHLIGHT");
+	    			preparedSql.setNString(pI, jArr.toString());
+	            	
+	    			jArr.remove(0);
+	    			jArr.add("NOTIPS");
+	            	++pI;
+	            	preparedSql.setNString(pI, jArr.toString());
+	            	++pI;
+	    			preparedSql.setLong(pI, rowID);
+	            	if(pI == 8){
+	            		logger.info("[ROTATE pI].");
+	            		pI = 1;
+	            	}
+	                preparedSql.addBatch();
+        			preparedSql.setLong(8, rowID);
+                    preparedSql.addBatch();
+                    logger.info("[Done_LAST_prepared_batch].");
+               	}
                 
             } catch (Exception e) {
     			e.printStackTrace();
@@ -925,8 +951,8 @@ public class HomeController {
 					if(dotPos != -1){
 						strTemp1 = String.valueOf((char)(j+65)) + strTemp1.substring(dotPos);
 					}else{
-						logger.error("[runSuitePOST]: Found bad formatted option without dot between A|B|C|D and rest!");
-						strTemp1 = String.valueOf((char)(j+65)) + "." + strTemp1.substring(dotPos);
+						logger.error("[runSuitePOST]: Found bad formatted option without dot between A|B|C|D and rest!Test[" + String.valueOf(i) + "], Option[" + strTemp1 + "]");
+						strTemp1 = String.valueOf((char)(j+65)) + "." + strTemp1;
 					}
 					randomOptions.set(j, new JsonPrimitive(strTemp1));
 					randomOptions.set(r, jElemTemp);
@@ -1008,39 +1034,57 @@ public class HomeController {
 			JsonParser jp = new JsonParser();
 			Gson gs = new Gson();
 			String temp;
+			JsonElement elem = null;
+			JsonArray jsonArr = null;
+			Test found = null;
 			while(s.next()){
-				Test found = new Test();
-				JsonElement elem = jp.parse(s.getString("question"));
-				JsonArray jsonArr = elem.getAsJsonArray();
-				temp = jsonArr.get(0).getAsString();
-				temp = serial + "." + temp;
-				jsonArr.set(0, new JsonPrimitive(temp));
-				found.setQuestion(jsonArr);
+				found = new Test();
+				if(s.getString("question").equals("[\"NOQUESTION\"]") == false){
+					elem = jp.parse(s.getString("question"));
+					jsonArr = elem.getAsJsonArray();
+					temp = jsonArr.get(0).getAsString();
+					temp = serial + "." + temp;
+					jsonArr.set(0, new JsonPrimitive(temp));
+					found.setQuestion(jsonArr);
+				}else{
+					//Really odd...
+					logger.error("[getTestBySuiteAndID]: NOQUESTION found!! " + suite + "::" + testsn);
+					continue;
+				}
 
-				elem = jp.parse(s.getString("watchword"));
-				jsonArr = elem.getAsJsonArray();
-				found.setWatchword(jsonArr);				
+				if(s.getString("watchword").equals("[\"NOHIGHLIGHT\"]") == false){
+					elem = jp.parse(s.getString("watchword"));
+					jsonArr = elem.getAsJsonArray();
+					found.setWatchword(jsonArr);				
+				}
 				
-				elem = jp.parse(s.getString("answer"));
-				jsonArr = elem.getAsJsonArray();
-				found.setAnswers(jsonArr);
-				//found.setAnswers(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
-				//found.setAnswer(s.getString("answer"));
+				if(s.getString("answer").equals("[\"NOANSWER\"]") == false
+						&& s.getString("answer").equals("[\"NOANS\"]") == false){
+					elem = jp.parse(s.getString("answer"));
+					jsonArr = elem.getAsJsonArray();
+					found.setAnswers(jsonArr);
+				}
 
-				elem = jp.parse(s.getString("options"));
-				jsonArr = elem.getAsJsonArray();
-				found.setOptions(jsonArr);
-				//found.setOptions(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
+				if(s.getString("options").equals("[\"NOOPT\"]") == false){
+					elem = jp.parse(s.getString("options"));
+					jsonArr = elem.getAsJsonArray();
+					found.setOptions(jsonArr);
+				}
 				
-				elem = jp.parse(s.getString("keywords"));
-				jsonArr = elem.getAsJsonArray();
-				found.setKeywords(jsonArr);
-				//found.setKeywords(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
+				if(s.getString("keywords").equals("[\"NOKEYWORD\"]") == false){
+					elem = jp.parse(s.getString("keywords"));
+					jsonArr = elem.getAsJsonArray();
+					found.setKeywords(jsonArr);
+				}
 
 				//found.setOptions(s.getString("options"));
 				serial = Integer.toString(s.getInt("serial"));
 				found.setPic(s.getString("pic"));
-				found.setTips(s.getString("tips"));
+				if(s.getString("tips").equals("[\"NOTIPS\"]") == false){
+					elem = jp.parse(s.getString("tips"));
+					jsonArr = elem.getAsJsonArray();
+					found.setTips(jsonArr);
+				}
 				found.setId(encrypt(curUser + "MendezMasterTrainingCenter6454",suite + "-" + serial));
 				found.setSuite(suite);
 				found.setSerialNo(Integer.valueOf(testsn));
@@ -1077,37 +1121,57 @@ public class HomeController {
 			JsonParser jp = new JsonParser();
 			Gson gs = new Gson();
 			String temp;
+			Test found = null;
+			JsonElement elem = null;
+			JsonArray jsonArr = null;
 			while(s.next()){
-				Test found = new Test();
+				found = new Test();
 				serial = Integer.toString(s.getInt("serial"));
-				JsonElement elem = jp.parse(s.getString("question"));
-				JsonArray jsonArr = elem.getAsJsonArray();
-				temp = jsonArr.get(0).getAsString();
-				temp = serial + "." + temp;
-				jsonArr.set(0, new JsonPrimitive(temp));
-				found.setQuestion(jsonArr);
-
-				elem = jp.parse(s.getString("watchword"));
-				jsonArr = elem.getAsJsonArray();
-				found.setWatchword(jsonArr);
+				if(s.getString("question").equals("[\"NOQUESTION\"]") == false){
+					elem = jp.parse(s.getString("question"));
+					jsonArr = elem.getAsJsonArray();
+					temp = jsonArr.get(0).getAsString();
+					temp = serial + "." + temp;
+					jsonArr.set(0, new JsonPrimitive(temp));
+					found.setQuestion(jsonArr);
+				}else{
+					//Really odd, ought have been filtered out in uploadtestsuite.
+					logger.error("[getTestsForSuite] NOQUESTION found!! TestSuite[" + suite + "][" + serial + "]");
+					continue;
+				}
 				
-				elem = jp.parse(s.getString("answer"));
-				jsonArr = elem.getAsJsonArray();
-				found.setAnswers(jsonArr);
-				//found.setAnswers(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
-
-				elem = jp.parse(s.getString("options"));
-				jsonArr = elem.getAsJsonArray();
-				found.setOptions(jsonArr);
-				//found.setOptions(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));
 				
-				elem = jp.parse(s.getString("keywords"));
-				jsonArr = elem.getAsJsonArray();
-				found.setKeywords(jsonArr);
-				//found.setKeywords(gs.fromJson(jsonArr, new TypeToken<ArrayList<String>>(){}.getType()));				
+				if(s.getString("watchword").equals("[\"NOHIGHLIGHT\"]") == false){
+					elem = jp.parse(s.getString("watchword"));
+					jsonArr = elem.getAsJsonArray();
+					found.setWatchword(jsonArr);
+				}
+				
+				if(s.getString("answer").equals("[\"NOANSWER\"]") == false
+						&& s.getString("answer").equals("[\"NOANS\"]") == false){
+					elem = jp.parse(s.getString("answer"));
+					jsonArr = elem.getAsJsonArray();
+					found.setAnswers(jsonArr);
+				}
+
+				if(s.getString("options").equals("[\"NOOPT\"]") == false){
+					elem = jp.parse(s.getString("options"));
+					jsonArr = elem.getAsJsonArray();
+					found.setOptions(jsonArr);
+				}
+				
+				if(s.getString("keywords").equals("[\"NOKEYWORD\"]") == false){
+					elem = jp.parse(s.getString("keywords"));
+					jsonArr = elem.getAsJsonArray();
+					found.setKeywords(jsonArr);
+				}
 				
 				found.setPic(s.getString("pic"));
-				found.setTips(s.getString("tips"));
+				if(s.getString("tips").equals("[\"NOTIPS\"]") == false){
+					elem = jp.parse(s.getString("tips"));
+					jsonArr = elem.getAsJsonArray();
+					found.setTips(jsonArr);					
+				}
 				found.setId(encrypt(curUser + "MendezMasterTrainingCenter6454",suite + "-" + serial));
 				found.setSuite(suite);
 				found.setSerialNo(Integer.valueOf(serial));	
