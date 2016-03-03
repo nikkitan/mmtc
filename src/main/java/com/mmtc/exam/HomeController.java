@@ -113,7 +113,7 @@ public class HomeController {
 	@Autowired
 	private SimpleMailMessage emailRegMsgTemplate;
 	
-	private final int DataRows = 3;
+	private final int DataRows = 5;//Index of last row(tips).
 	
 	private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");	
@@ -577,7 +577,6 @@ public class HomeController {
 	                        {
 	                            case Cell.CELL_TYPE_NUMERIC:
 	                            	logger.info("[CELL_TYPE_NUMERIC]!");                           	
-	                                System.out.print(cell.getNumericCellValue() + ",");
 	                                curValue = String.valueOf(cell.getNumericCellValue());
                                 	if(jArr == null)
                                 		jArr = new  JsonArray();
