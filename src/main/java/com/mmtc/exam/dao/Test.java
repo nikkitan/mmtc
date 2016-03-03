@@ -111,15 +111,15 @@ public class Test {
 		this.watchword = watchword;
 	}
 
-	public String getTips() {
+	public JsonArray getTips() {
 		return tips;
 	}
 
-	public void setTips(String tips) {
+	public void setTips(JsonArray tips) {
 		this.tips = tips;
 	}
 
-	private String tips;
+	private JsonArray tips;
 	private JsonArray watchword;
 	private JsonArray question;
 	private JsonArray answers;
