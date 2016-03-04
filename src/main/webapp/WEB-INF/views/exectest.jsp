@@ -150,6 +150,56 @@ $(document).ready(function() {
 		//console.log("prev! " + curTest);
 	});
 	
+	//Review Btn.
+	$('#rvwbtn').on('click', function (e) {
+		$('#rvwModal').modal();
+		//console.log("prev! " + curTest);
+		
+	});
+	
+	function genReviewTable(){
+		var review = "<div class=\"container-fluid col-md-12\"><div class=\"row\">";
+		var listPrefix = "<div class=\"list-group\">";
+		var itemPrefix = "<p class=\"list-group-item\">";
+		var itemSuffix = "</p>";
+		var divEndTag = "</div>";
+		var colPrefix = "<div class=\"col-md-2\">";
+		review += colPrefix;
+		review += listPrefix;
+		var limit = p.tests.length;
+		for(var i = 0; i < limit; ++i){
+			if(i != 0 && i%20 == 0){
+				review += divEndTag;
+				review += divEndTag;				
+				review += colPrefix;
+				review += listPrefix;
+			}
+			
+			review += itemPrefix;
+			review += i+1;
+			review += ":";
+			if(p.tests[i].hasOwnProperty("taking")){
+				review += p.tests[i].taking.stuans;				
+			}else{
+				review += "-";
+			}
+			review += itemSuffix;				
+
+		}
+		review += divEndTag;
+		review += divEndTag;
+		return review;
+	}
+	//Review Modal
+	$('#rvwModal').on('show.bs.modal', function (event) {
+	  var button = $(event.relatedTarget) // Button that triggered the modal
+	  var recipient = button.data('whatever') // Extract info from data-* attributes
+	  // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
+	  // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
+	  var modal = $(this)
+	  //modal.find('.modal-title').text('New message to ' + recipient)
+	  modal.find('.modal-body').html(genReviewTable());
+	})
 	//Show/Hide answer.
 	$('#ansbtn').on('click', function (e) {
 		//.log("answer!" + curTest);
@@ -208,12 +258,14 @@ $(document).ready(function() {
 			var opts = p.tests[curTest].options;
 			for(var i = 0; i < opts.length; ++i){
 				var opt = opts[i];
-				$('#testrootpanel #optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\"><input type=\"radio\" name=\"optradio\">" + opt + "</label></div>");
-				$('#testrootpanel #optcol').children().last().on('click',
+				var id = "opt" + i;
+				$('#testrootpanel #optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
+						+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\">" + opt + "</label></div>");
+				$('input[name="optradio"]').on('click',
 					function(){
 						//onclicked, cache clicked option to local storage.
-						var tt = window.localStorage.getItem('tests');
-						
+						p.tests[curTest].taking = {"stuans":$(this).parent().text().charAt(0)}
+						window.localStorage.setItem('tests',JSON.stringify(p));						
 				});
 			}
 		}
@@ -252,7 +304,7 @@ $(document).ready(function() {
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
-        <h4 class="modal-title">Modal Header</h4>
+        <h4 class="modal-title">Pause!</h4>
       </div>
       <div class="modal-body">
         <p>Exam paused. Click OK to resume</p>
@@ -269,7 +321,7 @@ $(document).ready(function() {
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
-        <h4 class="modal-title">Modal Header</h4>
+        <h4 class="modal-title">Time Out</h4>
       </div>
       <div class="modal-body">
         <p>Your time has expired. Press OK to end the exam.</p>
@@ -280,7 +332,24 @@ $(document).ready(function() {
     </div>
   </div>
 </div>
-<form:form method="POST" action="${s}?${_csrf.parameterName}=${_csrf.token}" commandName="ts" enctype="multipart/form-data"> 
+<!-- Review Modal -->
+<div class="modal fade" id="rvwModal" role="dialog">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Test Review</h4>
+      </div>
+      <div class="modal-body">
+        
+      </div>
+      <div class="modal-footer">
+        <button id="endtestbtn" type="button" class="btn btn-default" data-dismiss="modal" >OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+<form:form method="POST" action="${s}?${_csrf.parameterName}=${_csrf.token}" enctype="multipart/form-data"> 
 <div class="row">
 <div class="col-sm-8"><!-- MARK --></div>
 <div class="col-sm-4">
@@ -321,7 +390,7 @@ $(document).ready(function() {
 <!-- prev,next,review -->
 <button type="button" id="prvbtn">Prev</button>
 <button type="button" id="nxtbtn">Next</button>
-<button type="button" id="prvbtn">Review</button>
+<button type="button" id="rvwbtn">Review</button>
 </div>
 <div style="text-align:right" class="col-sm-4">
 <!-- pause,end exam -->
