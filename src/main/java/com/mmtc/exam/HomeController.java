@@ -17,6 +17,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -336,51 +337,6 @@ public class HomeController {
 		return view;
 	}
 	
-	@RequestMapping(value = "/submitans", method = RequestMethod.POST)
-	public @ResponseBody ModelAndView submitAnsPOST(
-			Locale locale,
-			Model model,
-			HttpSession session,
-			HttpServletRequest request, 
-			HttpServletResponse response){
-		ModelAndView v = new ModelAndView();
-		logger.info(request.getRequestURL().toString());
-		logger.info(request.getParameter("tests"));
-		JsonParser jsonParser = new JsonParser();
-		JsonObject jsonTestSuite = jsonParser.parse(request.getParameter("tests")).getAsJsonObject();
-		//Calculate grade.
-		JsonArray jArrTests = jsonTestSuite.getAsJsonArray("tests");
-		Iterator<JsonElement> itor = jArrTests.iterator();
-		String stuAns;
-		String correctAns;
-		Integer grade = 0;
-		String suiteAndTest;
-		
-		while(itor.hasNext()){
-			JsonElement cur = itor.next();
-			if(cur.getAsJsonObject().getAsJsonObject("taking") != null){				
-				stuAns = cur.getAsJsonObject().getAsJsonObject("taking").getAsJsonObject("stuans").getAsString();
-				correctAns = cur.getAsJsonObject().getAsJsonObject("answer").getAsString();
-				if(stuAns.equals(correctAns)){
-					grade += 1;
-				}
-			}
-		}
-		
-		
-		
-		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
-		String sql = "INSERT ";
-		try{
-			Connection conn = dataSource.getConnection();
-			conn.close();
-		}catch(Exception e){
-			e.printStackTrace();
-			logger.error("[testsuite] " + e.getMessage());			
-		}
-		
-		return v;
-	}
 
 	@Async
 	public Future<PutObjectResult> uploadS3(File file){
@@ -1315,5 +1271,92 @@ public class HomeController {
 		logger.info(" Decrypted Text message is " + strDecryptedText + "/" + encryptedData);
 		return strDecryptedText;
 		
+	}
+	@RequestMapping(value = "/submitans", method = RequestMethod.POST)
+	public @ResponseBody ModelAndView submitAnsPOST(
+			Locale locale,
+			Model model,
+			HttpSession session,
+			HttpServletRequest request, 
+			HttpServletResponse response){
+		ModelAndView v = new ModelAndView();
+		logger.info(request.getRequestURL().toString());
+		JsonParser jsonParser = new JsonParser();
+		JsonObject jsonTestSuite = jsonParser.parse(request.getParameter("tests")).getAsJsonObject();
+		//Check if test taker is authed user.
+		String user = null;
+		if(request.getUserPrincipal().getName().equals(jsonTestSuite.get("user").getAsString()) == false){
+			v.setViewName("result");
+			v.addObject("result","Test taker and logged-in user are different.");
+			return v;
+		}else
+			user = request.getUserPrincipal().getName();
+		//Calculate grade.
+		JsonArray jArrTests = jsonTestSuite.getAsJsonArray("tests");
+		Iterator<JsonElement> itor = jArrTests.iterator();
+		String stuAns;
+		String correctAns;
+		Integer grade = 0;
+		String suiteAndTest;
+		
+		while(itor.hasNext()){
+			JsonElement cur = itor.next();
+			if(cur.getAsJsonObject().getAsJsonObject("taking") != null){				
+				stuAns = cur.getAsJsonObject().getAsJsonObject("taking").getAsJsonObject("stuans").getAsString();
+				correctAns = cur.getAsJsonObject().getAsJsonObject("answer").getAsString();
+				if(stuAns.equals(correctAns)){
+					grade += 1;
+				}
+			}
+		}
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");		
+		long startTime = jsonTestSuite.get("beg").getAsLong();
+		long endTime = jsonTestSuite.get("end").getAsLong();
+		Date sdt = new Date(startTime);
+		Date edt = new Date(endTime);
+		String tt = null;
+		Timestamp stmp = new Timestamp(startTime);
+		Timestamp etmp = new Timestamp(endTime);
+		//Integer dur = jsonTestSuite.get("testdur").getAsInt();
+	
+		
+		
+		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
+		String sql = "INSERT INTO test_taking " 
+				+ "(user_username, grade, start_time, end_time, duration_in_sec,test_pk) " 
+				+ "VALUES (?,?,?,?,(SELECT pk FROM test WHERE ))";
+		PreparedStatement prepStmt = null;
+		JsonObject t = null;
+		try{
+			Connection conn = dataSource.getConnection();
+			tt = sdf.format(sdt);
+			prepStmt = conn.prepareStatement(sql);			
+			prepStmt.setString(1, user);
+			prepStmt.setInt(2, grade);
+			prepStmt.setTimestamp(3, stmp);
+			prepStmt.setTimestamp(4, etmp);
+			prepStmt.setInt(5,((Long)((endTime - startTime)/1000)).intValue());
+			prepStmt.executeUpdate();
+			conn.close();
+		}catch(Exception e){
+			e.printStackTrace();
+			logger.error("[submitans] " + e.getMessage());			
+		}
+		v.setViewName("review");
+		
+		return v;
+	}	
+	private class InsertTestAnsThread extends Thread{
+		private DataSource dataSource = null;
+		private String user = null;
+		public InsertTestAnsThread(DataSource datasource, Integer grade, String testTaker){
+			this.dataSource = datasource;
+			user = testTaker;
+		}
+		
+		@Override
+		public void run(){
+						
+		}
 	}
 }

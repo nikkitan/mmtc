@@ -166,8 +166,9 @@ $(document).ready(function() {
 		p.user = "${pageContext.request.userPrincipal.name}";
 		testStartTime = window.localStorage.getItem('start_time');
 		var curDate = new Date();
-		p.date = curDate;
-		p.testdur = (Date.parse(curDate) - Date.parse(testStartTime))/1000;
+		p.end = Date.parse(curDate);
+		p.beg = Date.parse(testStartTime);
+		//p.testdur = (Date.parse(curDate) - Date.parse(testStartTime))/1000;
 		console.log("s: " + testStartTime);
 		console.log("c: " + curDate);
 		console.log(Date.parse(curDate));
