@@ -86,8 +86,11 @@ $(document).ready(function() {
 	window.localStorage.setItem('tests',oo);	
 	var total = p.tests.length;
 	//Initialize timer.
-	var startTime = new Date();
-	var endTime = startTime;
+	var testStartTime = new Date();
+	window.localStorage.setItem('start_time',testStartTime);
+	var iii = 9;
+	console.log("[START]: " + testStartTime);	
+	var endTime = testStartTime;
 	//console.log("[ENDTIME 1]: " + endTime);
 	var pauseTime;
 	var resumeTime;
@@ -121,7 +124,8 @@ $(document).ready(function() {
 		prevEndTime += Date.parse(resumeTime) - Date.parse(pauseTime);
 		endTime = new Date(prevEndTime);
 		//console.log("[ENDTIME 2]: " + endTime);
-		//console.log("resume!");
+		console.log("resume! ");
+		console.log(Date.parse(resumeTime) - Date.parse(pauseTime));
 		updateTimer();
 		timerIntervalObj = setInterval(updateTimer,1000);	
 	});
@@ -156,6 +160,22 @@ $(document).ready(function() {
 		//console.log("prev! " + curTest);
 		
 	});
+	
+	//Submit.
+	$('#sbtbtn').on('click', function (e) {
+		p.user = "${pageContext.request.userPrincipal.name}";
+		testStartTime = window.localStorage.getItem('start_time');
+		var curDate = new Date();
+		p.date = curDate;
+		p.testdur = (Date.parse(curDate) - Date.parse(testStartTime))/1000;
+		console.log("s: " + testStartTime);
+		console.log("c: " + curDate);
+		console.log(Date.parse(curDate));
+		console.log(Date.parse(testStartTime));
+		console.log((Date.parse(curDate) - Date.parse(testStartTime))/1000);
+		$('input[name="tests"]').attr("value",JSON.stringify(p));
+		clearInterval(timerIntervalObj);
+	});	
 	
 	function genReviewTable(){
 		var review = "<div class=\"container-fluid col-md-12\"><div class=\"row\">";
@@ -349,7 +369,7 @@ $(document).ready(function() {
     </div>
   </div>
 </div>
-<form:form method="POST" action="${s}?${_csrf.parameterName}=${_csrf.token}" enctype="multipart/form-data"> 
+<form:form id="myform" method="POST" action="${pageContext.request.contextPath}/submitans?${_csrf.parameterName}=${_csrf.token}"> 
 <div class="row">
 <div class="col-sm-8"><!-- MARK --></div>
 <div class="col-sm-4">
@@ -395,8 +415,8 @@ $(document).ready(function() {
 <div style="text-align:right" class="col-sm-4">
 <!-- pause,end exam -->
 <button id="paubtn" type="button" data-toggle="modal" data-target="#pauModal">Pause</button>
-<input type="submit" value="Submit"/> 
-
+<input type="hidden" name="tests" />
+<input type="submit" value="Submit" id="sbtbtn"/> 
 </div>
 </div>
 </form:form>

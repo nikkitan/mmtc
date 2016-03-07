@@ -1,6 +1,7 @@
 package com.mmtc.exam;
 
 import java.io.ByteArrayInputStream;
+import static com.mmtc.exam.BuildConfig.DEBUG;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -343,6 +344,40 @@ public class HomeController {
 			HttpServletRequest request, 
 			HttpServletResponse response){
 		ModelAndView v = new ModelAndView();
+		logger.info(request.getRequestURL().toString());
+		logger.info(request.getParameter("tests"));
+		JsonParser jsonParser = new JsonParser();
+		JsonObject jsonTestSuite = jsonParser.parse(request.getParameter("tests")).getAsJsonObject();
+		//Calculate grade.
+		JsonArray jArrTests = jsonTestSuite.getAsJsonArray("tests");
+		Iterator<JsonElement> itor = jArrTests.iterator();
+		String stuAns;
+		String correctAns;
+		Integer grade = 0;
+		String suiteAndTest;
+		
+		while(itor.hasNext()){
+			JsonElement cur = itor.next();
+			if(cur.getAsJsonObject().getAsJsonObject("taking") != null){				
+				stuAns = cur.getAsJsonObject().getAsJsonObject("taking").getAsJsonObject("stuans").getAsString();
+				correctAns = cur.getAsJsonObject().getAsJsonObject("answer").getAsString();
+				if(stuAns.equals(correctAns)){
+					grade += 1;
+				}
+			}
+		}
+		
+		
+		
+		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
+		String sql = "INSERT ";
+		try{
+			Connection conn = dataSource.getConnection();
+			conn.close();
+		}catch(Exception e){
+			e.printStackTrace();
+			logger.error("[testsuite] " + e.getMessage());			
+		}
 		
 		return v;
 	}
@@ -1071,7 +1106,9 @@ public class HomeController {
 					found.setTips(jsonArr);
 				}
 				found.setId(encrypt(curUser + "MendezMasterTrainingCenter6454",suite + "-" + serial));
-				found.setSuite(suite);
+				if(DEBUG == true){
+					found.setSuite(suite);
+				}
 				found.setSerialNo(Integer.valueOf(testsn));
 				tests.add(found);
 			}
@@ -1158,7 +1195,9 @@ public class HomeController {
 					found.setTips(jsonArr);					
 				}
 				found.setId(encrypt(curUser + "MendezMasterTrainingCenter6454",suite + "-" + serial));
-				found.setSuite(suite);
+				if(DEBUG == true){
+					found.setSuite(suite);
+				}
 				found.setSerialNo(Integer.valueOf(serial));	
 				tests.add(found);
 			}
