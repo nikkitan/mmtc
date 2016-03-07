@@ -24,6 +24,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
+import static com.mmtc.exam.BuildConfig.DEBUG;
 
 public class MMTCCtxListener extends ContextLoaderListener {
 
@@ -134,40 +135,40 @@ public class MMTCCtxListener extends ContextLoaderListener {
 	@Override
 	public void contextInitialized(ServletContextEvent event){
 		super.contextInitialized(event);
-		/*
-		DriverManagerDataSource dataSource = 
-				new DriverManagerDataSource(
-						"jdbc:mysql://mmtc-db-dev.cjmff6hkiqpv.us-west-2.rds.amazonaws.com:3306/mmtc?autoReconnect=true",
-						"root","mysqlmmtc(6454)");
-
-		ArrayList<String> pics = null;
-		try {
-			Connection conn = dataSource.getConnection();
-			String sql = "SELECT DISTINCT pic FROM test";
-			String p = null;
-			ResultSet rs = conn.createStatement().executeQuery(sql);
-			while(rs.next()){
-				if(pics == null)
-					pics = new ArrayList<String>();
-				p = rs.getString("pic");
-				if(p != null
-					&& p.length() > 0
-					&& p.equals("null") == false){
-					pics.add(rs.getString("pic"));
+		if(DEBUG == false){
+			DriverManagerDataSource dataSource = 
+					new DriverManagerDataSource(
+							"jdbc:mysql://mmtc-db-dev.cjmff6hkiqpv.us-west-2.rds.amazonaws.com:3306/mmtc?autoReconnect=true",
+							"root","mysqlmmtc(6454)");
+	
+			ArrayList<String> pics = null;
+			try {
+				Connection conn = dataSource.getConnection();
+				String sql = "SELECT DISTINCT pic FROM test";
+				String p = null;
+				ResultSet rs = conn.createStatement().executeQuery(sql);
+				while(rs.next()){
+					if(pics == null)
+						pics = new ArrayList<String>();
+					p = rs.getString("pic");
+					if(p != null
+						&& p.length() > 0
+						&& p.equals("null") == false){
+						pics.add(rs.getString("pic"));
+					}
 				}
-			}
+				
+				conn.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+				logger.error("[Ctx_Listener]: Failed select pics from test!");
+			} 
 			
-			conn.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
-			logger.error("[Ctx_Listener]: Failed select pics from test!");
-		} 
-		
-		for(String pic : pics){
-			S3DownloadThread dl = new S3DownloadThread(pic,event.getServletContext().getRealPath("/"));
-			dl.start();
+			for(String pic : pics){
+				S3DownloadThread dl = new S3DownloadThread(pic,event.getServletContext().getRealPath("/"));
+				dl.start();
+			}	
 		}	
-		*/	
 		
 	}
 	
