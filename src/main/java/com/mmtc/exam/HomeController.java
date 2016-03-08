@@ -1297,8 +1297,6 @@ public class HomeController {
 		String stuAns;
 		String correctAns;
 		Integer grade = 0;
-		String suiteAndTest;
-		
 		while(itor.hasNext()){
 			JsonElement cur = itor.next();
 			if(cur.getAsJsonObject().getAsJsonObject("taking") != null){				
@@ -1318,13 +1316,16 @@ public class HomeController {
 		Timestamp stmp = new Timestamp(startTime);
 		Timestamp etmp = new Timestamp(endTime);
 		//Integer dur = jsonTestSuite.get("testdur").getAsInt();
-	
+		
+		String suiteAndTest = decryptTestID(user + "MendezMasterTrainingCenter6454",jArrTests.get(0).getAsString());
+		String[] s_t = suiteAndTest.split("-");
 		
 		
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		String sql = "INSERT INTO test_taking " 
-				+ "(user_username, grade, start_time, end_time, duration_in_sec,test_pk) " 
-				+ "VALUES (?,?,?,?,(SELECT pk FROM test WHERE ))";
+				+ "(user_username, grade, start_time, end_time, duration_in_sec,testsuite_name) " 
+				+ "VALUES (?,?,?,?,"
+				+ "(SELECT name FROM testsuite WHERE name = '"+ s_t[0] +"'))";
 		PreparedStatement prepStmt = null;
 		JsonObject t = null;
 		try{
@@ -1342,20 +1343,69 @@ public class HomeController {
 			e.printStackTrace();
 			logger.error("[submitans] " + e.getMessage());			
 		}
+		
+		
+		
 		v.setViewName("review");
 		
 		return v;
 	}	
 	private class InsertTestAnsThread extends Thread{
 		private DataSource dataSource = null;
-		private String user = null;
-		public InsertTestAnsThread(DataSource datasource, Integer grade, String testTaker){
+		private JsonArray tests = null;
+		private Long testTakingPK = null;
+		public InsertTestAnsThread(
+				DataSource datasource,
+				JsonArray tests,
+				Long testTakingPk){
 			this.dataSource = datasource;
-			user = testTaker;
+			this.tests = tests;
+			this.testTakingPK = testTakingPk;
 		}
 		
 		@Override
 		public void run(){
+			Iterator<JsonElement> itor = tests.iterator();
+			JsonObject test = null;
+			String sql = "INSERT INTO test_taking_snapshot (stuans, test_taking_serial,test_taking_options,test_taking_pk)" 
+					+ " VALUES (?,?,?," + testTakingPK.toString() + ")";
+			PreparedStatement prepStmt = null;
+			try {
+				Connection conn = dataSource.getConnection();
+				prepStmt = conn.prepareStatement(sql);
+				conn.setAutoCommit(false);
+				
+				for(int i = 0; i < tests.size(); ++i){
+					test = tests.get(i).getAsJsonObject(); 
+					prepStmt.setString(1, test.getAsJsonObject("taking").getAsJsonObject("stuans").getAsString());
+					
+					
+					
+					prepStmt.addBatch();
+					
+					if(i!=0 && i%10 == 0){
+						prepStmt.executeBatch();
+						conn.commit();
+						prepStmt.clearBatch();
+					}
+					
+					
+					
+				}
+				
+				
+				
+				conn.setAutoCommit(true);
+				prepStmt.close();
+				conn.close();
+				
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			
+			
 						
 		}
 	}
