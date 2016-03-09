@@ -1307,7 +1307,9 @@ public class HomeController {
 				}
 			}
 		}
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");		
+		SimpleDateFormat ymdFmt = new SimpleDateFormat("yyyy-MM-dd");		
+		SimpleDateFormat hmFmt = new SimpleDateFormat("HH:mm aaa");		
+
 		long startTime = jsonTestSuite.get("beg").getAsLong();
 		long endTime = jsonTestSuite.get("end").getAsLong();
 		Date sdt = new Date(startTime);
@@ -1316,38 +1318,57 @@ public class HomeController {
 		Timestamp stmp = new Timestamp(startTime);
 		Timestamp etmp = new Timestamp(endTime);
 		//Integer dur = jsonTestSuite.get("testdur").getAsInt();
-		
-		String suiteAndTest = decryptTestID(user + "MendezMasterTrainingCenter6454",jArrTests.get(0).getAsString());
+		JsonObject tempTest = jArrTests.get(0).getAsJsonObject();
+		String suiteAndTest = decryptTestID(user + "MendezMasterTrainingCenter6454",tempTest.get("id").getAsString());
 		String[] s_t = suiteAndTest.split("-");
 		
 		
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		String sql = "INSERT INTO test_taking " 
 				+ "(user_username, grade, start_time, end_time, duration_in_sec,testsuite_name) " 
-				+ "VALUES (?,?,?,?,"
+				+ "VALUES (?,?,?,?,?,"
 				+ "(SELECT name FROM testsuite WHERE name = '"+ s_t[0] +"'))";
 		PreparedStatement prepStmt = null;
 		JsonObject t = null;
+		long newRowID = -1L;
 		try{
 			Connection conn = dataSource.getConnection();
 			tt = sdf.format(sdt);
-			prepStmt = conn.prepareStatement(sql);			
+			prepStmt = conn.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS);			
 			prepStmt.setString(1, user);
 			prepStmt.setInt(2, grade);
 			prepStmt.setTimestamp(3, stmp);
 			prepStmt.setTimestamp(4, etmp);
 			prepStmt.setInt(5,((Long)((endTime - startTime)/1000)).intValue());
 			prepStmt.executeUpdate();
+			ResultSet rs = prepStmt.getGeneratedKeys();
+			if(rs != null && rs.next()){
+				newRowID = rs.getLong(1);
+			}
 			conn.close();
 		}catch(Exception e){
 			e.printStackTrace();
 			logger.error("[submitans] " + e.getMessage());			
 		}
 		
-		
-		
+		InsertTestAnsThread insertThread = new InsertTestAnsThread(dataSource,jArrTests, newRowID);
+		insertThread.start();
 		v.setViewName("review");
-		
+		v.addObject("participant", user);
+		String ymd = ymdFmt.format(sdt);
+		String hm = hmFmt.format(sdt);
+		v.addObject("date",ymd);
+		v.addObject("time",hm);
+		v.addObject("elaptime", (endTime - startTime)/1000);
+		v.addObject("passscore","630/900");
+		v.addObject("urscore", String.valueOf(grade * 10) + "/1000");
+		if(grade >= 70){
+			v.addObject("grade","Pass");
+		}else{
+			v.addObject("grade","Fail");
+		}
+		//http://hdnrnzk.me/2012/07/04/creating-a-bar-graph-using-d3js/
+		v.addObject("chartdata","[10,5,4,3]");
 		return v;
 	}	
 	private class InsertTestAnsThread extends Thread{
@@ -1374,27 +1395,34 @@ public class HomeController {
 				Connection conn = dataSource.getConnection();
 				prepStmt = conn.prepareStatement(sql);
 				conn.setAutoCommit(false);
-				
+				Integer serial = null;
+				String strSerial;
+				String strQuestion;
+				String testOptions;
 				for(int i = 0; i < tests.size(); ++i){
 					test = tests.get(i).getAsJsonObject(); 
-					prepStmt.setString(1, test.getAsJsonObject("taking").getAsJsonObject("stuans").getAsString());
-					
-					
-					
+					if(test.getAsJsonObject("taking") != null
+						&& test.getAsJsonObject("taking").getAsJsonObject("stuans") != null){
+						prepStmt.setString(1, test.getAsJsonObject("taking").getAsJsonObject("stuans").getAsString());
+					}else{
+						prepStmt.setString(1,"");
+					}
+					strQuestion = test.getAsJsonArray("question").get(0).getAsString();
+					strSerial = strQuestion.substring(0, strQuestion.indexOf("."));
+					prepStmt.setInt(2, Integer.valueOf(strSerial));
+					testOptions = test.getAsJsonArray("options").toString();
+					prepStmt.setString(3, testOptions);			
 					prepStmt.addBatch();
 					
 					if(i!=0 && i%10 == 0){
 						prepStmt.executeBatch();
 						conn.commit();
 						prepStmt.clearBatch();
-					}
-					
-					
-					
-				}
-				
-				
-				
+					}					
+				}	
+				prepStmt.executeBatch();
+				conn.commit();
+				prepStmt.clearBatch();
 				conn.setAutoCommit(true);
 				prepStmt.close();
 				conn.close();
