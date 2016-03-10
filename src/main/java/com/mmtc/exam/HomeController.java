@@ -1299,9 +1299,10 @@ public class HomeController {
 		Integer grade = 0;
 		while(itor.hasNext()){
 			JsonElement cur = itor.next();
-			if(cur.getAsJsonObject().getAsJsonObject("taking") != null){				
-				stuAns = cur.getAsJsonObject().getAsJsonObject("taking").getAsJsonObject("stuans").getAsString();
-				correctAns = cur.getAsJsonObject().getAsJsonObject("answer").getAsString();
+			if(cur.getAsJsonObject().get("taking") != null){				
+				stuAns = cur.getAsJsonObject().get("taking").getAsJsonObject().get("stuans").getAsString();
+				//TODO: change this if in the future they start to use multi-selection questions.
+				correctAns = cur.getAsJsonObject().getAsJsonArray("answers").get(0).getAsString();
 				if(stuAns.equals(correctAns)){
 					grade += 1;
 				}
@@ -1359,7 +1360,21 @@ public class HomeController {
 		String hm = hmFmt.format(sdt);
 		v.addObject("date",ymd);
 		v.addObject("time",hm);
-		v.addObject("elaptime", (endTime - startTime)/1000);
+		String strElapsedTime;
+		long elapsedSec = (endTime - startTime);///1000;
+		String days = String.valueOf(Math.floor(elapsedSec/(1000*60*60*24)));
+		String hours = String.valueOf(Math.floor((elapsedSec/(1000*60*60)) % 24));
+		String mins = String.valueOf(Math.floor((elapsedSec/1000/60) % 60));
+		String seconds = String.valueOf(Math.floor((elapsedSec/1000) % 60));
+		strElapsedTime = days;
+		strElapsedTime += " days ";
+		strElapsedTime += hours;
+		strElapsedTime += " hours ";
+		strElapsedTime += mins;
+		strElapsedTime += " mins ";
+		strElapsedTime += seconds;
+		strElapsedTime += " seconds";
+		v.addObject("elaptime", strElapsedTime);
 		v.addObject("passscore","630/900");
 		v.addObject("urscore", String.valueOf(grade * 10) + "/1000");
 		if(grade >= 70){
@@ -1368,7 +1383,11 @@ public class HomeController {
 			v.addObject("grade","Fail");
 		}
 		//http://hdnrnzk.me/2012/07/04/creating-a-bar-graph-using-d3js/
-		v.addObject("chartdata","[10,5,4,3]");
+		JsonArray scoreRange = new JsonArray();
+		scoreRange.add(grade*10);
+		scoreRange.add(700);
+		scoreRange.add(1000);
+		v.addObject("scores",scoreRange.toString());
 		return v;
 	}	
 	private class InsertTestAnsThread extends Thread{
@@ -1401,9 +1420,9 @@ public class HomeController {
 				String testOptions;
 				for(int i = 0; i < tests.size(); ++i){
 					test = tests.get(i).getAsJsonObject(); 
-					if(test.getAsJsonObject("taking") != null
-						&& test.getAsJsonObject("taking").getAsJsonObject("stuans") != null){
-						prepStmt.setString(1, test.getAsJsonObject("taking").getAsJsonObject("stuans").getAsString());
+					if(test.get("taking") != null
+						&& test.get("taking").getAsJsonObject().get("stuans") != null){
+						prepStmt.setString(1, test.get("taking").getAsJsonObject().get("stuans").getAsString());
 					}else{
 						prepStmt.setString(1,"");
 					}
