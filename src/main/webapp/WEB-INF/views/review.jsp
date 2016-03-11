@@ -79,8 +79,19 @@ p {font-size: 16px;}
 .chart rect:hover {
   fill: cyan;
 }
+
+h4#fail{
+	color:red;
+}
+
+h4#pass{
+	color:black;
+}
+
 </style>
 <script>
+var data = ${scores};
+var cat = ['Your Score','Required Score'];
 function sec2hms(t){
 	var dur = Date.parse(t) - Date.parse(new Date());
 	var seconds = Math.floor( (dur/1000) % 60 );
@@ -95,11 +106,7 @@ function sec2hms(t){
 	  'seconds': seconds
 	};
 }
-$(document).ready(function() {
-	
-	var data = ${scores};
-	var w = 1000, h = 200;
-	var cat = ['Your Score','Required Score'];
+function renderChart(dataX,dataY,w,h){
 	var chart = d3.select("#chartdiv")
 	.append('svg')
 	.attr('class','chart')
@@ -112,10 +119,10 @@ $(document).ready(function() {
 	var gap = 5;
 	
 	var x = d3.scale.linear()
-			.domain([0,d3.max(data)])
-			.range([0,850]);
+			.domain([0,d3.max(dataX)])
+			.range([0,w-200]);
 	var y = d3.scale.ordinal()
-			.domain([data[0],data[1]])
+			.domain([dataX[0],dataX[1]])
 			.range([150,50]);
 	chart.selectAll("rect")
 	   .data([data[0],data[1]])
@@ -136,11 +143,11 @@ $(document).ready(function() {
 	  .text(String);
 
 	chart.selectAll("text.name")
-	  .data(cat)
+	  .data(dataY)
 	  .enter().append("text")
 	  .attr("x", left_padding / 2)
 	  .attr("y", function(d){ return y(d) + y.rangeBand()/2+10; } )
-	  .attr("dy", ".26em")
+	  .attr("dy", ".20em")
 	  .attr("text-anchor", "middle")
 	  .attr('class', 'name')
 	  .text(String);
@@ -165,7 +172,24 @@ $(document).ready(function() {
 	  .attr("text-anchor", "middle")
 	  .attr("font-size", 10)
 	  .attr("stroke","black")
-	  .text(String);
+	  .text(String);	
+}
+$(window).resize(function(){
+	var h = $('#chartdiv').innerHeight();
+	console.log(h);
+	$('#chartdiv').html('');
+	renderChart(data,cat,$('#chartdiv').innerWidth(),200);
+})
+$(document).ready(function() {
+	renderChart(data,cat,$('#chartdiv').innerWidth(),200);
+	var grade = '${grade}';
+	if(grade == 'Fail'
+		|| grade == 'FAIL'){
+		$('#gradecol').append('<h4 id=\'fail\'>'+grade + '</h4>');
+	}else if(grade == 'Pass'
+			|| grade == 'PASS'){
+		$('#gradecol').append('<h4 id=\'pass\'>'+grade + '</h4>');		
+	}
 });
 </script>
 <title>MMTC</title>
@@ -260,8 +284,7 @@ $(document).ready(function() {
 <div class="col-sm-4">
 <label>Grade:</label>
 </div>
-<div class="col-sm-2">
-<h4>${grade}</h4>
+<div class="col-sm-2" id="gradecol">
 </div>
 </div>
 </div>

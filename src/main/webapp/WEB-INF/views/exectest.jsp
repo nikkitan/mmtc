@@ -280,8 +280,18 @@ $(document).ready(function() {
 			for(var i = 0; i < opts.length; ++i){
 				var opt = opts[i];
 				var id = "opt" + i;
-				$('#testrootpanel #optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
-						+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\">" + opt + "</label></div>");
+				if(typeof p.tests[curTest].taking != 'undefined'){
+					if(p.tests[curTest].taking.stuans == opt.charAt(0)){
+						$('#testrootpanel #optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
+							+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\" checked>" + opt + "</label></div>");
+					}else{
+						$('#testrootpanel #optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
+								+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\">" + opt + "</label></div>");			
+					}
+				}else{
+					$('#testrootpanel #optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
+							+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\">" + opt + "</label></div>");
+				}
 				$('input[name="optradio"]').on('click',
 					function(){
 						//onclicked, cache clicked option to local storage.
