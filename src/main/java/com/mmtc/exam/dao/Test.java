@@ -5,7 +5,9 @@ import java.util.ArrayList;
 import com.google.gson.JsonArray;
 
 public class Test {
-	public Test(){}
+	public Test(){
+		taking = null;
+	}
 	
 	public JsonArray getQuestion() {
 		return question;
@@ -119,6 +121,14 @@ public class Test {
 		this.tips = tips;
 	}
 
+	public TestTaking getTaking() {
+		return taking;
+	}
+
+	public void setTaking(TestTaking taking) {
+		this.taking = taking;
+	}
+
 	private JsonArray tips;
 	private JsonArray watchword;
 	private JsonArray question;
@@ -133,4 +143,5 @@ public class Test {
 	private String pic;//picture file name.
 	private String id;//AES encryption for publicly usage in web pages.
 	private long lastUpdateTimestamp;
+	private TestTaking taking;
 }

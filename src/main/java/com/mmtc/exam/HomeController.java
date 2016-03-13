@@ -90,6 +90,7 @@ import com.mmtc.exam.auth.MMTCJdbcUserDetailsMgr;
 import com.mmtc.exam.dao.MMTCUser;
 import com.mmtc.exam.dao.Test;
 import com.mmtc.exam.dao.TestSuite;
+import com.mmtc.exam.dao.TestTaking;
 
 //http://springinpractice.com/2010/07/06/spring-security-database-schemas-for-mysql
 //http://www.jsptut.com/
@@ -1075,17 +1076,12 @@ public class HomeController {
 		}
 		return tests;
 	}
-	private ArrayList<Test> getTestsForSuiteAsJSON(String suite){
-		
-		
-		return null;
-		
-	}
+
 	private ArrayList<Test> getTestsForSuite(String suite){
 		logger.info("getTestForSuite()!");
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		ArrayList<Test> tests = new ArrayList<Test>();
-		String sql = "SELECT serial, updatedat, question, options,answer,keywords,pic,tips,watchword FROM test WHERE testsuite_pk IN (SELECT pk FROM testsuite WHERE name=?)";
+		String sql = "SELECT serial, updatedat, question, options,answer,keywords,pic,tips,watchword FROM test WHERE testsuite_pk IN (SELECT pk FROM testsuite WHERE name=?) ORDER BY serial";
 		PreparedStatement preparedSql = null;
 		Connection conn = null;
 	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -1097,7 +1093,6 @@ public class HomeController {
 			ResultSet s = preparedSql.executeQuery();
 			String serial = null;
 			JsonParser jp = new JsonParser();
-			Gson gs = new Gson();
 			String temp;
 			Test found = null;
 			JsonElement elem = null;
@@ -1272,6 +1267,94 @@ public class HomeController {
 		return strDecryptedText;
 		
 	}
+	@RequestMapping(value = "/execans", method = RequestMethod.GET)
+	public @ResponseBody ModelAndView execAnsPOST(
+			Locale locale,
+			Model model,
+			HttpSession session,
+			HttpServletRequest request, 
+			HttpServletResponse response,
+			@RequestParam("su") String suite,
+			@RequestParam("u") String user,
+			@RequestParam("st") Long st,
+			@RequestParam("et") Long et){
+		ModelAndView v = new ModelAndView();
+		logger.info(request.getRequestURL().toString());
+		logger.info(suite);
+		logger.info(user);
+		logger.info(st.toString());
+		logger.info(et.toString());
+		SimpleDateFormat dateFmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");		
+
+		String sql = "SELECT pk FROM test_taking WHERE user_username=? "
+				+ "AND start_time = ? AND end_time=? AND testsuite_name=?";
+		
+		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
+		Connection conn = null;
+		PreparedStatement prepStmt = null;
+		ArrayList<Test> tests = null;
+		try{
+			long testTakingPK = 0L;			
+			TestTaking taking = null;
+			JsonArray options = null;
+			String strOptions;
+			int serial = 0;
+			JsonParser jp = new JsonParser();
+			conn = dataSource.getConnection();
+			prepStmt = conn.prepareStatement(sql);			
+			prepStmt.setString(1, user);
+			prepStmt.setTimestamp(2, new Timestamp(st));
+			prepStmt.setTimestamp(3, new Timestamp(et));
+			prepStmt.setString(4, suite);
+			ResultSet rs = prepStmt.executeQuery();
+			if(rs != null && rs.next()){
+				testTakingPK = rs.getLong(1);
+			}
+			rs.close();			
+			prepStmt.close();
+			
+			tests = getTestsForSuite(suite);
+			
+			sql = "SELECT stuans, test_taking_serial,orig_test_serial, test_taking_options "
+					+ "FROM test_taking_snapshot WHERE test_taking_pk = ?";
+			
+			prepStmt = conn.prepareStatement(sql);
+			prepStmt.setString(1, String.valueOf(testTakingPK));
+			rs = prepStmt.executeQuery();
+			if(rs != null){
+				while(rs.next()){
+					//if(taking == null)
+						taking = new TestTaking();
+					
+					taking.setStuAns(rs.getString("stuans"));
+					serial = rs.getInt("test_taking_serial");
+					taking.setSerial(String.valueOf(serial));
+					strOptions = rs.getString("test_taking_options");
+					JsonElement elem = jp.parse(rs.getString("test_taking_options"));
+					options = elem.getAsJsonArray();
+					taking.setOptions(options);
+					serial = rs.getInt("orig_test_serial");
+					tests.get(serial - 1).setTaking(taking);
+				}
+			}	
+			rs.close();
+			prepStmt.close();
+			conn.close();
+		}catch(Exception e){
+			e.printStackTrace();
+			logger.error("[execans] " + e.getMessage());			
+		}		
+		JsonObject jSuite = new JsonObject();
+		jSuite.addProperty("suite", suite);
+		Gson gson = new Gson();
+		JsonArray jTests = (JsonArray)gson.toJsonTree(tests, new TypeToken<ArrayList<Test>>(){}.getType());
+		jSuite.add("tests", jTests);
+		String strJ = gson.toJson(jSuite).replace("\\", "\\\\");
+		request.setAttribute("tests",strJ);		
+		
+		v.setViewName("execans");
+		return v;
+	}
 	@RequestMapping(value = "/submitans", method = RequestMethod.POST)
 	public @ResponseBody ModelAndView submitAnsPOST(
 			Locale locale,
@@ -1299,12 +1382,14 @@ public class HomeController {
 		Integer grade = 0;
 		while(itor.hasNext()){
 			JsonElement cur = itor.next();
-			if(cur.getAsJsonObject().get("taking") != null){				
-				stuAns = cur.getAsJsonObject().get("taking").getAsJsonObject().get("stuans").getAsString();
-				//TODO: change this if in the future they start to use multi-selection questions.
-				correctAns = cur.getAsJsonObject().getAsJsonArray("answers").get(0).getAsString();
-				if(stuAns.equals(correctAns)){
-					grade += 1;
+			if(cur.getAsJsonObject().get("taking") != null){
+				if(cur.getAsJsonObject().get("taking").getAsJsonObject().get("stuans") != null){
+					stuAns = cur.getAsJsonObject().get("taking").getAsJsonObject().get("stuans").getAsString();
+					//TODO: change this if in the future they start to use multi-selection questions.
+					correctAns = cur.getAsJsonObject().getAsJsonArray("answers").get(0).getAsString();
+					if(stuAns.equals(correctAns)){
+						grade += 1;
+					}
 				}
 			}
 		}
@@ -1358,8 +1443,9 @@ public class HomeController {
 		v.addObject("participant", user);
 		String ymd = ymdFmt.format(sdt);
 		String hm = hmFmt.format(sdt);
-		v.addObject("date",ymd);
-		v.addObject("time",hm);
+		//v.addObject("date",ymd);
+		v.addObject("starttime",startTime);//sdt.toString());
+		v.addObject("endtime",endTime);//edt.toString());
 		String strElapsedTime;
 		long elapsedSec = (endTime - startTime);///1000;
 		String days = String.valueOf(Math.floor(elapsedSec/(1000*60*60*24)));
@@ -1388,6 +1474,7 @@ public class HomeController {
 		scoreRange.add(700);
 		scoreRange.add(1000);
 		v.addObject("scores",scoreRange.toString());
+		v.addObject("suite",s_t[0]);
 		return v;
 	}	
 	private class InsertTestAnsThread extends Thread{
@@ -1407,11 +1494,12 @@ public class HomeController {
 		public void run(){
 			Iterator<JsonElement> itor = tests.iterator();
 			JsonObject test = null;
-			String sql = "INSERT INTO test_taking_snapshot (stuans, test_taking_serial,test_taking_options,test_taking_pk)" 
-					+ " VALUES (?,?,?," + testTakingPK.toString() + ")";
+			String sql = "INSERT INTO test_taking_snapshot (stuans, test_taking_serial,test_taking_options,test_taking_pk,orig_test_serial)" 
+					+ " VALUES (?,?,?," + testTakingPK.toString() + ",?)";
 			PreparedStatement prepStmt = null;
+			Connection conn = null;
 			try {
-				Connection conn = dataSource.getConnection();
+				conn = dataSource.getConnection();
 				prepStmt = conn.prepareStatement(sql);
 				conn.setAutoCommit(false);
 				Integer serial = null;
@@ -1430,7 +1518,8 @@ public class HomeController {
 					strSerial = strQuestion.substring(0, strQuestion.indexOf("."));
 					prepStmt.setInt(2, Integer.valueOf(strSerial));
 					testOptions = test.getAsJsonArray("options").toString();
-					prepStmt.setString(3, testOptions);			
+					prepStmt.setString(3, testOptions);	
+					prepStmt.setInt(4, test.get("serialNo").getAsInt());
 					prepStmt.addBatch();
 					
 					if(i!=0 && i%10 == 0){
@@ -1449,6 +1538,21 @@ public class HomeController {
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+				try {
+					conn.rollback();
+				} catch (SQLException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+					logger.error("ROLLBACK of test taking data failed!");
+					try {
+						conn.close();
+					} catch (SQLException e2) {
+						// TODO Auto-generated catch block
+						e2.printStackTrace();
+						logger.error("Closing connection failed!");
+
+					}
+				}
 			}
 			
 			
