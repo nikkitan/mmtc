@@ -90,8 +90,13 @@ h4#pass{
 
 </style>
 <script>
+"use strict";
 var data = ${scores};
 var cat = ['Your Score','Required Score'];
+var suite = "${suite}";
+var user = "${participant}";
+var starttime = ${starttime};
+var endtime = ${endtime};
 function sec2hms(t){
 	var dur = Date.parse(t) - Date.parse(new Date());
 	var seconds = Math.floor( (dur/1000) % 60 );
@@ -101,7 +106,7 @@ function sec2hms(t){
 	return {
 	  'dur': dur,
 	  'days': days,
-	  'hours': hours,
+	  'housr': hours,
 	  'minutes': minutes,
 	  'seconds': seconds
 	};
@@ -190,6 +195,18 @@ $(document).ready(function() {
 			|| grade == 'PASS'){
 		$('#gradecol').append('<h4 id=\'pass\'>'+grade + '</h4>');		
 	}
+	
+	//View Answers.
+	$('#vwansbtn').on('click', function (e) {
+		var href = "${pageContext.request.contextPath}/execans?su="+ suite
+				+ "&u="+user+"&st="+starttime+"&et="+endtime;
+		$(this).attr("href",href);
+	})
+	
+	
+	//Insert start time, end time.
+	$('#st').html(new Date(starttime));
+	$('#et').html(new Date(endtime));
 });
 </script>
 <title>MMTC</title>
@@ -214,6 +231,7 @@ $(document).ready(function() {
     </div>
   </div>
 </nav>
+
 <div class="container-fluid bg-3">
 <h2><span class="label label-default">Examination Score Report:</span></h2>
 <div class="row">
@@ -221,36 +239,45 @@ $(document).ready(function() {
 </div>
 <div class="col-sm-8">
 <div class="container-fluid bg-3">
+<!-- Test Suite -->
+<div class="row">
+<div class="col-sm-2">
+<label>Test Suite:</label>
+</div>
+<div class="col-sm-4">
+<h4>${suite}</h4>
+</div>
+</div>
 <!-- Candidate -->
 <div class="row">
-<div class="col-sm-4">
+<div class="col-sm-2">
 <label>Candidate:</label>
 </div>
-<div class="col-sm-2">
+<div class="col-sm-4">
 <h4>${participant}</h4>
 </div>
 </div>
 <!-- Date,Time -->
 <div class="row">
-<div class="col-sm-4">
-<label>Date:</label>
+<div class="col-sm-2">
+<label>Start Time:</label>
+</div>
+<div class="col-sm-4" id="stcol">
+<h4 id="st"></h4>
 </div>
 <div class="col-sm-2">
-<h4>${date}</h4>
+<label>End Time:</label>
 </div>
-<div class="col-sm-4">
-<label>Time:</label>
-</div>
-<div class="col-sm-2">
-<h4>${time}</h4>
+<div class="col-sm-4" id="etcol">
+<h4 id="et"></h4>
 </div>
 </div>
 <!-- Exam Number, Elapsed Time -->
 <div class="row">
-<div class="col-sm-4">
+<div class="col-sm-2">
 <label>Elapsed Time:</label>
 </div>
-<div class="col-sm-2">
+<div class="col-sm-4">
 <h4>${elaptime}</h4>
 </div>
 </div>
@@ -287,10 +314,19 @@ $(document).ready(function() {
 <div class="col-sm-2" id="gradecol">
 </div>
 </div>
+
+<!-- View Answer -->
+<hr>
+<div class="row">
+<div class="col-sm-4">
+<a id="vwansbtn" role="button" class="btn btn-primary">View Answers</a>
+<button id="exitbtn" type="button" class="btn btn-primary">Exit</button>
+
 </div>
 </div>
-<div class="col-sm-2">
 </div>
+</div>
+
 </div>
 </div>
 <!-- Footer -->

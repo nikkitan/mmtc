@@ -60,11 +60,18 @@ p {font-size: 16px;}
 .highlight{
 	background-color: #FFFF88;
 }
+
+label#correctsel{
+	color:green;
+}
+label#wrongsel{
+	color:red;
+}
 </style>
 <script type="text/javascript">
 function updateRemainingTime(endTime){
 	//console.log("[updateRemain]: " + endTime);
-	var dur = endTime - Date.now();//Date.parse(endTime) - Date.parse(new Date());
+	var dur = Date.parse(endTime) - Date.parse(new Date());
 	var seconds = Math.floor( (dur/1000) % 60 );
 	var minutes = Math.floor( (dur/1000/60) % 60 );
 	var hours = Math.floor( (dur/(1000*60*60)) % 24 );
@@ -86,7 +93,7 @@ $(document).ready(function() {
 	window.localStorage.setItem('tests',oo);	
 	var total = p.tests.length;
 	//Initialize timer.
-	var testStartTime = Date.now();//new Date();
+	var testStartTime = new Date();
 	window.localStorage.setItem('start_time',testStartTime);
 	var iii = 9;
 	console.log("[START]: " + testStartTime);	
@@ -95,7 +102,7 @@ $(document).ready(function() {
 	var pauseTime;
 	var resumeTime;
 	//endTime.setSeconds(endTime.getSeconds() + 10);
-	endTime += 7200000;//endTime.setHours(endTime.getHours() + 2);
+	endTime.setHours(endTime.getHours() + 2);
 	function updateTimer(){
 		//console.log("[updateTimer]: " + endTime);
 		var d = updateRemainingTime(endTime);
@@ -112,21 +119,20 @@ $(document).ready(function() {
 	
 	//Pause Timer.
 	$('#paubtn').on('click', function (e) {
-		pauseTime = Date.now();//new Date();
+		pauseTime = new Date();
 		console.log("pause!");
 		clearInterval(timerIntervalObj);
 	})	
 	
 	//Resume Timer.
 	$('#unpausebtn').on('click', function (e) {
-		resumeTime = Date.now();//new Date();
-		//var prevEndTime = endTime;//Date.parse(endTime);
-		endTime += resumeTime - pauseTime;//Date.parse(resumeTime) - Date.parse(pauseTime);
-		//endTime = new Date(prevEndTime);
-		console.log("[ENDTIME 2]: " + endTime);
+		resumeTime = new Date();
+		var prevEndTime = Date.parse(endTime);
+		prevEndTime += Date.parse(resumeTime) - Date.parse(pauseTime);
+		endTime = new Date(prevEndTime);
+		//console.log("[ENDTIME 2]: " + endTime);
 		console.log("resume! ");
-		console.log(resumeTime - pauseTime);
-		//console.log(Date.parse(resumeTime) - Date.parse(pauseTime));
+		console.log(Date.parse(resumeTime) - Date.parse(pauseTime));
 		updateTimer();
 		timerIntervalObj = setInterval(updateTimer,1000);	
 	});
@@ -167,8 +173,8 @@ $(document).ready(function() {
 		p.user = "${pageContext.request.userPrincipal.name}";
 		testStartTime = window.localStorage.getItem('start_time');
 		var curDate = new Date();
-		p.end = Date.now();//Date.parse(curDate);
-		p.beg = testStartTime;//Date.parse(testStartTime);
+		p.end = Date.parse(curDate);
+		p.beg = Date.parse(testStartTime);
 		//p.testdur = (Date.parse(curDate) - Date.parse(testStartTime))/1000;
 		console.log("s: " + testStartTime);
 		console.log("c: " + curDate);
@@ -261,8 +267,6 @@ $(document).ready(function() {
 	function showTest(){
 		if(curTest > -1 && curTest < total){
 			$('#testrootpanel #qh').children().last().remove();
-			//$('#testrootpanel #qthb').children().last().remove();
-			//$('#testrootpanel #ques').children().last().remove();
 			$('#testrootpanel #quescol').html('');
 			$('#testrootpanel #optcol').html('');
 			$('#testrootpanel #ansrow #anscol #answell').html('');
@@ -277,28 +281,40 @@ $(document).ready(function() {
 				$('#testrootpanel #quescol').append("<div class=\"caption\" id=\"ques\"><h4>" 
 						+ p.tests[curTest].question[0] +"</h4></div>")
 			}
-			var opts = p.tests[curTest].options;
+			var opts;
+			if(typeof p.tests[curTest].taking != 'undefined'){
+				opts = p.tests[curTest].taking.options;
+			}else{
+				opts = p.tests[curTest].options;
+			}
 			for(var i = 0; i < opts.length; ++i){
 				var opt = opts[i];
 				var id = "opt" + i;
+				var studentAns = "";
+				var correctAns = p.tests[curTest].answers[0];
 				if(typeof p.tests[curTest].taking != 'undefined'){
-					if(p.tests[curTest].taking.stuans == opt.charAt(0)){
-						$('#testrootpanel #optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
-							+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\" checked>" + opt + "</label></div>");
+					if(typeof p.tests[curTest].taking.stuAns != 'undefined'){
+						studentAns = p.tests[curTest].taking.stuAns;
+					}
+				}
+				if(correctAns == opt.charAt(0)){
+					if(studentAns == opt.charAt(0)){
+						$('#testrootpanel #optcol').append("<div class=\"radio\"><label id=\"correctsel\" class=\"radiobtnopt\" for=\"" 
+								+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\" checked disabled>" + opt + "</label></div>");						
 					}else{
-						$('#testrootpanel #optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
-								+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\">" + opt + "</label></div>");			
+						$('#testrootpanel #optcol').append("<div class=\"radio\"><label id=\"correctsel\" class=\"radiobtnopt\" for=\"" 
+								+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\" disabled>" + opt + "</label></div>");						
 					}
 				}else{
-					$('#testrootpanel #optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
-							+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\">" + opt + "</label></div>");
+					if(studentAns == opt.charAt(0)){
+						$('#testrootpanel #optcol').append("<div class=\"radio\"><label id=\"wrongsel\" class=\"radiobtnopt\" for=\"" 
+								+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\" checked disabled>" + opt + "</label></div>");						
+					}else{
+						$('#testrootpanel #optcol').append("<div class=\"radio\"><label id=\"wrongsel\" class=\"radiobtnopt\" for=\"" 
+								+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\" disabled>" + opt + "</label></div>");						
+					}					
 				}
-				$('input[name="optradio"]').on('click',
-					function(){
-						//onclicked, cache clicked option to local storage.
-						p.tests[curTest].taking = {"stuans":$(this).parent().text().charAt(0)}
-						window.localStorage.setItem('tests',JSON.stringify(p));						
-				});
+
 			}
 		}
 	}
@@ -381,7 +397,6 @@ $(document).ready(function() {
     </div>
   </div>
 </div>
-<form:form id="myform" method="POST" action="${pageContext.request.contextPath}/submitans?${_csrf.parameterName}=${_csrf.token}"> 
 <div class="row">
 <div class="col-sm-8"><!-- MARK --></div>
 <div class="col-sm-4">
@@ -427,11 +442,10 @@ $(document).ready(function() {
 <div style="text-align:right" class="col-sm-4">
 <!-- pause,end exam -->
 <button id="paubtn" type="button" data-toggle="modal" data-target="#pauModal">Pause</button>
-<input type="hidden" name="tests" />
-<input type="submit" value="Submit" id="sbtbtn"/> 
+<!-- <a href="${pageContext.request.contextPath}/home" id="exitbtn" role="button" class="btn btn-default">Exit</a> -->
+<button id="exitbtn" type="button">Exit</button>
 </div>
 </div>
-</form:form>
 </div>
 
 <!-- Footer -->
