@@ -140,25 +140,24 @@ $(document).ready(function() {
 	//Next test.
 	var curTest = 0;
 	$('#nxtbtn').on('click', function (e) {
-		curTest += 1;
-		showTest();
-		//console.log("next! " + curTest);
+		if(curTest + 1 < p.tests.length){
+			curTest += 1;
+			showTest();
+		}
 	});	
 	
 	//Prev test.
 	$('#prvbtn').on('click', function (e) {
-		curTest -= 1;
-		showTest();
-		//console.log("prev! " + curTest);
+		if(curTest-1 > 0){
+			curTest -= 1;
+			showTest();
+		}
 	});
 	
 	
 	//TimeOut End test.
-	$('#endtestbtn').on('click', function (e) {
-		curTest -= 1;
-		showTest();
-		window.location.replace("${pageContext.request.contextPath}/index");
-		//console.log("prev! " + curTest);
+	$('#exitbtn').on('click', function (e) {
+		window.location.replace("${pageContext.request.contextPath}/home");
 	});
 	
 	//Review Btn.
@@ -266,6 +265,7 @@ $(document).ready(function() {
 	//Display tests.
 	function showTest(){
 		if(curTest > -1 && curTest < total){
+			console.log("[LEN]" + p.tests.length);
 			$('#testrootpanel #qh').children().last().remove();
 			$('#testrootpanel #quescol').html('');
 			$('#testrootpanel #optcol').html('');
@@ -287,17 +287,18 @@ $(document).ready(function() {
 			}else{
 				opts = p.tests[curTest].options;
 			}
+			var studentAns = "";
+			var correctAns = p.tests[curTest].answers[0];
+
 			for(var i = 0; i < opts.length; ++i){
 				var opt = opts[i];
 				var id = "opt" + i;
-				var studentAns = "";
-				var correctAns = p.tests[curTest].answers[0];
 				if(typeof p.tests[curTest].taking != 'undefined'){
 					if(typeof p.tests[curTest].taking.stuAns != 'undefined'){
 						studentAns = p.tests[curTest].taking.stuAns;
 					}
 				}
-				if(correctAns == opt.charAt(0)){
+				if(correctAns == opt.charAt(0)){					
 					if(studentAns == opt.charAt(0)){
 						$('#testrootpanel #optcol').append("<div class=\"radio\"><label id=\"correctsel\" class=\"radiobtnopt\" for=\"" 
 								+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\" checked disabled>" + opt + "</label></div>");						

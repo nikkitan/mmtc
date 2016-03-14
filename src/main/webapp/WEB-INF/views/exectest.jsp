@@ -134,16 +134,18 @@ $(document).ready(function() {
 	//Next test.
 	var curTest = 0;
 	$('#nxtbtn').on('click', function (e) {
-		curTest += 1;
-		showTest();
-		//console.log("next! " + curTest);
+		if(curTest + 1 < p.tests.length){
+			curTest += 1;
+			showTest();
+		}
 	});	
 	
 	//Prev test.
 	$('#prvbtn').on('click', function (e) {
-		curTest -= 1;
-		showTest();
-		//console.log("prev! " + curTest);
+		if(curTest-1 > 0){
+			curTest -= 1;
+			showTest();
+		}
 	});
 	
 	

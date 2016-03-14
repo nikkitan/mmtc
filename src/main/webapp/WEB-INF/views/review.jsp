@@ -319,8 +319,8 @@ $(document).ready(function() {
 <hr>
 <div class="row">
 <div class="col-sm-4">
-<a id="vwansbtn" role="button" class="btn btn-primary">View Answers</a>
-<button id="exitbtn" type="button" class="btn btn-primary">Exit</button>
+<a id="vwansbtn" role="button" class="btn btn-primary btn-lg">View Answers</a>
+<button id="exitbtn" type="button" class="btn btn-primary btn-lg">Exit</button>
 
 </div>
 </div>
