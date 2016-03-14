@@ -44,14 +44,12 @@
       border-radius: 0;
       margin-bottom: 0;
       font-size: 12px;
-      letter-spacing: 5px;
+      letter-spacing: 2px;
   }
   .navbar-nav  li a:hover {
       color: #1abc9c !important;
   }
-  .btn-signup {
-  	.button-variant(@btn-primary-color; #ff0000, #e60000);
-  }
+
   </style>
 </head>
 <body>
@@ -69,8 +67,8 @@
     </div>
     <div class="collapse navbar-collapse" id="myNavbar">
       <ul class="nav navbar-nav navbar-right">
-        <li><a href="${pageContext.request.contextPath}/login">LogIn</a></li>
-        <li><a href="#" class="btn navbar-btn btn-signup">SignUp</a></li>
+        <li><a href="${pageContext.request.contextPath}/login">Log in</a></li>
+        <li><a href="#" class="btn navbar-btn btn-signup">Sign Up</a></li>
       </ul>
     </div>
   </div>
