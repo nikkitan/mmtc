@@ -1280,10 +1280,6 @@ public class HomeController {
 			@RequestParam("et") Long et){
 		ModelAndView v = new ModelAndView();
 		logger.info(request.getRequestURL().toString());
-		logger.info(suite);
-		logger.info(user);
-		logger.info(st.toString());
-		logger.info(et.toString());
 		SimpleDateFormat dateFmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");		
 
 		String sql = "SELECT pk FROM test_taking WHERE user_username=? "
@@ -1293,6 +1289,7 @@ public class HomeController {
 		Connection conn = null;
 		PreparedStatement prepStmt = null;
 		ArrayList<Test> tests = null;
+		ArrayList<Test> reorderedTests = null;
 		try{
 			long testTakingPK = 0L;			
 			TestTaking taking = null;
@@ -1315,26 +1312,43 @@ public class HomeController {
 			
 			tests = getTestsForSuite(suite);
 			
+			
 			sql = "SELECT stuans, test_taking_serial,orig_test_serial, test_taking_options "
-					+ "FROM test_taking_snapshot WHERE test_taking_pk = ?";
+					+ "FROM test_taking_snapshot WHERE test_taking_pk = ? ORDER BY test_taking_serial";
 			
 			prepStmt = conn.prepareStatement(sql);
 			prepStmt.setString(1, String.valueOf(testTakingPK));
 			rs = prepStmt.executeQuery();
 			if(rs != null){
+				if(reorderedTests == null){
+					reorderedTests = new ArrayList<Test>(tests.size());
+				}
+				String strQuestion;
+				JsonArray questionArr = null;
+				Test temp = null;
+				int testTakingSerial = 0;
+				int origTestSerial = 0;
 				while(rs.next()){
 					//if(taking == null)
-						taking = new TestTaking();
-					
+					taking = null;
+					taking = new TestTaking();					
 					taking.setStuAns(rs.getString("stuans"));
-					serial = rs.getInt("test_taking_serial");
-					taking.setSerial(String.valueOf(serial));
+					testTakingSerial = rs.getInt("test_taking_serial");
+					taking.setSerial(String.valueOf(testTakingSerial));
 					strOptions = rs.getString("test_taking_options");
 					JsonElement elem = jp.parse(rs.getString("test_taking_options"));
 					options = elem.getAsJsonArray();
 					taking.setOptions(options);
-					serial = rs.getInt("orig_test_serial");
-					tests.get(serial - 1).setTaking(taking);
+					origTestSerial = rs.getInt("orig_test_serial");
+					temp = tests.get(origTestSerial-1);
+					questionArr = temp.getQuestion();
+					strQuestion = questionArr.get(0).getAsString();
+					strQuestion = String.valueOf(testTakingSerial) + strQuestion.substring(strQuestion.indexOf("."));
+					questionArr.set(0, new JsonPrimitive(strQuestion));
+					//temp.setQuestion(questionArr);
+					temp.setTaking(taking);
+					
+					reorderedTests.add(temp);
 				}
 			}	
 			rs.close();
@@ -1347,7 +1361,7 @@ public class HomeController {
 		JsonObject jSuite = new JsonObject();
 		jSuite.addProperty("suite", suite);
 		Gson gson = new Gson();
-		JsonArray jTests = (JsonArray)gson.toJsonTree(tests, new TypeToken<ArrayList<Test>>(){}.getType());
+		JsonArray jTests = (JsonArray)gson.toJsonTree(reorderedTests, new TypeToken<ArrayList<Test>>(){}.getType());
 		jSuite.add("tests", jTests);
 		String strJ = gson.toJson(jSuite).replace("\\", "\\\\");
 		request.setAttribute("tests",strJ);		
@@ -1436,9 +1450,11 @@ public class HomeController {
 			e.printStackTrace();
 			logger.error("[submitans] " + e.getMessage());			
 		}
-		
-		InsertTestAnsThread insertThread = new InsertTestAnsThread(dataSource,jArrTests, newRowID);
-		insertThread.start();
+		ArrayList<JsonArray> testSplits = splitJsonArray(3,jArrTests);
+		for(int i = 0; i < testSplits.size(); ++i){
+			InsertTestAnsThread insertThread = new InsertTestAnsThread(dataSource,testSplits.get(i), newRowID);
+			insertThread.start();
+		}
 		v.setViewName("review");
 		v.addObject("participant", user);
 		String ymd = ymdFmt.format(sdt);
@@ -1499,14 +1515,20 @@ public class HomeController {
 			PreparedStatement prepStmt = null;
 			Connection conn = null;
 			try {
-				conn = dataSource.getConnection();
-				prepStmt = conn.prepareStatement(sql);
-				conn.setAutoCommit(false);
 				Integer serial = null;
 				String strSerial;
 				String strQuestion;
 				String testOptions;
+				conn = dataSource.getConnection();
+				prepStmt = conn.prepareStatement(sql);
+				conn.setAutoCommit(false);
+
 				for(int i = 0; i < tests.size(); ++i){
+					/*if(conn == null && prepStmt == null){
+						conn = dataSource.getConnection();
+						prepStmt = conn.prepareStatement(sql);
+						conn.setAutoCommit(false);
+					}*/
 					test = tests.get(i).getAsJsonObject(); 
 					if(test.get("taking") != null
 						&& test.get("taking").getAsJsonObject().get("stuans") != null){
@@ -1525,11 +1547,19 @@ public class HomeController {
 					if(i!=0 && i%10 == 0){
 						prepStmt.executeBatch();
 						conn.commit();
+						//conn.setAutoCommit(true);
+						//conn.close();						
 						prepStmt.clearBatch();
+						//prepStmt.close();
+						//prepStmt = null;
+						//conn = null;
 					}					
 				}	
-				prepStmt.executeBatch();
-				conn.commit();
+				//if(prepStmt != null
+				//		&& prepStmt.isClosed() == false){
+					prepStmt.executeBatch();
+					conn.commit();
+				//}
 				prepStmt.clearBatch();
 				conn.setAutoCommit(true);
 				prepStmt.close();
@@ -1559,5 +1589,31 @@ public class HomeController {
 			
 						
 		}
+	}
+	
+	private ArrayList<JsonArray> splitJsonArray(int splitCount, JsonArray arr){
+		if(arr.size() == 0)
+			return null;
+		ArrayList<JsonArray> resultArray = new ArrayList<JsonArray>();		
+		int splitLength = arr.size() / splitCount;
+		int remainder = arr.size() % splitCount;
+		JsonArray newSubArr = null;
+		int i = 0;
+		for(; i < arr.size(); ++i){
+			if(i == 0){				
+				newSubArr = new JsonArray();
+			}else if(i % splitLength == 0){
+				resultArray.add(newSubArr);
+				newSubArr = new JsonArray();
+			}
+			newSubArr.add(arr.get(i));
+		}
+		
+		if(remainder > 0 || i % splitLength == 0){
+			resultArray.add(newSubArr);
+		}
+		
+		
+		return resultArray;
 	}
 }
