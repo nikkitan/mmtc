@@ -10,53 +10,8 @@
 <script src="${pageContext.request.contextPath}/resources/js/jquery.highlight.js" type="text/javascript"></script>
 <script src="${pageContext.request.contextPath}/resources/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
 <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/bootstrap/css/bootstrap.min.css">
-
+<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/css/style3.css">
 <style type="text/css">
-
-body {
-    font: 20px Montserrat, sans-serif;
-    line-height: 1.8;
-    color: #f5f6f7;
- 	-webkit-user-select: none;
-    -moz-user-select: -moz-none;
-    -ms-user-select: none;
-    user-select: none;
-}
-p {font-size: 16px;}
-.margin {margin-bottom: 45px;}
-.bg-1 { 
-    background-color: #1abc9c; /* Green */
-    color: #ffffff;
-}
-.bg-2 { 
-    background-color: #474e5d; /* Dark Blue */
-    color: #ffffff;
-}
-.bg-3 { 
-    background-color: #ffffff; /* White */
-    color: #555555;
-}
-.bg-4 { 
-    background-color: #2f2f2f; /* Black Gray */
-    color: #fff;
-}
-.container-fluid {
-    padding-top: 70px;
-    padding-bottom: 70px;
-}
-.navbar {
-    padding-top: 15px;
-    padding-bottom: 15px;
-    border: 0;
-    border-radius: 0;
-    margin-bottom: 0;
-    font-size: 12px;
-    letter-spacing: 5px;
-}
-.navbar-nav  li a:hover {
-    color: #1abc9c !important;
-}
-
 .highlight{
 	background-color: #FFFF88;
 }
@@ -65,6 +20,10 @@ label#correctsel{
 	color:green;
 }
 label#wrongsel{
+	color:red;
+}
+
+p.wrongans{
 	color:red;
 }
 </style>
@@ -96,7 +55,7 @@ $(document).ready(function() {
 	var testStartTime = new Date();
 	window.localStorage.setItem('start_time',testStartTime);
 	var iii = 9;
-	console.log("[START]: " + testStartTime);	
+	//console.log("[START]: " + testStartTime);	
 	var endTime = testStartTime;
 	//console.log("[ENDTIME 1]: " + endTime);
 	var pauseTime;
@@ -148,7 +107,7 @@ $(document).ready(function() {
 	
 	//Prev test.
 	$('#prvbtn').on('click', function (e) {
-		if(curTest-1 > 0){
+		if(curTest-1 >= 0){
 			curTest -= 1;
 			showTest();
 		}
@@ -166,6 +125,12 @@ $(document).ready(function() {
 		//console.log("prev! " + curTest);
 		
 	});
+	
+	//Ans <p> in Review Modal.
+	$('#rvwModal').on('hide.bs.modal', function (e) {
+		curTest = parseInt(window.localStorage.getItem('modelsel'));
+		showTest();
+	});	
 	
 	//Submit.
 	$('#sbtbtn').on('click', function (e) {
@@ -185,9 +150,9 @@ $(document).ready(function() {
 	});	
 	
 	function genReviewTable(){
-		var review = "<div class=\"container-fluid col-md-12\"><div class=\"row\">";
+		var review = "<div id=\"rvwmodalcol\" class=\"container-fluid col-md-12\"><div class=\"row\">";
 		var listPrefix = "<div class=\"list-group\">";
-		var itemPrefix = "<p class=\"list-group-item\">";
+		var itemPrefix = "<p ";//class=\"list-group-item\" ";
 		var itemSuffix = "</p>";
 		var divEndTag = "</div>";
 		var colPrefix = "<div class=\"col-md-2\">";
@@ -203,11 +168,35 @@ $(document).ready(function() {
 			}
 			
 			review += itemPrefix;
-			review += i+1;
-			review += ":";
-			if(p.tests[i].hasOwnProperty("taking")){
-				review += p.tests[i].taking.stuans;				
+			review += "id=\"";
+			review += i;
+			review += "\" onclick='window.localStorage.setItem(\"modelsel\","+i+"); $(\"#rvwModal\").modal(\"hide\");' ";
+
+			
+			if(p.tests[i].hasOwnProperty("taking")
+					&& typeof p.tests[i].taking != 'undefined'
+					&& typeof p.tests[i].taking.stuAns != 'undefined'){
+				if(p.tests[i].taking.stuAns != p.tests[i].answers[0]){
+					review += "class=\"list-group-item wrongans\">";
+					console.log("WRONG ans: " + review);
+
+					review += i+1;
+					review += ":";
+					review += p.tests[i].taking.stuAns;				
+				}else{
+					console.log("GOOD ans: " + p.tests[i].taking.stuAns);
+
+					review += "class=\"list-group-item correctans\">";
+					review += i+1;
+					review += ":";
+					review += p.tests[i].taking.stuAns;
+				}
 			}else{
+				console.log("NO ans: ");
+
+				review += "class=\"list-group-item wrongans\">";
+				review += i+1;
+				review += ":";				
 				review += "-";
 			}
 			review += itemSuffix;				
@@ -219,10 +208,8 @@ $(document).ready(function() {
 	}
 	//Review Modal
 	$('#rvwModal').on('show.bs.modal', function (event) {
-	  var button = $(event.relatedTarget) // Button that triggered the modal
-	  var recipient = button.data('whatever') // Extract info from data-* attributes
-	  // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
-	  // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
+	  var button = $(event.relatedTarget) 
+	  var recipient = button.data('whatever') 
 	  var modal = $(this)
 	  //modal.find('.modal-title').text('New message to ' + recipient)
 	  modal.find('.modal-body').html(genReviewTable());
@@ -264,8 +251,8 @@ $(document).ready(function() {
 	
 	//Display tests.
 	function showTest(){
+		console.log('[curTest] ' + curTest);
 		if(curTest > -1 && curTest < total){
-			console.log("[LEN]" + p.tests.length);
 			$('#testrootpanel #qh').children().last().remove();
 			$('#testrootpanel #quescol').html('');
 			$('#testrootpanel #optcol').html('');
@@ -336,7 +323,7 @@ $(document).ready(function() {
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>                        
       </button>
-      <a class="navbar-brand" href="#">MMTC 全方位专业按摩培训</a>
+      <a class="navbar-brand" href="${pageContext.request.contextPath}/index">MMTC 全方位专业按摩培训</a>
     </div>
     <div class="collapse navbar-collapse" id="myNavbar">
       <ul class="nav navbar-nav navbar-right">
@@ -376,7 +363,7 @@ $(document).ready(function() {
         <p>Your time has expired. Press OK to end the exam.</p>
       </div>
       <div class="modal-footer">
-        <button id="endtestbtn" type="button" class="btn btn-default" data-dismiss="modal" >OK</button>
+        <button id="endtestbtn" type="button" class="btn btn-default" data-dismiss="modal"  onclick='window.location.replace("${pageContext.request.contextPath}/home");'>OK</button>
       </div>
     </div>
   </div>
@@ -399,7 +386,7 @@ $(document).ready(function() {
   </div>
 </div>
 <div class="row">
-<div class="col-sm-8"><!-- MARK --></div>
+<div class="col-sm-8"></div>
 <div class="col-sm-4">
 <!-- COUNTDOWN -->	
 <h4 style="text-align:right" id="rt">Time Remaining:00:00:00</h4>

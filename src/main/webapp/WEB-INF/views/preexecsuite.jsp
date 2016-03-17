@@ -10,47 +10,8 @@
 <script src="${pageContext.request.contextPath}/resources/js/jquery-2.1.4.min.js" type="text/javascript"></script>
 <script src="${pageContext.request.contextPath}/resources/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
 <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/css/style3.css">
 <style type="text/css">
-
-body {
-    font: 20px Montserrat, sans-serif;
-    line-height: 1.8;
-    color: #f5f6f7;
-}
-p {font-size: 16px;}
-.margin {margin-bottom: 45px;}
-.bg-1 { 
-    background-color: #1abc9c; /* Green */
-    color: #ffffff;
-}
-.bg-2 { 
-    background-color: #474e5d; /* Dark Blue */
-    color: #ffffff;
-}
-.bg-3 { 
-    background-color: #ffffff; /* White */
-    color: #555555;
-}
-.bg-4 { 
-    background-color: #2f2f2f; /* Black Gray */
-    color: #fff;
-}
-.container-fluid {
-    padding-top: 70px;
-    padding-bottom: 70px;
-}
-.navbar {
-    padding-top: 15px;
-    padding-bottom: 15px;
-    border: 0;
-    border-radius: 0;
-    margin-bottom: 0;
-    font-size: 12px;
-    letter-spacing: 5px;
-}
-.navbar-nav  li a:hover {
-    color: #1abc9c !important;
-}
 </style>
 <title>MMTC</title>
 </head>
@@ -64,7 +25,7 @@ p {font-size: 16px;}
 	        <span class="icon-bar"></span>
 	        <span class="icon-bar"></span>                        
 	      </button>
-	      <a class="navbar-brand" href="#">MMTC 全方位专业按摩培训</a>
+	      <a class="navbar-brand" href="${pageContext.request.contextPath}/index">MMTC 全方位专业按摩培训</a>
 	    </div>
 	    <div class="collapse navbar-collapse" id="myNavbar">
 	      <ul class="nav navbar-nav navbar-right">
@@ -76,7 +37,8 @@ p {font-size: 16px;}
 	</nav>
 <!--<mmtc:jsonparser></mmtc:jsonparser>-->
 <div class="container-fluid bg-3">
-<form:form method="POST" action="${s}?${_csrf.parameterName}=${_csrf.token}" commandName="ts" enctype="multipart/form-data"> 
+<form:form method="POST" action="${s}" commandName="ts" enctype="multipart/form-data"> 
+<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
 <div class="row">
 <div class="col-sm-12">
 <h3>Test Suite ${su} Options</h3>

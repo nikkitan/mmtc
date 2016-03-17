@@ -1280,7 +1280,6 @@ public class HomeController {
 			@RequestParam("et") Long et){
 		ModelAndView v = new ModelAndView();
 		logger.info(request.getRequestURL().toString());
-		SimpleDateFormat dateFmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");		
 
 		String sql = "SELECT pk FROM test_taking WHERE user_username=? "
 				+ "AND start_time = ? AND end_time=? AND testsuite_name=?";
@@ -1329,7 +1328,6 @@ public class HomeController {
 				int testTakingSerial = 0;
 				int origTestSerial = 0;
 				while(rs.next()){
-					//if(taking == null)
 					taking = null;
 					taking = new TestTaking();					
 					taking.setStuAns(rs.getString("stuans"));
@@ -1510,8 +1508,8 @@ public class HomeController {
 		public void run(){
 			Iterator<JsonElement> itor = tests.iterator();
 			JsonObject test = null;
-			String sql = "INSERT INTO test_taking_snapshot (stuans, test_taking_serial,test_taking_options,test_taking_pk,orig_test_serial)" 
-					+ " VALUES (?,?,?," + testTakingPK.toString() + ",?)";
+			String sql = "INSERT INTO test_taking_snapshot (stuans, test_taking_serial,test_taking_options,test_taking_pk,orig_test_serial,marked)" 
+					+ " VALUES (?,?,?," + testTakingPK.toString() + ",?,?)";
 			PreparedStatement prepStmt = null;
 			Connection conn = null;
 			try {
@@ -1542,9 +1540,14 @@ public class HomeController {
 					testOptions = test.getAsJsonArray("options").toString();
 					prepStmt.setString(3, testOptions);	
 					prepStmt.setInt(4, test.get("serialNo").getAsInt());
+					if(test.get("marked") != null){
+						prepStmt.setInt(5, test.get("marked").getAsBoolean() == true?1:0);
+					}else{
+						prepStmt.setInt(5, 0);						
+					}
 					prepStmt.addBatch();
 					
-					if(i!=0 && i%10 == 0){
+					/*if(i!=0 && i%10 == 0){
 						prepStmt.executeBatch();
 						conn.commit();
 						//conn.setAutoCommit(true);
@@ -1553,7 +1556,7 @@ public class HomeController {
 						//prepStmt.close();
 						//prepStmt = null;
 						//conn = null;
-					}					
+					}*/					
 				}	
 				//if(prepStmt != null
 				//		&& prepStmt.isClosed() == false){
@@ -1566,18 +1569,15 @@ public class HomeController {
 				conn.close();
 				
 			} catch (SQLException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 				try {
 					conn.rollback();
 				} catch (SQLException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 					logger.error("ROLLBACK of test taking data failed!");
 					try {
 						conn.close();
 					} catch (SQLException e2) {
-						// TODO Auto-generated catch block
 						e2.printStackTrace();
 						logger.error("Closing connection failed!");
 

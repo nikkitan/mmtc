@@ -10,56 +10,21 @@
 <script src="${pageContext.request.contextPath}/resources/js/jquery.highlight.js" type="text/javascript"></script>
 <script src="${pageContext.request.contextPath}/resources/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
 <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/css/style3.css">
 
 <style type="text/css">
-
-body {
-    font: 20px Montserrat, sans-serif;
-    line-height: 1.8;
-    color: #f5f6f7;
- 	-webkit-user-select: none;
-    -moz-user-select: -moz-none;
-    -ms-user-select: none;
-    user-select: none;
-}
-p {font-size: 16px;}
-.margin {margin-bottom: 45px;}
-.bg-1 { 
-    background-color: #1abc9c; /* Green */
-    color: #ffffff;
-}
-.bg-2 { 
-    background-color: #474e5d; /* Dark Blue */
-    color: #ffffff;
-}
-.bg-3 { 
-    background-color: #ffffff; /* White */
-    color: #555555;
-}
-.bg-4 { 
-    background-color: #2f2f2f; /* Black Gray */
-    color: #fff;
-}
-.container-fluid {
-    padding-top: 70px;
-    padding-bottom: 70px;
-}
-.navbar {
-    padding-top: 15px;
-    padding-bottom: 15px;
-    border: 0;
-    border-radius: 0;
-    margin-bottom: 0;
-    font-size: 12px;
-    letter-spacing: 5px;
-}
-.navbar-nav  li a:hover {
-    color: #1abc9c !important;
-}
-
 .highlight{
 	background-color: #FFFF88;
+	font-weight: bold;
 }
+p.marked{
+	color:orange;
+}
+
+p.notanswered{
+	color:red;
+}
+
 </style>
 <script type="text/javascript">
 function updateRemainingTime(endTime){
@@ -89,12 +54,10 @@ $(document).ready(function() {
 	var testStartTime = Date.now();//new Date();
 	window.localStorage.setItem('start_time',testStartTime);
 	var iii = 9;
-	console.log("[START]: " + testStartTime);	
+	//console.log("[START]: " + testStartTime);	
 	var endTime = testStartTime;
-	//console.log("[ENDTIME 1]: " + endTime);
 	var pauseTime;
 	var resumeTime;
-	//endTime.setSeconds(endTime.getSeconds() + 10);
 	endTime += 7200000;//endTime.setHours(endTime.getHours() + 2);
 	function updateTimer(){
 		//console.log("[updateTimer]: " + endTime);
@@ -142,7 +105,7 @@ $(document).ready(function() {
 	
 	//Prev test.
 	$('#prvbtn').on('click', function (e) {
-		if(curTest-1 > 0){
+		if(curTest-1 >= 0){
 			curTest -= 1;
 			showTest();
 		}
@@ -154,14 +117,16 @@ $(document).ready(function() {
 		curTest -= 1;
 		showTest();
 		window.location.replace("${pageContext.request.contextPath}/index");
-		//console.log("prev! " + curTest);
 	});
 	
 	//Review Btn.
 	$('#rvwbtn').on('click', function (e) {
-		$('#rvwModal').modal();
-		//console.log("prev! " + curTest);
-		
+		$('#rvwModal').modal();		
+	});
+	
+	//Mark checkbox.
+	$('#chekmark').on('click', function (e) {
+		p.tests[curTest].marked = $(this).prop('checked');
 	});
 	
 	//Submit.
@@ -184,7 +149,11 @@ $(document).ready(function() {
 	function genReviewTable(){
 		var review = "<div class=\"container-fluid col-md-12\"><div class=\"row\">";
 		var listPrefix = "<div class=\"list-group\">";
-		var itemPrefix = "<p class=\"list-group-item\">";
+		var markedPrefix = "<p class=\"marked\">";
+		var listGroupItemRowPrefix = "<div class=\"row list-group-item\">";
+		var listGroupItemCol1Prefix = "<div class=\"col-xs-6\">";
+		var listGroupItemCol2Prefix = "<div class=\"col-xs-6\">";
+		var itemPrefix = "<p ";
 		var itemSuffix = "</p>";
 		var divEndTag = "</div>";
 		var colPrefix = "<div class=\"col-md-2\">";
@@ -193,25 +162,44 @@ $(document).ready(function() {
 		var limit = p.tests.length;
 		for(var i = 0; i < limit; ++i){
 			if(i != 0 && i%20 == 0){
-				review += divEndTag;
-				review += divEndTag;				
+				review += divEndTag;//close list-group.
+				review += divEndTag;//close col-md-2.
 				review += colPrefix;
 				review += listPrefix;
+				review += listGroupItemRowPrefix;
+				review += listGroupItemCol1Prefix;
+			}else{
+				review += listGroupItemRowPrefix;
+				review += listGroupItemCol1Prefix;
 			}
-			
-			review += itemPrefix;
-			review += i+1;
-			review += ":";
-			if(p.tests[i].hasOwnProperty("taking")){
+			review += markedPrefix
+			if(p.tests[i].hasOwnProperty('marked')
+					&& p.tests[i].marked != 'undefined'){
+				review += 'M';
+			}
+			review += itemSuffix;
+			review += divEndTag;//close item col1;
+			review += listGroupItemCol2Prefix;
+			if(p.tests[i].hasOwnProperty("taking")
+					&& p.tests[i].taking != 'undefined'){
+				review += itemPrefix;
+				review += ">";
+				review += i+1;
+				review += ":";
 				review += p.tests[i].taking.stuans;				
 			}else{
+				review += itemPrefix;
+				review += "class=\"notanswered\">";
+				review += i+1;
+				review += ":";
 				review += "-";
 			}
-			review += itemSuffix;				
-
+			review += itemSuffix;
+			review += divEndTag;//close item col2.
+			review += divEndTag;//close item row.
 		}
-		review += divEndTag;
-		review += divEndTag;
+		review += divEndTag;//close row in modal.
+		review += divEndTag;//close root col in modal.
 		return review;
 	}
 	//Review Modal
@@ -263,15 +251,18 @@ $(document).ready(function() {
 	function showTest(){
 		if(curTest > -1 && curTest < total){
 			$('#testrootpanel #qh').children().last().remove();
-			//$('#testrootpanel #qthb').children().last().remove();
-			//$('#testrootpanel #ques').children().last().remove();
 			$('#testrootpanel #quescol').html('');
 			$('#testrootpanel #optcol').html('');
 			$('#testrootpanel #ansrow #anscol #answell').html('');
 			$('#ansrow #anscol #answell').addClass('hidden');
 			$('#testrootpanel #ansbtn').html('Show Answer');
+			$('#chekmark').prop('checked',false);
+			if(p.tests[curTest].hasOwnProperty('marked')
+				&& typeof p.tests[curTest].marked != 'undefined'){
+				$('#chekmark').prop('checked',p.tests[curTest].marked);
+			}
 			var curSN = curTest + 1;
-			$('#testrootpanel #qh').append("<h4>Item " + curSN + " of "+ total +"</h4>");
+			$('#testrootpanel #qh').append("<label>Item " + curSN + " of "+ total +"</label>");
 			if(typeof p.tests[curTest].pic != 'undefined'){
 				$('#testrootpanel #quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[curTest].pic+ "\"/></div>")
 				$('#testrootpanel #quescol').append("<div class=\"caption\" id=\"ques\"><h4>" + p.tests[curTest].question[0] + "</h4>");
@@ -361,7 +352,7 @@ $(document).ready(function() {
         <p>Your time has expired. Press OK to end the exam.</p>
       </div>
       <div class="modal-footer">
-        <button id="endtestbtn" type="button" class="btn btn-default" data-dismiss="modal" >OK</button>
+        <button id="endtestbtn" type="button" class="btn btn-default" data-dismiss="modal" onclick='window.location.replace("${pageContext.request.contextPath}/home");' >OK</button>
       </div>
     </div>
   </div>
@@ -385,7 +376,10 @@ $(document).ready(function() {
 </div>
 <form:form id="myform" method="POST" action="${pageContext.request.contextPath}/submitans?${_csrf.parameterName}=${_csrf.token}"> 
 <div class="row">
-<div class="col-sm-8"><!-- MARK --></div>
+<div class="col-sm-8">
+<!-- MARK -->
+<h4><input id="chekmark" type="checkbox" style="margin-right:10px;">Mark</h4>
+</div>
 <div class="col-sm-4">
 <!-- COUNTDOWN -->	
 <h4 style="text-align:right" id="rt">Time Remaining:00:00:00</h4>

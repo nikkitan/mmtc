@@ -9,6 +9,7 @@
 <script src="${pageContext.request.contextPath}/resources/js/jquery-2.1.4.min.js" type="text/javascript"></script>
 <script src="${pageContext.request.contextPath}/resources/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
 <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/css/style3.css">
 <title>Login Page</title>
 <style>
 .error {
@@ -40,45 +41,6 @@
 	border: 1px solid #000;
 }
 
-body {
-    font: 20px Montserrat, sans-serif;
-    line-height: 1.8;
-    color: #f5f6f7;
-}
-p {font-size: 16px;}
-.margin {margin-bottom: 45px;}
-.bg-1 { 
-    background-color: #1abc9c; /* Green */
-    color: #ffffff;
-}
-.bg-2 { 
-    background-color: #474e5d; /* Dark Blue */
-    color: #ffffff;
-}
-.bg-3 { 
-    background-color: #ffffff; /* White */
-    color: #555555;
-}
-.bg-4 { 
-    background-color: #2f2f2f; /* Black Gray */
-    color: #fff;
-}
-.container-fluid {
-    padding-top: 70px;
-    padding-bottom: 70px;
-}
-.navbar {
-    padding-top: 15px;
-    padding-bottom: 15px;
-    border: 0;
-    border-radius: 0;
-    margin-bottom: 0;
-    font-size: 12px;
-    letter-spacing: 5px;
-}
-.navbar-nav  li a:hover {
-    color: #1abc9c !important;
-}
 </style>
 </head>
 <body onload='document.loginForm.username.focus();'>
@@ -91,12 +53,12 @@ p {font-size: 16px;}
 	        <span class="icon-bar"></span>
 	        <span class="icon-bar"></span>                        
 	      </button>
-	      <a class="navbar-brand" href="#">MMTC 全方位专业按摩培训</a>
+	      <a class="navbar-brand" href="${pageContext.request.contextPath}/index">MMTC 全方位专业按摩培训</a>
 	    </div>
 	    <div class="collapse navbar-collapse" id="myNavbar">
 	      <ul class="nav navbar-nav navbar-right">
 	        <li><a href="${pageContext.request.contextPath}/index">Home</a></li>
-	        <li><a href="${pageContext.request.contextPath}/newuser">SignUp</a></li>
+	        <li><a id="signup" class="btn btn-danger" href="${pageContext.request.contextPath}/adduser">Sign Up</a></li>
 	      </ul>
 	    </div>
 	  </div>
@@ -127,7 +89,6 @@ p {font-size: 16px;}
 						<input type='password' id="pwFiled" class="form-control" name='password' placeholder="Your Password"/>
 					</div>
 						<button type="submit" name="submit" class="btn btn-primary">Submit</button>
-						<a href="${pageContext.request.contextPath}/login?newu" class="btn btn-default">Register</a>
 					<!--  <input name="submit" type="submit" value="Submit" /> 
 					<a href="${pageContext.request.contextPath}/login?newu">Create New Account</a>-->
 		
