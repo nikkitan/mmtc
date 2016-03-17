@@ -8,49 +8,11 @@
 <script src="${pageContext.request.contextPath}/resources/js/jquery-2.1.4.min.js" type="text/javascript"></script>
 <script src="${pageContext.request.contextPath}/resources/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
 <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/css/style3.css">
+
 <title>MMTC</title>
 <style>
-  body {
-      font: 20px Montserrat, sans-serif;
-      line-height: 1.8;
-      color: #f5f6f7;
-  }
-  p {font-size: 16px;}
-  .margin {margin-bottom: 45px;}
-  .bg-1 { 
-      background-color: #1abc9c; /* Green */
-      color: #ffffff;
-  }
-  .bg-2 { 
-      background-color: #474e5d; /* Dark Blue */
-      color: #ffffff;
-  }
-  .bg-3 { 
-      background-color: #ffffff; /* White */
-      color: #555555;
-  }
-  .bg-4 { 
-      background-color: #2f2f2f; /* Black Gray */
-      color: #fff;
-  }
-  .container-fluid {
-      padding-top: 70px;
-      padding-bottom: 70px;
-  }
-  .navbar {
-      padding-top: 15px;
-      padding-bottom: 15px;
-      border: 0;
-      border-radius: 0;
-      margin-bottom: 0;
-      font-size: 12px;
-      letter-spacing: 2px;
-  }
-  .navbar-nav  li a:hover {
-      color: #1abc9c !important;
-  }
-
-  </style>
+</style>
 </head>
 <body>
 
@@ -68,7 +30,7 @@
     <div class="collapse navbar-collapse" id="myNavbar">
       <ul class="nav navbar-nav navbar-right">
         <li><a href="${pageContext.request.contextPath}/login">Log in</a></li>
-        <li><a href="#" class="btn navbar-btn btn-signup">Sign Up</a></li>
+        <li><a href="${pageContext.request.contextPath}/adduser" id="signup" class="btn btn-signup">Sign Up</a></li>
       </ul>
     </div>
   </div>
@@ -76,34 +38,34 @@
 
 <!-- First Container -->
 <div class="container-fluid bg-1 text-center">
-  <h3 class="margin">Welcome to MMTC! 加州最大按摩职照培训中心！</h3>
+  <h3 class="margin">Welcome to MMTC! 加州最大按摩职照培训中心！(這裡會放照片跑馬燈)</h3>
   <!-- <img src="bird.jpg" class="imgresponsive img-circle margin" style="display:inline" alt="Bird" width="350" height="350">
   <h3>I'm an adventurer</h3> -->
 </div>
 
 <!-- Second Container -->
 <div class="container-fluid bg-2 text-center">
-  <h3 class="margin">What Am I?</h3>
-  <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. </p>
-  <a href="#" class="btn btn-default btn-lg">
+  <h3 class="margin">Our Services</h3>
+  <p>這裡要放業務流程（希望有插圖）</p>
+  <!-- <a href="#" class="btn btn-default btn-lg">
     <span class="glyphicon glyphicon-search"></span> Search
-  </a>
+  </a> -->
 </div>
 
 <!-- Third Container (Grid) -->
 <div class="container-fluid bg-3 text-center">    
-  <h3 class="margin">Where To Find Me?</h3><br>
+  <h3 class="margin">Hear what our students say</h3><br>
   <div class="row">
     <div class="col-sm-4">
-      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+      <p>（學生實例1）</p>
       <!--  <img src="birds1.jpg" class="img-responsive margin" style="width:100%" alt="Image">-->
     </div>
     <div class="col-sm-4"> 
-      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+      <p>（學生實例2）</p>
       <!-- <img src="birds2.jpg" class="img-responsive margin" style="width:100%" alt="Image">  -->
     </div>
     <div class="col-sm-4"> 
-      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+      <p>（學生實例3）</p>
       <!--  <img src="birds3.jpg" class="img-responsive margin" style="width:100%" alt="Image"> -->
     </div>
   </div>

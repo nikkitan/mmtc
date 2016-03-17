@@ -135,7 +135,9 @@ public class MMTCCtxListener extends ContextLoaderListener {
 	@Override
 	public void contextInitialized(ServletContextEvent event){
 		super.contextInitialized(event);
+		logger.info("[contextInitialized].");
 		if(DEBUG == false){
+			logger.info("[DEBUG]: " + DEBUG.toString());
 			DriverManagerDataSource dataSource = 
 					new DriverManagerDataSource(
 							"jdbc:mysql://mmtc-db-dev.cjmff6hkiqpv.us-west-2.rds.amazonaws.com:3306/mmtc?autoReconnect=true",
