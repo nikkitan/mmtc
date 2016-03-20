@@ -65,7 +65,7 @@
 	    </div>
 	
 	    <div class="item">
-	      <img src="${pageContext.request.contextPath}/resources/pic/empty.jpg" alt="More pics coming">
+	      <img src="${pageContext.request.contextPath}/resources/pic/Virginia.jpg" alt="Virginia">
 	    </div>
 	  </div>
 
