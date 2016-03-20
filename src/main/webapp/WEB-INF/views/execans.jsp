@@ -152,7 +152,7 @@ $(document).ready(function() {
 	function genReviewTable(){
 		var review = "<div id=\"rvwmodalcol\" class=\"container-fluid col-md-12\"><div class=\"row\">";
 		var listPrefix = "<div class=\"list-group\">";
-		var itemPrefix = "<p ";//class=\"list-group-item\" ";
+		var itemPrefix = "<p ";
 		var itemSuffix = "</p>";
 		var divEndTag = "</div>";
 		var colPrefix = "<div class=\"col-md-2\">";

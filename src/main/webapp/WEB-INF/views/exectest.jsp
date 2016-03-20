@@ -226,6 +226,7 @@ $(document).ready(function() {
 				var kwds = p.tests[curTest].kwds;
 				$("#ansrow #anscol #answell").append("Keyword: " + kwds + "<br>");
 				for(var i = 0; i < kwds.length; i+=2){
+					$("#ansrow #anscol #answell").highlight(kwds[i]);
 					$('#testrootpanel #quescol #ques').highlight(kwds[i]);
 					$('#testrootpanel #optcol .radio .radiobtnopt').highlight(kwds[i]);					
 				}
@@ -374,7 +375,7 @@ $(document).ready(function() {
     </div>
   </div>
 </div>
-<form:form id="myform" method="POST" action="${pageContext.request.contextPath}/submitans?${_csrf.parameterName}=${_csrf.token}"> 
+<form:form id="myform" method="POST" action="${pageContext.request.contextPath}/submitans"> 
 <div class="row">
 <div class="col-sm-8">
 <!-- MARK -->
@@ -424,6 +425,7 @@ $(document).ready(function() {
 <!-- pause,end exam -->
 <button id="paubtn" type="button" data-toggle="modal" data-target="#pauModal">Pause</button>
 <input type="hidden" name="tests" />
+<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
 <input type="submit" value="Submit" id="sbtbtn"/> 
 </div>
 </div>

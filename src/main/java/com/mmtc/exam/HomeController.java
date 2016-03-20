@@ -254,10 +254,15 @@ public class HomeController {
 			HttpServletRequest request, 
 			HttpServletResponse response){
 		logger.info(request.getRequestURL().toString());
-		logger.info("[GOT_TS] " + ts.getName());
-		//ArrayList<String> suites = getTestSuites();	
-		
-        return new ModelAndView("listtest","tests",getTestsForSuite(ts.getName()));
+		ArrayList<Test> tests = getTestsForSuite(ts.getName());
+		JsonObject jSuite = new JsonObject();
+		jSuite.addProperty("suite", ts.getName());
+		Gson gson = new Gson();
+		JsonArray jTests = (JsonArray)gson.toJsonTree(tests, new TypeToken<ArrayList<Test>>(){}.getType());
+		jSuite.add("tests", jTests);
+		String strJ = gson.toJson(jSuite).replace("\\", "\\\\");
+		request.setAttribute("tests",strJ);
+		return new ModelAndView("execedit");
 	}
 
 	@RequestMapping(value = "/edittest/{tid}", method = RequestMethod.GET)
@@ -794,30 +799,7 @@ public class HomeController {
         
 		
     }
-	
-	/*
-	 * {
-  "suite" : "A",
-  "tests": [
-    {
-      "q":"",
-      "opt":[],
-      "ans":[],
-      "kwd":[],
-      "p":"",
-      "cursel":""
-    },
-    {
-      "q":"",
-      "opt":[],
-      "ans":[],
-      "kwd":[],
-      "p":"",
-      "cursel":""     
-    }
-  ]
-}
-	 * */
+
 	@RequestMapping(value = "/runsuite/{s}", method = RequestMethod.GET)
 	public @ResponseBody ModelAndView runSuiteGET(
 			Locale locale, 
@@ -858,19 +840,6 @@ public class HomeController {
 				 r = random.nextInt(i);
 				 lastUnStruck = tests.get(i);
 				 randomPickTest = tests.get(r);
-				 /*
-				 fullQues = lastUnStruck.getQuestion();
-				 dotPos = fullQues.indexOf(".");
-				 if(dotPos != -1){
-					 String ques = fullQues.substring(dotPos);
-					 fullQues = String.valueOf(r+1) + ques;
-				 }else{
-					 logger.error("[runSuitePOST]: Found question not beginning with serial!");
-					 //Make it right: random + "." + question.
-					 fullQues = String.valueOf(r+1) + "." + fullQues;					 
-				 }				 
-				 lastUnStruck.setQuestion(fullQues);
-				 */
 				 JsonArray jArrQuestion = randomPickTest.getQuestion();
 				 fullQues = jArrQuestion.get(0).getAsString();
 				 dotPos = fullQues.indexOf(".");
@@ -1163,7 +1132,6 @@ public class HomeController {
 	//https://www.owasp.org/index.php/Using_the_Java_Cryptographic_Extensions
 	private String encrypt(String key, String secret2Encrypt){
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-	    String curUser = auth.getName();
 	    MessageDigest md = null;
 		byte[] iv = new byte[AES_KEYLENGTH / 8];	// Save the IV bytes or send it in plaintext with the encrypted data so you can decrypt the data later
 	    try {
