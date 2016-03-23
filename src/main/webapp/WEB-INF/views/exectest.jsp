@@ -215,47 +215,49 @@ $(document).ready(function() {
 	//Show/Hide answer.
 	$('#ansbtn').on('click', function (e) {
 		//.log("answer!" + curTest);
+		var answell = $('#answell');
 		if($(this).html() == "Show Answer"){
 			$(this).html("Hide Answer");
-			$('#ansrow #anscol #answell').removeClass('hidden');
+			answell.removeClass('hidden');
 			if(typeof p.tests[curTest].answers != 'undefined'){
-				$("#ansrow #anscol #answell").append("Answer:"+ p.tests[curTest].answers[0] + "<br>");
+				answell.append("Answer:"+ p.tests[curTest].answers[0] + "<br>");
 			}
 
 			if(typeof p.tests[curTest].kwds != 'undefined'){
 				var kwds = p.tests[curTest].kwds;
-				$("#ansrow #anscol #answell").append("Keyword: " + kwds + "<br>");
+				answell.append("Keyword: " + kwds + "<br>");
 				for(var i = 0; i < kwds.length; i+=2){
-					$("#ansrow #anscol #answell").highlight(kwds[i]);
-					$('#testrootpanel #quescol #ques').highlight(kwds[i]);
-					$('#testrootpanel #optcol .radio .radiobtnopt').highlight(kwds[i]);					
+					answell.highlight(kwds[i]);
+					$('#ques').highlight(kwds[i]);
+					$('#optcol .radio .radiobtnopt').highlight(kwds[i]);					
 				}
 			}
 			
 			
 			if(typeof p.tests[curTest].watchword != 'undefined'){
-				$("#ansrow #anscol #answell").append("Watchword:"+ p.tests[curTest].watchword + "<br>");
+				answell.append("Watchword:"+ p.tests[curTest].watchword + "<br>");
 			}
 			
 			if(typeof p.tests[curTest].tips != 'undefined'){
-				$("#ansrow #anscol #answell").append("Tips:"+ p.tests[curTest].tips);
+				answell.append("Tips:"+ p.tests[curTest].tips);
 			}
 
 		}else{
 			$(this).html("Show Answer");
-			$("#ansrow #anscol #answell").html('');
-			$('#ansrow #anscol #answell').addClass('hidden');
+			answell.html('');
+			answell.addClass('hidden');
 		}
 	});	
 	
 	//Display tests.
 	function showTest(){
 		if(curTest > -1 && curTest < total){
-			$('#testrootpanel #qh').children().last().remove();
-			$('#testrootpanel #quescol').html('');
-			$('#testrootpanel #optcol').html('');
-			$('#testrootpanel #ansrow #anscol #answell').html('');
-			$('#ansrow #anscol #answell').addClass('hidden');
+			$('#qh').children().last().remove();
+			$('#quescol').html('');
+			$('#optcol').html('');
+			var answell = $('#answell');
+			answell.html('');
+			answell.addClass('hidden');
 			$('#testrootpanel #ansbtn').html('Show Answer');
 			$('#chekmark').prop('checked',false);
 			if(p.tests[curTest].hasOwnProperty('marked')
@@ -263,12 +265,12 @@ $(document).ready(function() {
 				$('#chekmark').prop('checked',p.tests[curTest].marked);
 			}
 			var curSN = curTest + 1;
-			$('#testrootpanel #qh').append("<label>Item " + curSN + " of "+ total +"</label>");
+			$('#qh').append("<label>Item " + curSN + " of "+ total +"</label>");
 			if(typeof p.tests[curTest].pic != 'undefined'){
-				$('#testrootpanel #quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[curTest].pic+ "\"/></div>")
-				$('#testrootpanel #quescol').append("<div class=\"caption\" id=\"ques\"><h4>" + p.tests[curTest].question[0] + "</h4>");
+				$('#quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[curTest].pic+ "\"/></div>")
+				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h4>" + p.tests[curTest].question[0] + "</h4>");
 			}else{
-				$('#testrootpanel #quescol').append("<div class=\"caption\" id=\"ques\"><h4>" 
+				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h4>" 
 						+ p.tests[curTest].question[0] +"</h4></div>")
 			}
 			var opts = p.tests[curTest].options;
@@ -277,14 +279,14 @@ $(document).ready(function() {
 				var id = "opt" + i;
 				if(typeof p.tests[curTest].taking != 'undefined'){
 					if(p.tests[curTest].taking.stuans == opt.charAt(0)){
-						$('#testrootpanel #optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
+						$('#optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
 							+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\" checked>" + opt + "</label></div>");
 					}else{
-						$('#testrootpanel #optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
+						$('#optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
 								+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\">" + opt + "</label></div>");			
 					}
 				}else{
-					$('#testrootpanel #optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
+					$('#optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
 							+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\">" + opt + "</label></div>");
 				}
 				$('input[name="optradio"]').on('click',
@@ -313,7 +315,7 @@ $(document).ready(function() {
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>                        
       </button>
-      <a class="navbar-brand" href="#">MMTC 全方位专业按摩培训</a>
+      <a class="navbar-brand" href="${pageContext.request.contextPath}/index">MMTC 全方位专业按摩培训</a>
     </div>
     <div class="collapse navbar-collapse" id="myNavbar">
       <ul class="nav navbar-nav navbar-right">

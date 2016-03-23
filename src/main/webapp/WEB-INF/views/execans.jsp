@@ -178,14 +178,10 @@ $(document).ready(function() {
 					&& typeof p.tests[i].taking.stuAns != 'undefined'){
 				if(p.tests[i].taking.stuAns != p.tests[i].answers[0]){
 					review += "class=\"list-group-item wrongans\">";
-					console.log("WRONG ans: " + review);
-
 					review += i+1;
 					review += ":";
 					review += p.tests[i].taking.stuAns;				
 				}else{
-					console.log("GOOD ans: " + p.tests[i].taking.stuAns);
-
 					review += "class=\"list-group-item correctans\">";
 					review += i+1;
 					review += ":";

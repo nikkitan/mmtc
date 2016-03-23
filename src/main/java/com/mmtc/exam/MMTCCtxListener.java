@@ -14,6 +14,7 @@ import org.apache.tomcat.jdbc.pool.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jndi.JndiObjectFactoryBean;
 import org.springframework.web.context.ContextLoaderListener;
@@ -31,7 +32,12 @@ public class MMTCCtxListener extends ContextLoaderListener {
 	private static final Logger logger = LoggerFactory.getLogger(MMTCCtxListener.class);
 	@Autowired
 	private JndiObjectFactoryBean jndiObjFactoryBean;		
-	
+	@Value("${mysql.url}")
+	private String defaultDb;
+	@Value("${mysql.username}")
+	private String dbUser;
+	@Value("${mysql.password}")
+	private String dbPW;
 	private class S3DownloadThread extends Thread{
 		
 		private String obj;
@@ -52,9 +58,7 @@ public class MMTCCtxListener extends ContextLoaderListener {
 			}
 			if(dlObj == null){
 				logger.info("[S3DoWNload] NULL=> " + obj);
-			}else{
-				//save to /resources/pic.
-				
+			}else{				
 				S3ObjectInputStream dlStream = dlObj.getObjectContent();
                 int totalBytesRead = 0;
                 Long blen = dlObj.getObjectMetadata().getContentLength();
@@ -137,11 +141,10 @@ public class MMTCCtxListener extends ContextLoaderListener {
 		super.contextInitialized(event);
 		logger.info("[contextInitialized].");
 		if(DEBUG == false){
-			logger.info("[DEBUG]: " + DEBUG.toString());
 			DriverManagerDataSource dataSource = 
 					new DriverManagerDataSource(
-							"jdbc:mysql://mmtc-db-dev.cjmff6hkiqpv.us-west-2.rds.amazonaws.com:3306/mmtc?autoReconnect=true",
-							"root","mysqlmmtc(6454)");
+							defaultDb,
+							dbUser,dbPW);
 	
 			ArrayList<String> pics = null;
 			try {

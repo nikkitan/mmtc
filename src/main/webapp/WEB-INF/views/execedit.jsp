@@ -35,9 +35,31 @@ input[name="opt"]{
 	width:100%;
 }
 
+label[for="chekedit"]{
+	font-weight: normal;
+}
+
+#nxtbtn.notorig{
+	margin-left:6px;
+	margin-right:6px;
+}
+
+#delbtn.notorig{
+	margin-right:6px;
+}
 </style>
 <script type="text/javascript">
-//$(document).on("contextmenu", function (event) { event.preventDefault(); });
+$(document).on("contextmenu", function (event) { event.preventDefault(); });
+var delBtn = '<button id="delbtn" class="notorig" type="button">Delete</button>';
+var newBtn = '<button id="newbtn" class="notorig" type="button">New</button>';
+var prvBtn = '<button type="button" class="notorig" id="prvbtn">Prev</button>';
+var nxtBtn = '<button type="button" class="notorig" id="nxtbtn">Next</button>';
+var rvwBtn = '<button type="button" class="notorig" id="rvwbtn">Review</button>';
+var sbtBtn = '<input type="submit" value="Submit" id="sbtbtn"/>';
+var view = 'v';
+var edit = 'e';
+var curMode = view;
+var curDom;
 $(document).ready(function() {
 	//Get and save in JSON.
 	<% String origTest=(String)request.getAttribute("tests");%>
@@ -51,7 +73,7 @@ $(document).ready(function() {
 	$('#nxtbtn').on('click', function (e) {
 		if(curTest + 1 < p.tests.length){
 			curTest += 1;
-			ToggleTestApperance();
+			showTest4View();
 		}
 	});	
 	
@@ -59,7 +81,7 @@ $(document).ready(function() {
 	$('#prvbtn').on('click', function (e) {
 		if(curTest-1 >= 0){
 			curTest -= 1;
-			ToggleTestApperance();
+			showTest4View();
 		}
 	});
 	
@@ -67,7 +89,7 @@ $(document).ready(function() {
 	//TimeOut End test.
 	$('#endtestbtn').on('click', function (e) {
 		curTest -= 1;
-		ToggleTestApperance();
+		showTest4View();
 		window.location.replace("${pageContext.request.contextPath}/index");
 	});
 	
@@ -76,16 +98,78 @@ $(document).ready(function() {
 		$('#rvwModal').modal();		
 	});
 	
+	//Delete Test Btn.
+	$('#delbtn').on('click', function (e) {
+		$('#rvwModal').modal();		
+	});
+		
+	//New Test Btn.
+	$('#newbtn').on('click', function (e) {
+		p.tests.splice(curTest,0,{"dirty":true,"isnew":true,"serialNo":curTest});
+		window.localStorage.setItem("tests",JSON.stringify(p));
+		showTest4Edit();
+	});
+	
+	
 	//Ans <p> in Review Modal.
 	$('#rvwModal').on('hide.bs.modal', function (e) {
 		curTest = parseInt(window.localStorage.getItem('modelsel'));
-		ToggleTestApperance();
+		showTest4View();
 	});	
 	
 	//Mark checkbox.
 	$('#chekedit').on('click', function (e) {
-		p.tests[curTest].dirty = $(this).prop('checked');
-		ToggleTestApperance();
+		p.tests[curTest].dirty = true;
+		if(curMode == view){
+			curMode = edit;
+			showTest4Edit();
+		}else{
+			curDom = $('#prvnxtrvwdiv');
+			curDom.append(prvBtn);
+			curDom.children().last().on('click', function (e) {
+				if(curTest-1 >= 0){
+					curTest -= 1;
+					showTest4View();
+				}
+			});
+			curDom.append(nxtBtn);
+			curDom.children().last().on('click', function (e) {
+				if(curTest + 1 < p.tests.length){
+					curTest += 1;
+					showTest4View();
+				}
+			});
+			curDom.append(rvwBtn);
+			curDom.children().last().on('click', function (e) {
+				$('#rvwModal').modal();		
+			});
+			curDom = $('#delnewdiv');
+			curDom.append(delBtn);
+			curDom.append(newBtn);
+			curDom.children().last().on('click', function (e) {
+				p.tests.splice(curTest,0,{"dirty":true,"isnew":true,"serialNo":curTest});
+				window.localStorage.setItem("tests",JSON.stringify(p));
+				showTest4Edit();
+			});
+			curDom = $('#sbtdiv');
+			curDom.append(sbtBtn).on('click', function (e) {
+				p.user = "${pageContext.request.userPrincipal.name}";
+				testStartTime = window.localStorage.getItem('start_time');
+				var curDate = new Date();
+				p.end = Date.now();//Date.parse(curDate);
+				p.beg = testStartTime;//Date.parse(testStartTime);
+				//p.testdur = (Date.parse(curDate) - Date.parse(testStartTime))/1000;
+				console.log("s: " + testStartTime);
+				console.log("c: " + curDate);
+				console.log(Date.parse(curDate));
+				console.log(Date.parse(testStartTime));
+				console.log((Date.parse(curDate) - Date.parse(testStartTime))/1000);
+				$('input[name="tests"]').attr("value",JSON.stringify(p));
+				clearInterval(timerIntervalObj);
+			});
+			curMode = view;
+			showTest4View();
+		}
 	});
 	
 	//Submit.
@@ -106,8 +190,12 @@ $(document).ready(function() {
 	});	
 	
 	function genReviewTable(){
-		var review = "<div id=\"rvwmodalcol\" class=\"container-fluid col-md-12\"><div class=\"row\">";
+		var review = "<div class=\"container-fluid col-md-12\"><div class=\"row\">";
 		var listPrefix = "<div class=\"list-group\">";
+		var markedPrefix = "<p class=\"marked\">";
+		var listGroupItemRowPrefix = "<div class=\"row list-group-item\">";
+		var listGroupItemCol1Prefix = "<div class=\"col-xs-6\">";
+		var listGroupItemCol2Prefix = "<div class=\"col-xs-6\">";
 		var itemPrefix = "<p ";
 		var itemSuffix = "</p>";
 		var divEndTag = "</div>";
@@ -117,49 +205,46 @@ $(document).ready(function() {
 		var limit = p.tests.length;
 		for(var i = 0; i < limit; ++i){
 			if(i != 0 && i%20 == 0){
-				review += divEndTag;
-				review += divEndTag;				
+				review += divEndTag;//close list-group.
+				review += divEndTag;//close col-md-2.
 				review += colPrefix;
 				review += listPrefix;
-			}
-			
-			review += itemPrefix;
-			review += "id=\"";
-			review += i;
-			review += "\" onclick='window.localStorage.setItem(\"modelsel\","+i+"); $(\"#rvwModal\").modal(\"hide\");' ";
-
-			
-			if(p.tests[i].hasOwnProperty("taking")
-					&& typeof p.tests[i].taking != 'undefined'
-					&& typeof p.tests[i].taking.stuAns != 'undefined'){
-				if(p.tests[i].taking.stuAns != p.tests[i].answers[0]){
-					review += "class=\"list-group-item wrongans\">";
-					console.log("WRONG ans: " + review);
-
-					review += i+1;
-					review += ":";
-					review += p.tests[i].taking.stuAns;				
-				}else{
-					console.log("GOOD ans: " + p.tests[i].taking.stuAns);
-
-					review += "class=\"list-group-item correctans\">";
-					review += i+1;
-					review += ":";
-					review += p.tests[i].taking.stuAns;
-				}
+				review += listGroupItemRowPrefix;
+				review += listGroupItemCol1Prefix;
 			}else{
-				console.log("NO ans: ");
-
-				review += "class=\"list-group-item wrongans\">";
+				review += listGroupItemRowPrefix;
+				review += listGroupItemCol1Prefix;
+			}
+			review += markedPrefix
+			if(p.tests[i].hasOwnProperty('dirty')
+					&& p.tests[i].dirty != 'undefined'){
+				review += 'E';
+			}
+			review += itemSuffix;
+			review += divEndTag;//close item col1;
+			review += listGroupItemCol2Prefix;
+			if(p.tests[i].hasOwnProperty("taking")
+					&& p.tests[i].taking != 'undefined'){
+				review += itemPrefix;
+				review += "\" onclick='window.localStorage.setItem(\"modelsel\","+i+"); $(\"#rvwModal\").modal(\"hide\");' ";
+				review += ">";
 				review += i+1;
-				review += ":";				
+				review += ":";
+				review += p.tests[i].taking.stuans;				
+			}else{
+				review += itemPrefix;
+				review += "\" onclick='window.localStorage.setItem(\"modelsel\","+i+"); $(\"#rvwModal\").modal(\"hide\");' ";
+				review += "class=\"notanswered\">";
+				review += i+1;
+				review += ":";
 				review += "-";
 			}
-			review += itemSuffix;				
-
+			review += itemSuffix;
+			review += divEndTag;//close item col2.
+			review += divEndTag;//close item row.
 		}
-		review += divEndTag;
-		review += divEndTag;
+		review += divEndTag;//close row in modal.
+		review += divEndTag;//close root col in modal.
 		return review;
 	}
 	//Review Modal
@@ -170,144 +255,139 @@ $(document).ready(function() {
 	  modal.find('.modal-body').html(genReviewTable());
 	})
 
-	//Show/Hide answer.
-	$('#ansbtn').on('click', function (e) {
-		//.log("answer!" + curTest);
-		if($(this).html() == "Show Answer"){
-			$(this).html("Hide Answer");
-			$('#ansrow #anscol #answell').removeClass('hidden');
-			if(typeof p.tests[curTest].answers != 'undefined'){
-				$("#ansrow #anscol #answell").append("Answer:"+ p.tests[curTest].answers[0] + "<br>");
-			}
 
-			if(typeof p.tests[curTest].kwds != 'undefined'){
-				var kwds = p.tests[curTest].kwds;
-				$("#ansrow #anscol #answell").append("Keyword: " + kwds + "<br>");
-				for(var i = 0; i < kwds.length; i+=2){
-					$('#testrootpanel #quescol #ques').highlight(kwds[i]);
-					$('#testrootpanel #optcol .radio .radiobtnopt').highlight(kwds[i]);					
-				}
-			}
-			
-			
-			if(typeof p.tests[curTest].watchword != 'undefined'){
-				$("#ansrow #anscol #answell").append("Watchword:"+ p.tests[curTest].watchword + "<br>");
-			}
-			
-			if(typeof p.tests[curTest].tips != 'undefined'){
-				$("#ansrow #anscol #answell").append("Tips:"+ p.tests[curTest].tips);
-			}
-
-		}else{
-			$(this).html("Show Answer");
-			$("#ansrow #anscol #answell").html('');
-			$('#ansrow #anscol #answell').addClass('hidden');
-		}
-	});	
-	//En/Disable all text inputs.
-	function ToggleTestApperance(){
-		if(p.tests[curTest].dirty == true){
-			showTest4Edit();
-		}else{
-			showTest4View();
-		}
-	}
 	//Display tests.
 	function showTest4Edit(){
 		if(curTest > -1 && curTest < total){
-			$('#testrootpanel #qh').children().last().remove();
-			$('#testrootpanel #quescol').html('');
-			$('#testrootpanel #optcol').html('');
-			$('#testrootpanel #ansrow #anscol #answell').html('');
-			$('#testrootpanel #ansrow #anscol #answell').removeClass('hidden');
-			$('#chekmark').prop('checked',false);
-			if(p.tests[curTest].hasOwnProperty('marked')
-				&& typeof p.tests[curTest].marked != 'undefined'){
-				$('#chekmark').prop('checked',p.tests[curTest].marked);
+			console.log('[show4Edit]');
+			$('#prvnxtrvwdiv').html('');
+			$('#delnewdiv').html('');
+			$('#sbtdiv').html('');
+			$('#qh').children().last().remove();
+			$('#quescol').html('');
+			$('#optcol').html('');
+			var answell = $('#answell');
+			answell.html('');
+			answell.removeClass('hidden');
+			if(p.tests[curTest].hasOwnProperty('dirty')
+				&& typeof p.tests[curTest].dirty != 'undefined'){
+				$('#chekedit').prop('checked',p.tests[curTest].dirty);
+				$('label[for="chekedit"]').text('Uncheck to finalize editing.');
 			}
 			var curSN = curTest + 1;
-			$('#testrootpanel #qh').append("<label>Item " + curSN + " of "+ total +"</label>");
-			if(typeof p.tests[curTest].pic != 'undefined'){
-				$('#testrootpanel #quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[curTest].pic+ "\"/></div>");
-				$('#testrootpanel #quescol').append("<div class=\"caption\" id=\"ques\"><h4>" + p.tests[curTest].question[0] + "</h4>");
+			$('#qh').append("<label>Item " + curSN + " of "+ total +"</label>");
+			
+			$('#quescol').append("<div class=\"thumbnail\" id=\"qthb\"><label for=\"pic_input\"><img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[curTest].pic+ "\"/></label><input id=\"pic_input\" type=\"file\" name=\"file\"/></div>");	
+			
+			if(typeof p.tests[curTest].question != 'undefined'){
+				$('#quescol').append("<textarea id=\"ques\" class=\"form-control\">" + p.tests[curTest].question[0] + "</textarea>");
 			}else{
-				$('#testrootpanel #quescol').append("<div class=\"thumbnail\" id=\"qthb\"><label for=\"pic_input\"><img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[curTest].pic+ "\"/></label><input id=\"pic_input\" type=\"file\" name=\"file\"/></div>");	
-				$('#testrootpanel #quescol').append("<textarea id=\"ques\" class=\"form-control\" disabled>" 
-						+ p.tests[curTest].question[0] +"</textarea>")
+				$('#quescol').append("<textarea id=\"ques\" class=\"form-control\" placeholder=\"Question\"></textarea>");				
 			}
+						
 			//Options.
-			var opts = p.tests[curTest].options;
-			for(var i = 0; i < opts.length; ++i){
-				var opt = opts[i];
-				var id = "opt" + i;
-				$('#testrootpanel #optcol').append("<input id=\"" + id + "\"type=\"text\" name=\"opt\" placeholder=\"" + opt + "\"></input><br>");
+			if(p.tests[curTest].hasOwnProperty('dirty')
+				&& typeof p.tests[curTest].options != 'undefined'){
+				var opts = p.tests[curTest].options;
+				for(var i = 0; i < opts.length; ++i){
+					var opt = opts[i];
+					var id = "opt" + i;
+					$('#optcol').append("<input id=\"" + id + "\"type=\"text\" name=\"opt\" placeholder=\"" + opt + "\"></input><br>");
+				}
+			}else{
+				var optcol = $('#optcol');
+				optcol.append("<div class=\"row\">");
+				optcol.children().last().append("<div id=\"opt\" class=\"col-xs-5\">");
+				optcol.children().last().append("<div class=\"col-xs-5\">");
+
+				optcol = $('#opt');
+				
+				optcol.append("<input name=\"opt\" type=\"text\" placeholder=\"Option A\">");
+				optcol.append("<input name=\"opt\" type=\"text\" placeholder=\"Option B\">");
+				optcol.append("<input name=\"opt\" type=\"text\" placeholder=\"Option C\">");
+				optcol.append("<input name=\"opt\" type=\"text\" placeholder=\"Option D\">");
 			}
 			
 			//Answer area
-			$("#ansrow #anscol #answell").append("<div class=\"row\">Answer:</div>");
-			$("#ansrow #anscol #answell").append("<div id=\"ansr\" class=\"row\">");
-			$("#ansrow #anscol #answell #ansr").append("<div id=\"ansc\" class=\"col-xs-2\">");
+			answell.append("<div class=\"row\">Answer:</div>");
+			answell.append("<div id=\"ansr\" class=\"row\">");
+			$("#ansr").append("<div id=\"ansc\" class=\"col-xs-2\">");
 			if(typeof p.tests[curTest].answers != 'undefined'){
-				$("#ansrow #anscol #answell #ansr #ansc").append("<input type=\"text\" class=\"form-control\" placeholder=\""+ p.tests[curTest].answers[0] + "\"></input>");
+				$("#ansc").append("<input type=\"text\" class=\"form-control\" placeholder=\""+ p.tests[curTest].answers[0] + "\"></input>");
 			}else{
-				$("#ansrow #anscol #answell #ansr #ansc").append("<input type=\"text\" class=\"form-control\"></input>");
+				$("#ansc").append("<input type=\"text\" class=\"form-control\"></input>");
 			}
 			
 			
 			//Keyword
-			$("#answell").append("<div class=\"row\">Keyword:</div>");
-			$("#answell").append("<div id=\"kwds\" class=\"row\">");
+			answell.append("<div class=\"row\">Keyword:</div>");
+			answell.append("<div id=\"kwds\" class=\"row\">");
 			$("#kwds").append("<div id=\"en\" class=\"col-xs-5\">");
 			$("#kwds").append("<div id=\"ch\" class=\"col-xs-5\">");
 			if(typeof p.tests[curTest].kwds != 'undefined'){
 				var kwds = p.tests[curTest].kwds;
 				for(var i = 0; i < kwds.length; ++i){
 					if(i%2 == 0){
-						$("#ansrow #anscol #answell #kwds #en").append("<textarea class=\"form-control\"> " + kwds[i] + "</textarea>");
+						$("#kwds #en").append("<textarea class=\"form-control\"> " + kwds[i] + "</textarea>");
 					}else{
-						$("#ansrow #anscol #answell #kwds #ch").append("<textarea class=\"form-control\"> " + kwds[i] + "</textarea>");						
+						$("#kwds #ch").append("<textarea class=\"form-control\"> " + kwds[i] + "</textarea>");						
 					}
 				}
 			}
-			$("#answell").append("<button type=\"button\" id=\"pluskwdbtn\" class=\"btn btn-info\">");
-			$('#answell').children().last()
+			answell.append("<button type=\"button\" id=\"pluskwdbtn\" class=\"btn btn-info\">");
+			answell.children().last()
 			.on('click',function(){
-				$("#ansrow #anscol #answell #kwds #en").append("<textarea class=\"form-control\"> </textarea>");	
-				$("#ansrow #anscol #answell #kwds #ch").append("<textarea class=\"form-control\"> </textarea>");
+				$("#kwds #en").append("<textarea class=\"form-control\"> </textarea>");	
+				$("#kwds #ch").append("<textarea class=\"form-control\"> </textarea>");
 			});
-			$('#answell').children().last().append("<span class=\"glyphicon glyphicon-plus\"></span>");
+			answell.children().last().append("<span class=\"glyphicon glyphicon-plus\"></span>");
+			
+			answell.append("<button type=\"button\" id=\"minuskwdbtn\" class=\"btn btn-info\">");
+			answell.children().last()
+			.on('click',function(){
+				$("#kwds #en").children().last().remove();	
+				$("#kwds #ch").children().last().remove();
+			});
+			answell.children().last().append("<span class=\"glyphicon glyphicon-minus\"></span>");
 			
 			//Watchword
-			$("#ansrow #anscol #answell").append("<div class=\"row\">Watchword:</div>");
-			$("#ansrow #anscol #answell").append("<div id=\"wwds\" class=\"row\">");
-			$("#ansrow #anscol #answell #wwds").append("<div id=\"en\" class=\"col-xs-5\">");
-			$("#ansrow #anscol #answell #wwds").append("<div id=\"ch\" class=\"col-xs-5\">");
+			answell.append("<div class=\"row\">Watchword:</div>");
+			answell.append("<div id=\"wwds\" class=\"row\">");
+			$("#wwds").append("<div id=\"en\" class=\"col-xs-5\">");
+			$("#wwds").append("<div id=\"ch\" class=\"col-xs-5\">");
 			if(typeof p.tests[curTest].watchword != 'undefined'){
 				var wwds = p.tests[curTest].watchword;
 				for(var i = 0; i < wwds.length; ++i){
 					if(i%2 != 0){
-						$("#ansrow #anscol #answell #wwds #en").append("<textarea class=\"form-control\"> " + wwds[i] + "</textarea>");
+						$("#wwds #en").append("<textarea class=\"form-control\"> " + wwds[i] + "</textarea>");
 					}else{
-						$("#ansrow #anscol #answell #wwds #ch").append("<textarea class=\"form-control\"> " + wwds[i] + "</textarea>");						
+						$("#wwds #ch").append("<textarea class=\"form-control\"> " + wwds[i] + "</textarea>");						
 					}
 				}
 			}
-			$("#ansrow #anscol #answell").append("<button type=\"button\"  id=\"pluswdbtn\" class=\"btn btn-info\">");
-			$("#ansrow #anscol #answell #pluswdbtn").append("<span class=\"glyphicon glyphicon-plus\"></span>");
-			$("#ansrow #anscol #answell #pluswdbtn").on('click',function(){
-				$("#ansrow #anscol #answell #wwds #en").append("<textarea class=\"form-control\"> </textarea>");	
-				$("#ansrow #anscol #answell #wwds #ch").append("<textarea class=\"form-control\"> </textarea>");							
+			answell.append("<button type=\"button\"  id=\"pluswdbtn\" class=\"btn btn-info\">");
+			$("#pluswdbtn").append("<span class=\"glyphicon glyphicon-plus\"></span>");
+			$("#pluswdbtn").on('click',function(){
+				$("#wwds #en").append("<textarea class=\"form-control\"> </textarea>");	
+				$("#wwds #ch").append("<textarea class=\"form-control\"> </textarea>");							
 			});
+			answell.append("<button type=\"button\" id=\"minuswdbtn\" class=\"btn btn-info\">");
+			answell.children().last()
+			.on('click',function(){
+				$("#wwds #en").children().last().remove();	
+				$("#wwds #ch").children().last().remove();
+			});
+			answell.children().last().append("<span class=\"glyphicon glyphicon-minus\"></span>");
 			
 			
 			//Tips.
-			$("#ansrow #anscol #answell").append("<div class=\"row\">Tips:</div>");
-			$("#ansrow #anscol #answell").append("<div id=\"tipsr\" class=\"row\">");
-			$("#ansrow #anscol #answell #tipsr").append("<div id=\"tipsc\" class=\"col-xs-12\">");
+			answell.append("<div class=\"row\">Tips:</div>");
+			answell.append("<div id=\"tipsr\" class=\"row\">");
+			$("#tipsr").append("<div id=\"tipsc\" class=\"col-xs-12\">");
 			if(typeof p.tests[curTest].tips != 'undefined'){
-				$("#ansrow #anscol #answell #tipsr #tipsc").append("<textarea class=\"form-control\" >"+ p.tests[curTest].tips+"</textarea>");
+				$("#tipsc").append("<textarea class=\"form-control\" >"+ p.tests[curTest].tips+"</textarea>");
 			}else{
-				$("#ansrow #anscol #answell #tipsr #tipsc").append("<textarea class=\"form-control\" ></textarea>");
+				$("#tipsc").append("<textarea class=\"form-control\" ></textarea>");
 			}
 		}
 	}
@@ -315,39 +395,42 @@ $(document).ready(function() {
 	//Display tests.
 	function showTest4View(){
 		if(curTest > -1 && curTest < total){
-			$('#testrootpanel #qh').children().last().remove();
-			$('#testrootpanel #quescol').html('');
-			$('#testrootpanel #optcol').html('');
-			$('#testrootpanel #ansrow #anscol #answell').html('');
-			$('#ansrow #anscol #answell').addClass('hidden');
+			console.log('cur: ' + curTest);
+			$('#qh').children().last().remove();
+			$('#quescol').html('');
+			$('#optcol').html('');
+			$('#answell').html('');
+			$('#answell').addClass('hidden');
 			$('#chekedit').prop('checked',false);
-			if(p.tests[curTest].hasOwnProperty('marked')
-				&& typeof p.tests[curTest].marked != 'undefined'){
-				$('#chekmark').prop('checked',p.tests[curTest].marked);
-			}
+			$('label[for="chekedit"]').text('Edit');
 			var curSN = curTest + 1;
-			$('#testrootpanel #qh').append("<label>Item " + curSN + " of "+ total +"</label>");
+			//Pic
+			$('#qh').append("<label>Item " + curSN + " of "+ total +"</label>");
 			if(typeof p.tests[curTest].pic != 'undefined'){
-				$('#testrootpanel #quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[curTest].pic+ "\"/></div>")
-				$('#testrootpanel #quescol').append("<div class=\"caption\" id=\"ques\"><h4>" + p.tests[curTest].question[0] + "</h4>");
+				$('#quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[curTest].pic+ "\"/></div>")
+			}
+			//Question
+			if(typeof p.tests[curTest].question != "undefined"){
+				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h4>" + p.tests[curTest].question[0] + "</h4>");
 			}else{
-				$('#testrootpanel #quescol').append("<div class=\"caption\" id=\"ques\"><h4>" 
+				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h4>" 
 						+ p.tests[curTest].question[0] +"</h4></div>")
 			}
+			
 			var opts = p.tests[curTest].options;
 			for(var i = 0; i < opts.length; ++i){
 				var opt = opts[i];
 				var id = "opt" + i;
 				if(typeof p.tests[curTest].taking != 'undefined'){
 					if(p.tests[curTest].taking.stuans == opt.charAt(0)){
-						$('#testrootpanel #optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
+						$('#optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
 							+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\" checked>" + opt + "</label></div>");
 					}else{
-						$('#testrootpanel #optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
+						$('#optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
 								+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\">" + opt + "</label></div>");			
 					}
 				}else{
-					$('#testrootpanel #optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
+					$('#optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
 							+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\">" + opt + "</label></div>");
 				}
 				$('input[name="optradio"]').on('click',
@@ -442,7 +525,8 @@ $(document).ready(function() {
 <div class="row">
 <div class="col-sm-8">
 <!-- MARK -->
-<h4><input id="chekedit" type="checkbox" style="margin-right:10px;">Edit</h4>
+<input id="chekedit" type="checkbox" style="margin-right:1px;">
+<label for="chekedit">Edit</label>
 </div>
 <div class="col-sm-4">
 </div>
@@ -451,7 +535,7 @@ $(document).ready(function() {
 <div class="col-sm-8">
 <div id="qh"></div>
 </div>
-<div style="text-align:right" class="col-sm-4">
+<div style="text-align:right" class="col-sm-4" id="delnewdiv">
 <button id="delbtn" type="button">Delete</button>
 <button id="newbtn" type="button">New</button>
 </div>
@@ -476,13 +560,13 @@ $(document).ready(function() {
 </div>
 </div>
 <div class="row">
-<div class="col-sm-8">
+<div class="col-sm-8" id="prvnxtrvwdiv">
 <!-- prev,next,review -->
 <button type="button" id="prvbtn">Prev</button>
 <button type="button" id="nxtbtn">Next</button>
 <button type="button" id="rvwbtn">Review</button>
 </div>
-<div style="text-align:right" class="col-sm-4">
+<div style="text-align:right" class="col-sm-4" id="sbtdiv">
 <!-- pause,end exam -->
 <input type="hidden" name="tests" />
 <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
