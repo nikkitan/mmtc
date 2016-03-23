@@ -1,3 +1,7 @@
+// Copyright (c) 2016 Mendez Master Training Center
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 package com.mmtc.exam;
 
 import java.io.ByteArrayInputStream;
@@ -92,12 +96,6 @@ import com.mmtc.exam.dao.Test;
 import com.mmtc.exam.dao.TestSuite;
 import com.mmtc.exam.dao.TestTaking;
 
-//http://springinpractice.com/2010/07/06/spring-security-database-schemas-for-mysql
-//http://www.jsptut.com/
-//http://docs.spring.io/spring/docs/current/spring-framework-reference/html/spring-form-tld.html
-//http://danielkvist.net/wiki/spring-mvc-fundamentals
-//http://www.ibm.com/developerworks/library/ws-springjava/
-//https://docs.spring.io/spring-security/site/docs/current/reference/html/csrf.html#csrf-include-csrf-token-in-action
 /**
  * Handles requests for the application home page.
  */
@@ -175,7 +173,6 @@ public class HomeController {
 		logger.debug(request.getRequestURL().toString());
 		return "addsuite";
 	}
-	//http://www.codejava.net/frameworks/spring/spring-mvc-form-handling-tutorial-and-example
 	@RequestMapping(value="/adduser", method=RequestMethod.GET)
     public @ResponseBody ModelAndView addUserGET(
 			HttpServletRequest request, 
@@ -352,8 +349,6 @@ public class HomeController {
 		PutObjectResult pr = s3Client.putObject("mmtctestpic",file.getName(),file);
 		return new AsyncResult<PutObjectResult>(pr);	
 	}
-	//http://www.jayway.com/2014/09/09/asynchronous-spring-service/
-	//http://docs.aws.amazon.com/AWSSdkDocsJava/latest/DeveloperGuide/java-dg-roles.html
 	@RequestMapping(value = "/edittest/{tid}", method = RequestMethod.POST)
 	public @ResponseBody ModelAndView editTestPOST(
 			Locale locale,
@@ -702,25 +697,6 @@ public class HomeController {
                	if(jArr != null){
 	                curValue = jArr.toString();
 	            	preparedSql.setNString(pI, curValue);
-	            	/*++pI;
-	            	jArrLen = jArr.size();
-	            	for(int i = 0; i < jArrLen; ++i){
-	            		jArr.remove(0);
-	            	}
-	            	
-	            	jArr.add("NOHIGHLIGHT");
-	    			preparedSql.setNString(pI, jArr.toString());
-	            	
-	    			jArr.remove(0);
-	    			jArr.add("NOTIPS");
-	            	++pI;
-	            	preparedSql.setNString(pI, jArr.toString());
-	            	++pI;
-	    			preparedSql.setLong(pI, rowID);
-	            	if(pI == 8){
-	            		logger.info("[ROTATE pI].");
-	            		pI = 1;
-	            	}*/
 	                preparedSql.addBatch();
         			preparedSql.setLong(8, rowID);
                     preparedSql.addBatch();
@@ -1450,7 +1426,6 @@ public class HomeController {
 		}else{
 			v.addObject("grade","Fail");
 		}
-		//http://hdnrnzk.me/2012/07/04/creating-a-bar-graph-using-d3js/
 		JsonArray scoreRange = new JsonArray();
 		scoreRange.add(grade*10);
 		scoreRange.add(700);
