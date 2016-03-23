@@ -7,6 +7,7 @@
 		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.1.xsd">
 
+	<context:property-placeholder location="classpath:database.properties"/>
 	<!-- For CSRF token and Multipart Upload -->
 	<bean id="filterMultipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
         <property name="maxUploadSize" value="100000000" />
@@ -16,17 +17,17 @@
 		class="org.springframework.jndi.JndiObjectFactoryBean">
 		<property name="jndiName" value="java:comp/env/jdbc/mmtcMySQLDataSource"></property>
 	</bean>	
-	
+
 	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
     	<property name="host" value="smtp.gmail.com"/>
     	<property name="port" value="587"/>
-    	<property name="username" value="nikkigoldcal@gmail.com"/>
-    	<property name="password" value="nikkigoldcal6454"/>
+    	<property name="username" value="${mailnotif.u}"/>
+    	<property name="password" value="${mailnotif.pw}"/>
 	</bean>
 	
 	<!-- this is a template message that we can pre-load with default state -->
 	<bean id="emailRegistrationTemplaetMsg" class="org.springframework.mail.SimpleMailMessage">
-	    <property name="from" value="nikkigoldcal@gmail.com"/>
+	    <property name="from" value="${mailnotif.u}"/>
 	    <property name="subject" value="Your gmail is successfully registered to MMTC!"/>
 	</bean>	
 </beans>
