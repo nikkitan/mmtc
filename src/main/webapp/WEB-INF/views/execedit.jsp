@@ -25,7 +25,7 @@ p.notanswered{
 	color:red;
 }
 
-.form-control#ques{
+textarea[name='ques']{
 	font-size: 20px;
 }
 
@@ -69,18 +69,18 @@ $(document).ready(function() {
 	var total = p.tests.length;
 	
 	//Next test.
-	var curTest = 0;
+	var testItor = 0;
 	$('#nxtbtn').on('click', function (e) {
-		if(curTest + 1 < p.tests.length){
-			curTest += 1;
+		if(testItor + 1 < p.tests.length){
+			testItor += 1;
 			showTest4View();
 		}
 	});	
 	
 	//Prev test.
 	$('#prvbtn').on('click', function (e) {
-		if(curTest-1 >= 0){
-			curTest -= 1;
+		if(testItor-1 >= 0){
+			testItor -= 1;
 			showTest4View();
 		}
 	});
@@ -88,7 +88,7 @@ $(document).ready(function() {
 	
 	//TimeOut End test.
 	$('#endtestbtn').on('click', function (e) {
-		curTest -= 1;
+		testItor -= 1;
 		showTest4View();
 		window.location.replace("${pageContext.request.contextPath}/index");
 	});
@@ -105,37 +105,45 @@ $(document).ready(function() {
 		
 	//New Test Btn.
 	$('#newbtn').on('click', function (e) {
-		p.tests.splice(curTest,0,{"dirty":true,"isnew":true,"serialNo":curTest});
+		console.log("[new1] " + curMode);
+		p.tests.splice(testItor,0,{"dirty":true,"isnew":true,"serialNo":testItor});
 		window.localStorage.setItem("tests",JSON.stringify(p));
+		curMode = edit;
 		showTest4Edit();
+		console.log("[new2] " + curMode);
+
 	});
 	
 	
 	//Ans <p> in Review Modal.
 	$('#rvwModal').on('hide.bs.modal', function (e) {
-		curTest = parseInt(window.localStorage.getItem('modelsel'));
+		testItor = parseInt(window.localStorage.getItem('modelsel'));
 		showTest4View();
 	});	
 	
-	//Mark checkbox.
+	//Edit checkbox.
 	$('#chekedit').on('click', function (e) {
-		p.tests[curTest].dirty = true;
+		console.log("[chekedit] " + curMode);
+		p.tests[testItor].dirty = true;
 		if(curMode == view){
 			curMode = edit;
 			showTest4Edit();
 		}else{
+			//Save dirty data.
+			saveTestFromGUI();
+			//Prepare to render UI under view mode.
 			curDom = $('#prvnxtrvwdiv');
 			curDom.append(prvBtn);
 			curDom.children().last().on('click', function (e) {
-				if(curTest-1 >= 0){
-					curTest -= 1;
+				if(testItor-1 >= 0){
+					testItor -= 1;
 					showTest4View();
 				}
 			});
 			curDom.append(nxtBtn);
 			curDom.children().last().on('click', function (e) {
-				if(curTest + 1 < p.tests.length){
-					curTest += 1;
+				if(testItor + 1 < p.tests.length){
+					testItor += 1;
 					showTest4View();
 				}
 			});
@@ -147,23 +155,19 @@ $(document).ready(function() {
 			curDom.append(delBtn);
 			curDom.append(newBtn);
 			curDom.children().last().on('click', function (e) {
-				p.tests.splice(curTest,0,{"dirty":true,"isnew":true,"serialNo":curTest});
+				p.tests.splice(testItor,0,{"dirty":true,"isnew":true,"serialNo":testItor});
 				window.localStorage.setItem("tests",JSON.stringify(p));
+				curMode = edit;
 				showTest4Edit();
+				
 			});
 			curDom = $('#sbtdiv');
 			curDom.append(sbtBtn).on('click', function (e) {
 				p.user = "${pageContext.request.userPrincipal.name}";
 				testStartTime = window.localStorage.getItem('start_time');
 				var curDate = new Date();
-				p.end = Date.now();//Date.parse(curDate);
-				p.beg = testStartTime;//Date.parse(testStartTime);
-				//p.testdur = (Date.parse(curDate) - Date.parse(testStartTime))/1000;
-				console.log("s: " + testStartTime);
-				console.log("c: " + curDate);
-				console.log(Date.parse(curDate));
-				console.log(Date.parse(testStartTime));
-				console.log((Date.parse(curDate) - Date.parse(testStartTime))/1000);
+				p.end = Date.now();
+				p.beg = testStartTime;
 				$('input[name="tests"]').attr("value",JSON.stringify(p));
 				clearInterval(timerIntervalObj);
 			});
@@ -188,6 +192,54 @@ $(document).ready(function() {
 		$('input[name="tests"]').attr("value",JSON.stringify(p));
 		clearInterval(timerIntervalObj);
 	});	
+	
+	function saveTestFromGUI(){
+		var curTestObj = p.tests[testItor];
+		if(curTestObj.hasOwnProperty("quetion") == false
+				|| typeof curTestObj.question == 'undefined'){
+				curTestObj.question = [];
+			}		
+		var q = $('textarea[name="ques"]').val();
+		if(q.charAt(1) != '.'){
+			q = testItor + '.' + q;
+		}
+		curTestObj.question.push(q);
+		if(curTestObj.hasOwnProperty("options") == false
+			|| typeof curTestObj.options == 'undefined'){
+			curTestObj.options = [];
+		}
+		$('input[name=\"opt\"]').each(function(index,value){
+			if(value.value.charAt(1) != '.'){
+				value.value = String.fromCharCode(index+65) + '.' + value.value;
+			}
+			curTestObj.options.push(value.value);	
+		});
+		if(curTestObj.hasOwnProperty("answers") == false
+				|| typeof curTestObj.answers == 'undefined'){
+				curTestObj.answers = [];
+		}
+		curTestObj.answers.push($('input[name="ans"]').val());
+		if(curTestObj.hasOwnProperty("kwds") == false
+				|| typeof curTestObj.kwds == 'undefined'){
+				curTestObj.kwds = [];
+		}
+		$('textarea[name="kwd"]').each(function(index,value){
+			curTestObj.kwds.push(value.value);
+		});
+		if(curTestObj.hasOwnProperty("watchword") == false
+				|| typeof curTestObj.watchword == 'undefined'){
+				curTestObj.watchword = [];
+		}
+		$('textarea[name="wwd"]').each(function(index,value){
+			curTestObj.watchword.push(value.value);
+		});
+		if(curTestObj.hasOwnProperty("tips") == false
+				|| typeof curTestObj.tips == 'undefined'){
+				curTestObj.tips = [];
+		}
+		curTestObj.tips=$('textarea[name="tips"]').val();
+		console.log("[save]: " + curTestObj);
+	}
 	
 	function genReviewTable(){
 		var review = "<div class=\"container-fluid col-md-12\"><div class=\"row\">";
@@ -258,7 +310,7 @@ $(document).ready(function() {
 
 	//Display tests.
 	function showTest4Edit(){
-		if(curTest > -1 && curTest < total){
+		if(testItor > -1 && testItor < total){
 			console.log('[show4Edit]');
 			$('#prvnxtrvwdiv').html('');
 			$('#delnewdiv').html('');
@@ -269,26 +321,26 @@ $(document).ready(function() {
 			var answell = $('#answell');
 			answell.html('');
 			answell.removeClass('hidden');
-			if(p.tests[curTest].hasOwnProperty('dirty')
-				&& typeof p.tests[curTest].dirty != 'undefined'){
-				$('#chekedit').prop('checked',p.tests[curTest].dirty);
+			if(p.tests[testItor].hasOwnProperty('dirty')
+				&& typeof p.tests[testItor].dirty != 'undefined'){
+				$('#chekedit').prop('checked',p.tests[testItor].dirty);
 				$('label[for="chekedit"]').text('Uncheck to finalize editing.');
 			}
-			var curSN = curTest + 1;
+			var curSN = testItor + 1;
 			$('#qh').append("<label>Item " + curSN + " of "+ total +"</label>");
 			
-			$('#quescol').append("<div class=\"thumbnail\" id=\"qthb\"><label for=\"pic_input\"><img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[curTest].pic+ "\"/></label><input id=\"pic_input\" type=\"file\" name=\"file\"/></div>");	
+			$('#quescol').append("<div class=\"thumbnail\"><label for=\"pic_input\"><img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/></label><input id=\"pic_input\" type=\"file\" name=\"pic\"/></div>");	
 			
-			if(typeof p.tests[curTest].question != 'undefined'){
-				$('#quescol').append("<textarea id=\"ques\" class=\"form-control\">" + p.tests[curTest].question[0] + "</textarea>");
+			if(typeof p.tests[testItor].question != 'undefined'){
+				$('#quescol').append("<textarea name=\"ques\" class=\"form-control\">" + p.tests[testItor].question[0] + "</textarea>");
 			}else{
-				$('#quescol').append("<textarea id=\"ques\" class=\"form-control\" placeholder=\"Question\"></textarea>");				
+				$('#quescol').append("<textarea name=\"ques\" class=\"form-control\" placeholder=\"Question\"></textarea>");				
 			}
 						
 			//Options.
-			if(p.tests[curTest].hasOwnProperty('dirty')
-				&& typeof p.tests[curTest].options != 'undefined'){
-				var opts = p.tests[curTest].options;
+			if(p.tests[testItor].hasOwnProperty('dirty')
+				&& typeof p.tests[testItor].options != 'undefined'){
+				var opts = p.tests[testItor].options;
 				for(var i = 0; i < opts.length; ++i){
 					var opt = opts[i];
 					var id = "opt" + i;
@@ -309,136 +361,163 @@ $(document).ready(function() {
 			}
 			
 			//Answer area
-			answell.append("<div class=\"row\">Answer:</div>");
-			answell.append("<div id=\"ansr\" class=\"row\">");
-			$("#ansr").append("<div id=\"ansc\" class=\"col-xs-2\">");
-			if(typeof p.tests[curTest].answers != 'undefined'){
-				$("#ansc").append("<input type=\"text\" class=\"form-control\" placeholder=\""+ p.tests[curTest].answers[0] + "\"></input>");
+			answell.append("<div class=\"row\">Answer:</div><div class=\"row\">");
+			if(typeof p.tests[testItor].answers != 'undefined'){
+				answell.children().last().append("<div class=\"col-xs-2\"><input type=\"text\" name=\"ans\" class=\"form-control\" placeholder=\""+ p.tests[testItor].answers[0] + "\"></input></div>");
 			}else{
-				$("#ansc").append("<input type=\"text\" class=\"form-control\"></input>");
+				answell.children().last().append("<div class=\"col-xs-2\"><input type=\"text\" name=\"ans\" class=\"form-control\"></input></div>");
 			}
 			
 			
 			//Keyword
-			answell.append("<div class=\"row\">Keyword:</div>");
-			answell.append("<div id=\"kwds\" class=\"row\">");
-			$("#kwds").append("<div id=\"en\" class=\"col-xs-5\">");
-			$("#kwds").append("<div id=\"ch\" class=\"col-xs-5\">");
-			if(typeof p.tests[curTest].kwds != 'undefined'){
-				var kwds = p.tests[curTest].kwds;
+			answell.append("<div class=\"row\">Keyword:</div><div id=\"kwds\" class=\"row\">");
+			answell.children().last().append("<div id=\"kwden\" class=\"col-xs-5\">");
+			answell.children().last().append("<div id=\"kwdch\" class=\"col-xs-5\">");
+			if(typeof p.tests[testItor].kwds != 'undefined'){
+				var kwds = p.tests[testItor].kwds;
 				for(var i = 0; i < kwds.length; ++i){
 					if(i%2 == 0){
-						$("#kwds #en").append("<textarea class=\"form-control\"> " + kwds[i] + "</textarea>");
+						$("#kwden").append("<textarea name=\"kwd\" class=\"form-control\"> " + kwds[i] + "</textarea>");
 					}else{
-						$("#kwds #ch").append("<textarea class=\"form-control\"> " + kwds[i] + "</textarea>");						
+						$("#kwdch").append("<textarea name=\"kwd\" class=\"form-control\"> " + kwds[i] + "</textarea>");						
 					}
 				}
 			}
 			answell.append("<button type=\"button\" id=\"pluskwdbtn\" class=\"btn btn-info\">");
 			answell.children().last()
 			.on('click',function(){
-				$("#kwds #en").append("<textarea class=\"form-control\"> </textarea>");	
-				$("#kwds #ch").append("<textarea class=\"form-control\"> </textarea>");
+				$("#kwden").append("<textarea class=\"form-control\"> </textarea>");	
+				$("#kwdch").append("<textarea class=\"form-control\"> </textarea>");
 			});
 			answell.children().last().append("<span class=\"glyphicon glyphicon-plus\"></span>");
 			
 			answell.append("<button type=\"button\" id=\"minuskwdbtn\" class=\"btn btn-info\">");
 			answell.children().last()
 			.on('click',function(){
-				$("#kwds #en").children().last().remove();	
-				$("#kwds #ch").children().last().remove();
+				$("#kwden").children().last().remove();	
+				$("#kwdch").children().last().remove();
 			});
 			answell.children().last().append("<span class=\"glyphicon glyphicon-minus\"></span>");
 			
 			//Watchword
-			answell.append("<div class=\"row\">Watchword:</div>");
-			answell.append("<div id=\"wwds\" class=\"row\">");
-			$("#wwds").append("<div id=\"en\" class=\"col-xs-5\">");
-			$("#wwds").append("<div id=\"ch\" class=\"col-xs-5\">");
-			if(typeof p.tests[curTest].watchword != 'undefined'){
-				var wwds = p.tests[curTest].watchword;
+			answell.append("<div class=\"row\">Watchword:</div><div id=\"wwds\" class=\"row\">");
+			answell.children().last().append("<div id=\"wwden\" class=\"col-xs-5\">");
+			answell.children().last().append("<div id=\"wwdch\" class=\"col-xs-5\">");
+			if(typeof p.tests[testItor].watchword != 'undefined'){
+				var wwds = p.tests[testItor].watchword;
 				for(var i = 0; i < wwds.length; ++i){
 					if(i%2 != 0){
-						$("#wwds #en").append("<textarea class=\"form-control\"> " + wwds[i] + "</textarea>");
+						$("#wwden").append("<textarea name=\"wwd\" class=\"form-control\"> " + wwds[i] + "</textarea>");
 					}else{
-						$("#wwds #ch").append("<textarea class=\"form-control\"> " + wwds[i] + "</textarea>");						
+						$("#wwdch").append("<textarea name=\"wwd\" class=\"form-control\"> " + wwds[i] + "</textarea>");						
 					}
 				}
 			}
 			answell.append("<button type=\"button\"  id=\"pluswdbtn\" class=\"btn btn-info\">");
 			$("#pluswdbtn").append("<span class=\"glyphicon glyphicon-plus\"></span>");
 			$("#pluswdbtn").on('click',function(){
-				$("#wwds #en").append("<textarea class=\"form-control\"> </textarea>");	
-				$("#wwds #ch").append("<textarea class=\"form-control\"> </textarea>");							
+				$("#wwden").append("<textarea class=\"form-control\"> </textarea>");	
+				$("#wwdch").append("<textarea class=\"form-control\"> </textarea>");							
 			});
 			answell.append("<button type=\"button\" id=\"minuswdbtn\" class=\"btn btn-info\">");
 			answell.children().last()
 			.on('click',function(){
-				$("#wwds #en").children().last().remove();	
-				$("#wwds #ch").children().last().remove();
+				$("#wwden").children().last().remove();	
+				$("#wwdch").children().last().remove();
 			});
 			answell.children().last().append("<span class=\"glyphicon glyphicon-minus\"></span>");
 			
 			
 			//Tips.
-			answell.append("<div class=\"row\">Tips:</div>");
-			answell.append("<div id=\"tipsr\" class=\"row\">");
-			$("#tipsr").append("<div id=\"tipsc\" class=\"col-xs-12\">");
-			if(typeof p.tests[curTest].tips != 'undefined'){
-				$("#tipsc").append("<textarea class=\"form-control\" >"+ p.tests[curTest].tips+"</textarea>");
+			answell.append("<div class=\"row\">Tips:</div><div class=\"row\">");
+			if(typeof p.tests[testItor].tips != 'undefined'){
+				answell.children().last().append("<div class=\"col-xs-12\"><textarea name=\"tips\" class=\"form-control\" >"+ p.tests[testItor].tips+"</textarea></div>");
 			}else{
-				$("#tipsc").append("<textarea class=\"form-control\" ></textarea>");
+				answell.children().last().append("<div class=\"col-xs-12\"><textarea name=\"tips\" class=\"form-control\" ></textarea></div>");
 			}
 		}
 	}
 	
 	//Display tests.
 	function showTest4View(){
-		if(curTest > -1 && curTest < total){
-			console.log('cur: ' + curTest);
+		if(testItor > -1 && testItor < total){
+			console.log('cur: ' + testItor);
 			$('#qh').children().last().remove();
 			$('#quescol').html('');
-			$('#optcol').html('');
-			$('#answell').html('');
-			$('#answell').addClass('hidden');
+			$('#optcol').html('');			
+			var answell = $('#answell');
+			answell.html('');
+			answell.addClass('hidden');
 			$('#chekedit').prop('checked',false);
 			$('label[for="chekedit"]').text('Edit');
-			var curSN = curTest + 1;
+			var curSN = testItor + 1;
 			//Pic
 			$('#qh').append("<label>Item " + curSN + " of "+ total +"</label>");
-			if(typeof p.tests[curTest].pic != 'undefined'){
-				$('#quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[curTest].pic+ "\"/></div>")
+			if(typeof p.tests[testItor].pic != 'undefined'){
+				$('#quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/></div>")
 			}
 			//Question
-			if(typeof p.tests[curTest].question != "undefined"){
-				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h4>" + p.tests[curTest].question[0] + "</h4>");
+			if(typeof p.tests[testItor].question != "undefined"){
+				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h4>" + p.tests[testItor].question[0] + "</h4>");
 			}else{
-				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h4>" 
-						+ p.tests[curTest].question[0] +"</h4></div>")
+				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h4></h4></div>")
 			}
 			
-			var opts = p.tests[curTest].options;
-			for(var i = 0; i < opts.length; ++i){
-				var opt = opts[i];
-				var id = "opt" + i;
-				if(typeof p.tests[curTest].taking != 'undefined'){
-					if(p.tests[curTest].taking.stuans == opt.charAt(0)){
-						$('#optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
-							+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\" checked>" + opt + "</label></div>");
+			if(p.tests[testItor].hasOwnProperty("options")
+				&& typeof p.tests[testItor].options != 'undefined'){
+				var opts = p.tests[testItor].options;
+				for(var i = 0; i < opts.length; ++i){
+					var opt = opts[i];
+					var id = "opt" + i;
+					if(typeof p.tests[testItor].taking != 'undefined'){
+						if(p.tests[testItor].taking.stuans == opt.charAt(0)){
+							$('#optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
+								+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\" checked>" + opt + "</label></div>");
+						}else{
+							$('#optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
+									+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\">" + opt + "</label></div>");			
+						}
 					}else{
 						$('#optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
-								+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\">" + opt + "</label></div>");			
+								+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\">" + opt + "</label></div>");
 					}
-				}else{
-					$('#optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
-							+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\">" + opt + "</label></div>");
+					$('input[name="optradio"]').on('click',
+						function(){
+							//onclicked, cache clicked option to local storage.
+							p.tests[testItor].taking = {"stuans":$(this).parent().text().charAt(0)}
+							window.localStorage.setItem('tests',JSON.stringify(p));						
+					});
 				}
-				$('input[name="optradio"]').on('click',
-					function(){
-						//onclicked, cache clicked option to local storage.
-						p.tests[curTest].taking = {"stuans":$(this).parent().text().charAt(0)}
-						window.localStorage.setItem('tests',JSON.stringify(p));						
-				});
+			}else{
+				/*var id = "opt" + i;
+				$('#optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
+						+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\"></label></div>");*/
+				
+			}
+			
+			//Answer area.
+			answell.removeClass('hidden');
+			if(typeof p.tests[testItor].answers != 'undefined'){
+				answell.append("Answer:"+ p.tests[testItor].answers[0] + "<br>");
+			}
+
+			if(typeof p.tests[testItor].kwds != 'undefined'){
+				var kwds = p.tests[testItor].kwds;
+				answell.append("Keyword: " + kwds + "<br>");
+				for(var i = 0; i < kwds.length; i+=2){
+					answell.highlight(kwds[i]);
+					$('#ques').highlight(kwds[i]);
+					$('#optcol .radio .radiobtnopt').highlight(kwds[i]);					
+				}
+			}
+			
+			
+			if(typeof p.tests[testItor].watchword != 'undefined'){
+				answell.append("Watchword:"+ p.tests[testItor].watchword + "<br>");
+			}
+			
+			if(typeof p.tests[testItor].tips != 'undefined'){
+				answell.append("Tips:"+ p.tests[testItor].tips);
 			}
 		}
 	}
