@@ -6,22 +6,20 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Properties;
 
 import javax.servlet.ServletContextEvent;
-
-import org.apache.tomcat.jdbc.pool.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.Resource;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.jndi.JndiObjectFactoryBean;
 import org.springframework.web.context.ContextLoaderListener;
-import org.springframework.web.servlet.ModelAndView;
 
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3;
@@ -33,14 +31,11 @@ import static com.mmtc.exam.BuildConfig.DEBUG;
 public class MMTCCtxListener extends ContextLoaderListener {
 
 	private static final Logger logger = LoggerFactory.getLogger(MMTCCtxListener.class);
-	@Autowired
-	private JndiObjectFactoryBean jndiObjFactoryBean;		
-	@Value("${mysql.url}")
+	
 	private String defaultDb;
-	@Value("${mysql.username}")
 	private String dbUser;
-	@Value("${mysql.password}")
 	private String dbPW;
+
 	private class S3DownloadThread extends Thread{
 		
 		private String obj;
@@ -136,18 +131,41 @@ public class MMTCCtxListener extends ContextLoaderListener {
 		}
 	}
 	public MMTCCtxListener(){
-		logger.info("[MMTCCtxListner_CTOR]!");
 	}
 	
 	@Override
 	public void contextInitialized(ServletContextEvent event){
 		super.contextInitialized(event);
 		logger.info("[contextInitialized].");
+		final DefaultResourceLoader loader = new DefaultResourceLoader();
+		Resource dbPropResource = loader.getResource("classpath:database.properties");
+		if(dbPropResource.exists()){
+			final Properties props = new Properties();
+			try
+			{
+				props.load(dbPropResource.getInputStream());
+			}
+			catch(final IOException e)
+			{
+				logger.error("[contextInitialized]: Loading database.properties failed!");
+			}
+			for (String prop : props.stringPropertyNames())
+			{
+				if (System.getProperty(prop) == null)
+				{
+					System.setProperty(prop, props.getProperty(prop));
+				}
+			}			
+		}else{
+			//bad...
+		}
+		
 		if(DEBUG == false){
 			DriverManagerDataSource dataSource = 
 					new DriverManagerDataSource(
-							defaultDb,
-							dbUser,dbPW);
+							System.getProperty("mysql.url"),
+							System.getProperty("mysql.username"),
+							System.getProperty("mysql.password"));
 	
 			ArrayList<String> pics = null;
 			try {
