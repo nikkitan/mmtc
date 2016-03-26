@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+	xmlns:beans="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+	http://www.springframework.org/schema/security
+	http://www.springframework.org/schema/security/spring-security-4.0.xsd
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+	<!--  <beans:import resource="classpath:/WEB-INF/spring/root-context.xml"/> -->
+	<beans:import resource="classpath*:/WEB-INF/spring/root-context.xml" />
+	<context:component-scan base-package="com.mmtc.exam" />	
+	<debug/>
+	<http pattern="/resources/**" security="none"/>
+	<http auto-config="true" use-expressions="true">
+		<!--  <intercept-url pattern="/admin**" access="ROLE_USER" /> 
+		<intercept-url pattern="/adduser" access="isAnonymous() or hasAnyRole('ROLE_ADMIN','ROLE_USER')" />	-->	
+		<intercept-url pattern="/index" access="isAnonymous() or hasAnyRole('ROLE_ADMIN','ROLE_USER','ROLE_STU')" />		
+		<intercept-url pattern="/result" access="isAnonymous() or hasAnyRole('ROLE_ADMIN','ROLE_USER')" />
+		<intercept-url pattern="/login" access="isAnonymous() or hasAnyRole('ROLE_ADMIN','ROLE_USER','ROLE_STU')" />
+		<intercept-url pattern="/logout" access="isAnonymous() or hasAnyRole('ROLE_ADMIN','ROLE_USER','ROLE_STU')" />
+
+		<intercept-url pattern="/" access="isAnonymous() or hasAnyRole('ROLE_ADMIN','ROLE_USER','ROLE_STU')" />
+		<intercept-url pattern="/home" access="hasAnyRole('ROLE_ADMIN','ROLE_USER','ROLE_STU')" />
+		<intercept-url pattern="/addtestsuite" access="hasAnyRole('ROLE_ADMIN','ROLE_USER')" />		
+		<intercept-url pattern="/testsuite" access="hasAnyRole('ROLE_ADMIN','ROLE_USER','ROLE_STU')" />
+		<intercept-url pattern="/runsuite/**" access="hasAnyRole('ROLE_ADMIN','ROLE_USER','ROLE_STU')" />
+		<intercept-url pattern="/addsuite" access="hasAnyRole('ROLE_ADMIN','ROLE_USER')" />
+		<intercept-url pattern="/editsuite" access="hasAnyRole('ROLE_ADMIN','ROLE_USER')" />
+		<intercept-url pattern="/edittest" access="hasAnyRole('ROLE_ADMIN','ROLE_USER')" />
+		<intercept-url pattern="/exectest" access="hasAnyRole('ROLE_ADMIN','ROLE_USER','ROLE_STU')" />
+		<intercept-url pattern="/listtest" access="hasAnyRole('ROLE_ADMIN','ROLE_USER','ROLE_STU')" />
+		<intercept-url pattern="/picuploadindex" access="hasAnyRole('ROLE_ADMIN','ROLE_USER')" />
+		<intercept-url pattern="/preexecsuite" access="hasAnyRole('ROLE_ADMIN','ROLE_USER','ROLE_STU')" />
+		<intercept-url pattern="/settings" access="hasAnyRole('ROLE_ADMIN','ROLE_USER','ROLE_STU')" />
+		
+		<form-login 
+		    login-page="/login" 
+		    default-target-url="/home" 
+			authentication-failure-url="/login?error" 
+			username-parameter="username"
+			password-parameter="password" />
+		<logout
+			logout-success-url="/logout"
+			invalidate-session="true" 
+			delete-cookies="true" />
+		<!--  <session-management>
+			<concurrency-control max-sessions="1" error-if-maximum-exceeded="true" />
+		</session-management> -->
+		<!-- enable csrf protection <csrf disabled="false"/>-->
+		<csrf/>
+	</http>
+    <beans:bean id="bcryptEncoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder" />
+	<beans:bean id="jdbcDaoMgr" class="com.mmtc.exam.auth.MMTCJdbcUserDetailsMgr">
+		<!-- <beans:property name="dataSource" ref="mmtcMySqlDataSource"/>  -->
+	</beans:bean>
+	<authentication-manager>
+		<authentication-provider user-service-ref="jdbcDaoMgr">
+		</authentication-provider>
+	</authentication-manager>
+
+</beans:beans>

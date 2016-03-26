@@ -1,0 +1,17 @@
+table.root {
+	width: 100%;
+}
+caption.root {
+  text-align: left;
+  color: Black;
+  font-weight: bold;
+  text-transform: uppercase;
+  padding: 5px;
+}
+th.root,
+td.root {
+  padding: 10px 10px;
+}
+tbody.root td:nth-child(1){
+	width:70%;
+}
