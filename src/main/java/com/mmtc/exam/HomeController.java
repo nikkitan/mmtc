@@ -352,6 +352,77 @@ public class HomeController {
 		PutObjectResult pr = s3Client.putObject("mmtctestpic",file.getName(),file);
 		return new AsyncResult<PutObjectResult>(pr);	
 	}
+	@RequestMapping(value = "/submitedit", method = RequestMethod.POST)
+	public @ResponseBody ModelAndView submitEditPOST(
+			Locale locale,
+			Model model,
+			HttpSession session,
+			HttpServletRequest request, 
+			HttpServletResponse response,
+			@RequestParam("file") MultipartFile file) {
+		if(file.getSize() > 0L){
+		FileInputStream in = null;
+		try {
+			in = (FileInputStream) file.getInputStream();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			return new ModelAndView("result","result","Failed getting INPUT STREAM.");
+
+		}
+		String destDir = request.getSession().getServletContext().getRealPath("/");//servletCtx.getRealPath("/");
+		destDir += "resources";
+		destDir += File.separator;
+		destDir += "pic";
+		destDir += File.separator;
+	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+	    String curUser = auth.getName();
+		String encFileName = encrypt(curUser + "MendezMasterTrainingCenter6454_testpickey","test");			
+
+		FileOutputStream out = null;
+		try {
+			out = new FileOutputStream(destDir+encFileName+".png");
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			File f = new File(destDir);
+			if(f.mkdir() == false){
+				logger.error("[VERY BAD] Failed creating picture folder in CATALINA_HOME.");
+			}
+			return new ModelAndView("result","result","Failed getting OUTPUT STREAM.");
+		}
+		
+		int readBytes = 0;
+		byte[] buffer = new byte[8192];
+		try {
+			while ((readBytes = in.read(buffer, 0, 8192)) != -1) {
+				logger.info("===ddd=======");
+				out.write(buffer, 0, readBytes);
+			}
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} 
+		logger.info("[DONE_SAVING_IMG]");
+		try {
+			in.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		try {
+			out.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		}else{
+			return new ModelAndView("result","result","0 file size.");
+		}
+		
+		
+		return new ModelAndView("result","result","Non 0 file size.");
+	}
 	//http://www.jayway.com/2014/09/09/asynchronous-spring-service/
 	//http://docs.aws.amazon.com/AWSSdkDocsJava/latest/DeveloperGuide/java-dg-roles.html
 	@RequestMapping(value = "/edittest/{tid}", method = RequestMethod.POST)

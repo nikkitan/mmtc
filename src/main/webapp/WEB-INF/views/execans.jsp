@@ -49,11 +49,11 @@ $(document).ready(function() {
 	<% String origTest=(String)request.getAttribute("tests");%>
 	var oo = '<%=origTest%>';
 	var p = jQuery.parseJSON(oo);
-	window.localStorage.setItem('tests',oo);	
+	window.sessionStorage.setItem('tests',oo);	
 	var total = p.tests.length;
 	//Initialize timer.
 	var testStartTime = new Date();
-	window.localStorage.setItem('start_time',testStartTime);
+	window.sessionStorage.setItem('start_time',testStartTime);
 	var iii = 9;
 	//console.log("[START]: " + testStartTime);	
 	var endTime = testStartTime;
@@ -128,14 +128,14 @@ $(document).ready(function() {
 	
 	//Ans <p> in Review Modal.
 	$('#rvwModal').on('hide.bs.modal', function (e) {
-		curTest = parseInt(window.localStorage.getItem('modelsel'));
+		curTest = parseInt(window.sessionStorage.getItem('modelsel'));
 		showTest();
 	});	
 	
 	//Submit.
 	$('#sbtbtn').on('click', function (e) {
 		p.user = "${pageContext.request.userPrincipal.name}";
-		testStartTime = window.localStorage.getItem('start_time');
+		testStartTime = window.sessionStorage.getItem('start_time');
 		var curDate = new Date();
 		p.end = Date.parse(curDate);
 		p.beg = Date.parse(testStartTime);
@@ -170,7 +170,7 @@ $(document).ready(function() {
 			review += itemPrefix;
 			review += "id=\"";
 			review += i;
-			review += "\" onclick='window.localStorage.setItem(\"modelsel\","+i+"); $(\"#rvwModal\").modal(\"hide\");' ";
+			review += "\" onclick='window.sessionStorage.setItem(\"modelsel\","+i+"); $(\"#rvwModal\").modal(\"hide\");' ";
 
 			
 			if(p.tests[i].hasOwnProperty("taking")
