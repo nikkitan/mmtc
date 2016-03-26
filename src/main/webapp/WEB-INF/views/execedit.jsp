@@ -100,7 +100,7 @@ $(document).ready(function() {
 	
 	//Delete Test Btn.
 	$('#delbtn').on('click', function (e) {
-		$('#rvwModal').modal();		
+		p.tests.splice(testItor,1);
 	});
 		
 	//New Test Btn.
@@ -191,53 +191,70 @@ $(document).ready(function() {
 		console.log((Date.parse(curDate) - Date.parse(testStartTime))/1000);
 		$('input[name="tests"]').attr("value",JSON.stringify(p));
 		clearInterval(timerIntervalObj);
-	});	
+	});
+	
 	
 	function saveTestFromGUI(){
 		var curTestObj = p.tests[testItor];
-		if(curTestObj.hasOwnProperty("quetion") == false
-				|| typeof curTestObj.question == 'undefined'){
-				curTestObj.question = [];
-			}		
-		var q = $('textarea[name="ques"]').val();
-		if(q.charAt(1) != '.'){
-			q = testItor + '.' + q;
-		}
-		curTestObj.question.push(q);
-		if(curTestObj.hasOwnProperty("options") == false
-			|| typeof curTestObj.options == 'undefined'){
-			curTestObj.options = [];
-		}
-		$('input[name=\"opt\"]').each(function(index,value){
-			if(value.value.charAt(1) != '.'){
-				value.value = String.fromCharCode(index+65) + '.' + value.value;
+		if(curTestObj.dirty == true || curTestObj.isnew == true){
+			curTestObj.pic = $('#pic_input').prop('src');	
+			curTestObj.question = [];		
+			var q = $('textarea[name="ques"]').val();
+			if(typeof q != 'undefiend'){
+				if(q.charAt(1) != '.'){
+					q = testItor + '.' + q;
+				}
+				curTestObj.question.push(q);
 			}
-			curTestObj.options.push(value.value);	
-		});
-		if(curTestObj.hasOwnProperty("answers") == false
-				|| typeof curTestObj.answers == 'undefined'){
-				curTestObj.answers = [];
+			
+			curTestObj.options = [];
+			$('input[name=\"opt\"]').each(function(index,value){
+				if(typeof value.value != 'undefined'){
+					if(value.value.length > 0){
+						if(value.value.charAt(1) != '.'){
+							value.value = String.fromCharCode(index+65) + '.' + value.value;
+						}
+						curTestObj.options.push(value.value);
+					}else{
+						if(value.getAttribute('placeholder').length > 0){
+							curTestObj.options.push(value.getAttribute('placeholder'));
+						}else{
+							//overwrite though input is empty.
+							curTestObj.options.push(String.fromCharCode(index+65) + '.' + value.value);
+						}
+					}
+				}
+			});
+			curTestObj.answers = [];
+			curDom = $('input[name="ans"]');
+			if(typeof curDom.val() != 'undefined'){
+				if(curDom.val().length > 0){
+					curTestObj.answers.push(curDom.val());
+				}else{
+					if(curDom.prop('placeholder').length>0){
+						curTestObj.answers.push(curDom.prop('placeholder'));
+					}else{
+						curTestObj.answers.push(curDom.val());						
+					}
+				}
+			}
+			curTestObj.kwds = [];
+			$('textarea[name="kwd"]').each(function(index,value){
+				if(typeof value.value != 'undefined'){
+					curTestObj.kwds.push(value.value);
+				}
+			});
+			curTestObj.watchword = [];
+			$('textarea[name="wwd"]').each(function(index,value){
+				if(typeof value.value != 'undefined'){
+					curTestObj.watchword.push(value.value);
+				}
+			});
+			curTestObj.tips = [];
+			if(typeof $('textarea[name="tips"]').val() != 'undefined'){
+				curTestObj.tips=$('textarea[name="tips"]').val();	
+			}
 		}
-		curTestObj.answers.push($('input[name="ans"]').val());
-		if(curTestObj.hasOwnProperty("kwds") == false
-				|| typeof curTestObj.kwds == 'undefined'){
-				curTestObj.kwds = [];
-		}
-		$('textarea[name="kwd"]').each(function(index,value){
-			curTestObj.kwds.push(value.value);
-		});
-		if(curTestObj.hasOwnProperty("watchword") == false
-				|| typeof curTestObj.watchword == 'undefined'){
-				curTestObj.watchword = [];
-		}
-		$('textarea[name="wwd"]').each(function(index,value){
-			curTestObj.watchword.push(value.value);
-		});
-		if(curTestObj.hasOwnProperty("tips") == false
-				|| typeof curTestObj.tips == 'undefined'){
-				curTestObj.tips = [];
-		}
-		curTestObj.tips=$('textarea[name="tips"]').val();
 		console.log("[save]: " + curTestObj);
 	}
 	
@@ -329,8 +346,25 @@ $(document).ready(function() {
 			var curSN = testItor + 1;
 			$('#qh').append("<label>Item " + curSN + " of "+ total +"</label>");
 			
-			$('#quescol').append("<div class=\"thumbnail\"><label for=\"pic_input\"><img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/></label><input id=\"pic_input\" type=\"file\" name=\"pic\"/></div>");	
-			
+			$('#quescol').append("<div class=\"thumbnail\"><label for=\"pic_input\"><img id=\"picholder\" class=\"img-responsive\" src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/></label><input id=\"pic_input\" type=\"file\" name=\"file\"/></div>");	
+			$('#pic_input').on('change',function(){
+				console.log("[picchange]: " + $(this).val());
+				var filePath = $(this).val();
+				if(typeof FileReader != 'undefined'){
+					var picholder = $('#picholder');
+					var reader = new FileReader();
+					reader.onload = function(e){
+						//console.log("[load]: " + e.target.result);
+						picholder.prop('src',e.target.result);
+						//$(this).prop('src',"file://"+filePath);
+						p.tests[testItor].pic=e.target.result;//"file:///"+filePath;
+						window.sessionStorage.setItem('test',e.target.result);
+					}		
+					reader.readAsDataURL($(this)[0].files[0]);
+				}else{
+					console.log("This browser doesn't support HTML5 FileReader.");
+				}
+			});
 			if(typeof p.tests[testItor].question != 'undefined'){
 				$('#quescol').append("<textarea name=\"ques\" class=\"form-control\">" + p.tests[testItor].question[0] + "</textarea>");
 			}else{
@@ -454,7 +488,15 @@ $(document).ready(function() {
 			//Pic
 			$('#qh').append("<label>Item " + curSN + " of "+ total +"</label>");
 			if(typeof p.tests[testItor].pic != 'undefined'){
-				$('#quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/></div>")
+				if(p.tests[testItor].dirty == true){
+					//$('#quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img \"img-responsive\" src=\"" + p.tests[testItor].pic+ "\"/></div>");					
+					$('#quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img id=\"picholder\" \"img-responsive\"/></div>");	
+					$('#picholder').prop('src',window.sessionStorage.getItem('test'));
+					console.log("[setsrc]: " + p.tests[testItor].pic);
+					
+				}else{
+					$('#quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img \"img-responsive\" src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/></div>");
+				}
 			}
 			//Question
 			if(typeof p.tests[testItor].question != "undefined"){
@@ -600,7 +642,7 @@ $(document).ready(function() {
     </div>
   </div>
 </div>
-<form:form id="myform" method="POST" action="${pageContext.request.contextPath}/submitedit"> 
+<form:form id="myform" method="POST" enctype="multipart/form-data" action="${pageContext.request.contextPath}/submitedit"> 
 <div class="row">
 <div class="col-sm-8">
 <!-- MARK -->
