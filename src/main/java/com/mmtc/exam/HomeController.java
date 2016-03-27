@@ -238,7 +238,6 @@ public class HomeController {
 			HttpServletRequest request, 
 			HttpServletResponse response){
 		logger.info(request.getRequestURL().toString());
-		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		TestSuite ts = new TestSuite(null);
 		ModelAndView resultView = new ModelAndView();
 		resultView.setViewName("editsuite");
@@ -351,6 +350,213 @@ public class HomeController {
 		metadata.setContentType("image/png");
 		PutObjectResult pr = s3Client.putObject("mmtctestpic",file.getName(),file);
 		return new AsyncResult<PutObjectResult>(pr);	
+	}
+	
+	private Boolean updateTest(String suite, Test test){
+		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
+		String sql = "SELECT pk FROM testsuite WHERE name=?";
+		long suitePK = 0L;
+		try {
+			Connection conn = dataSource.getConnection();
+			PreparedStatement prepStmt = conn.prepareStatement(sql);
+			prepStmt.setString(1, suite);
+			ResultSet rs = prepStmt.executeQuery();
+			if(rs != null && rs.isBeforeFirst()){
+				suitePK = rs.getLong("pk");
+			}else{
+				logger.error("[saveTest]: Could not find suite of " + suite + " !");
+				prepStmt.close();
+				conn.close();
+				return false;
+			}
+			
+			sql = "UPDATE test SET question=?,options=?,answer=?," 
+					+ "testsuite_pk=?,keywords=?,pic=?,watchword=?,"
+					+ "tips=?,updatedat=NOW() WHERE testsuite_pk = ? AND serial=?";
+			prepStmt.close();
+			prepStmt = conn.prepareStatement(sql);
+			prepStmt.setString(1, test.getQuestion().toString());
+			prepStmt.setString(2, test.getAnswers().toString());
+			prepStmt.setLong(3, suitePK);
+			prepStmt.setString(4, test.getKeywords().toString());
+			prepStmt.setString(5, test.getPic());
+			prepStmt.setString(6, test.getWatchword().toString());
+			prepStmt.setString(7, test.getTips().toString());
+			
+			prepStmt.executeUpdate();
+			prepStmt.close();
+			conn.close();
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			
+		}
+		
+		return true;
+	}
+	private Boolean addTest(String suite, Test test){
+		
+		ArrayList<Test> tests = getTestsForSuite(suite);
+		int i = 0;
+		for(; i < tests.size(); ++i){
+			if(tests.get(i).getSerialNo() == test.getSerialNo()){
+				//We'll insert new test before found n-th test.
+				break;
+			}
+		}
+		if(i == tests.size()){
+			//Not found, we'll append new test at end.
+			tests.add(test);
+		}else{
+			tests.add(i, test);
+			++i;
+			for(; i < tests.size(); ++i){
+				tests.get(i).setSerialNo(i+1);
+			}
+		}
+		
+		//Put tests back to db.
+		return addTests(suite,tests);
+	}
+	private Boolean addTests(String suite, ArrayList<Test> tests){
+		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
+		String sql = "SELECT pk FROM testsuite WHERE name=?";
+		long suitePK = 0L;
+		Connection conn = null;
+		try {
+			conn = dataSource.getConnection();
+			PreparedStatement prepStmt = conn.prepareStatement(sql);
+			prepStmt.setString(1, suite);
+			ResultSet rs = prepStmt.executeQuery();
+			if(rs != null && rs.isBeforeFirst()){
+				suitePK = rs.getLong("pk");
+			}else{
+				//suite doesn't exist.
+				prepStmt.close();
+				conn.close();
+				suitePK = addEmptySuite(suite);
+				sql="INSERT INTO test (testsuite_pk,question,options,answer,"
+					+ "keywords,pic,serial,watchword,tips,createdat,updatedat)"
+					+ " VALUES (?,?,?,?,?,?,?,?,?,NOW(),NOW())";
+				prepStmt = conn.prepareStatement(sql);
+				conn.setAutoCommit(false);
+				for(Test t: tests){
+					prepStmt.setLong(1, suitePK);
+					prepStmt.setString(2, t.getQuestion().toString());
+					prepStmt.setString(3, t.getOptions().toString());
+					prepStmt.setString(4, t.getAnswers().toString());
+					prepStmt.setString(5, t.getKeywords().toString());
+					prepStmt.setString(6, t.getPic());
+					prepStmt.setInt(7, t.getSerialNo());
+					prepStmt.setString(8, t.getWatchword().toString());
+					prepStmt.setString(9, t.getTips().toString());
+					prepStmt.addBatch();
+				}				
+				conn.commit();
+				conn.setAutoCommit(true);
+				prepStmt.close();
+				conn.close();
+				
+			}
+		}catch(SQLException e){
+			logger.error("[addTests]: " + e.toString());
+			try {
+				conn.rollback();
+			} catch (SQLException e1) {
+				// TODO Auto-generated catch block
+				logger.error("[addTests]: " + e1.toString());
+				e1.printStackTrace();
+			}
+			return false;
+		}
+		return true;
+	}
+	private Long addEmptySuite(String name){
+		long newSuitePK = -1L;
+		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
+		String sql = "INSERT INTO testsuite (name) VALUES(?)";
+		try {
+			Connection conn = dataSource.getConnection();
+			PreparedStatement prepStmt = conn.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS);
+			prepStmt.setString(1, name);
+			ResultSet rs = prepStmt.executeQuery();
+			if(rs != null && rs.isBeforeFirst()){
+				newSuitePK = rs.getLong(0);
+			}else{
+				logger.error("[saveTest]: Could not get PK of new suite of " + name + " !");
+				prepStmt.close();
+				conn.close();
+ 			}
+			prepStmt.close();
+			conn.close();
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			
+		}		
+		return newSuitePK;
+	}
+	@RequestMapping(value = "/oneedit", method = RequestMethod.POST)
+	public @ResponseBody String oneEditPOST(
+			Locale locale,
+			Model model,
+			HttpSession session,
+			HttpServletRequest request, 
+			HttpServletResponse response,
+			@RequestParam ("suite") String suite,
+			@RequestParam ("test") String test) {
+		logger.info(request.getRequestURL().toString());
+		logger.info(test);
+
+		JsonParser jp = new JsonParser();
+		JsonObject testObj = jp.parse(test).getAsJsonObject();
+		String destDir = request.getSession().getServletContext().getRealPath("/");//servletCtx.getRealPath("/");
+		destDir += "resources";
+		destDir += File.separator;
+		destDir += "pic";
+		destDir += File.separator;
+		logger.info("[2_save_img_2] " + destDir);
+	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+	    String curUser = auth.getName();		
+		String strB64Pic = testObj.get("pic").getAsString();
+		String encFileName = encrypt(curUser + "MendezMasterTrainingCenter6454_testpickey",suite + "-" + testObj.get("serialNo").getAsString());			
+		strB64Pic = strB64Pic.substring(strB64Pic.indexOf(",")+1);
+		byte[] rawPicBytes = Base64.decodeBase64(strB64Pic);
+		logger.debug("[pic_enc_name]: " + encFileName);
+		try {
+			FileOutputStream out = new FileOutputStream(destDir+encFileName);
+			out.write(rawPicBytes);
+			out.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		Test t = new Test();
+		t.setAnswers(testObj.get("answers").getAsJsonArray());
+		if(testObj.get("kwds") != null){
+			t.setKeywords(testObj.get("kwds").getAsJsonArray());
+		}
+		t.setOptions(testObj.get("options").getAsJsonArray());
+		t.setPic(encFileName);
+		t.setQuestion(testObj.get("question").getAsJsonArray());
+		if(testObj.get("serialNo") != null){
+			t.setSerialNo(testObj.get("serialNo").getAsInt());
+		}
+		t.setSuite(suite);
+		if(testObj.get("tips") != null){
+			t.setTips(testObj.get("tips").getAsJsonArray());
+		}
+		if(testObj.get("watchword") != null){
+			t.setWatchword(testObj.get("watchword").getAsJsonArray());
+		}
+		updateTest(suite,t);
+		
+		return "{\"result\":\"success\"}";
 	}
 	@RequestMapping(value = "/submitedit", method = RequestMethod.POST)
 	public @ResponseBody ModelAndView submitEditPOST(
@@ -1250,7 +1456,7 @@ public class HomeController {
 		byte[] finalCipherText = new byte[iv.length + byteCipherText.length];
 		System.arraycopy(iv, 0, finalCipherText, 0, iv.length);
 		System.arraycopy(byteCipherText, 0, finalCipherText, iv.length, byteCipherText.length);
-		String strFinalCipherText = new String(Base64.encodeBase64(finalCipherText,false,true));//BASE64Encoder().encode(byteCipherText);		
+		String strFinalCipherText = new String(Base64.encodeBase64(finalCipherText,false,true));
 		return strFinalCipherText;
 	}
 	
@@ -1307,7 +1513,7 @@ public class HomeController {
 		
 	}
 	@RequestMapping(value = "/execans", method = RequestMethod.GET)
-	public @ResponseBody ModelAndView execAnsPOST(
+	public @ResponseBody ModelAndView execAnsGET(
 			Locale locale,
 			Model model,
 			HttpSession session,
