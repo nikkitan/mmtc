@@ -173,6 +173,26 @@ $(document).ready(function() {
 			});
 			curMode = view;
 			showTest4View();
+			//Ajax upload.
+			$.ajaxPrefilter(function (options, originalOptions, jqXHR) {
+			  jqXHR.setRequestHeader('X-CSRF-Token', "${_csrf.token}");
+			});
+			p.tests[testItor].pic=window.sessionStorage.getItem('test');
+			var postParam = {"suite":p.suite,"test":JSON.stringify(p.tests[testItor])};
+			$.ajax({
+			    url : "http://localhost:8080/mmtcexam/oneedit",
+			    type: "POST",
+			    data : postParam,
+			    dataType: "json",
+			    success: function(data, textStatus, jqXHR)
+			    {
+			        console.log("[AJAX_good]: " + data);
+			    },
+			    error: function (jqXHR, textStatus, errorThrown)
+			    {
+			        console.log("[AJAX_fail]: " + errorThrown);			 
+			    }
+			});
 		}
 	});
 	
@@ -354,10 +374,8 @@ $(document).ready(function() {
 					var picholder = $('#picholder');
 					var reader = new FileReader();
 					reader.onload = function(e){
-						//console.log("[load]: " + e.target.result);
 						picholder.prop('src',e.target.result);
-						//$(this).prop('src',"file://"+filePath);
-						p.tests[testItor].pic=e.target.result;//"file:///"+filePath;
+						p.tests[testItor].pic=e.target.result;
 						window.sessionStorage.setItem('test',e.target.result);
 					}		
 					reader.readAsDataURL($(this)[0].files[0]);
