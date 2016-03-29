@@ -62,6 +62,7 @@ var curMode = view;
 var curDom;
 $(document).ready(function() {
 	//Get and save in JSON.
+	var debug = "${debug}";
 	<% String origTest=(String)request.getAttribute("tests");%>
 	var oo = '<%=origTest%>';
 	var p = jQuery.parseJSON(oo);
@@ -123,7 +124,6 @@ $(document).ready(function() {
 	
 	//Edit checkbox.
 	$('#chekedit').on('click', function (e) {
-		console.log("[chekedit] " + curMode);
 		p.tests[testItor].dirty = true;
 		if(curMode == view){
 			curMode = edit;
@@ -172,6 +172,38 @@ $(document).ready(function() {
 				clearInterval(timerIntervalObj);
 			});
 			curMode = view;
+			//Ajax upload.
+			$.ajaxPrefilter(function (options, originalOptions, jqXHR) {
+			  jqXHR.setRequestHeader('X-CSRF-Token', "${_csrf.token}");
+			});
+			p.tests[testItor].pic=window.sessionStorage.getItem('test');
+			var postParam = {"suite":p.suite,"test":JSON.stringify(p.tests[testItor])};
+			var ip = debug?'localhost:8080/':'mmtctest.com/';
+			var scheme = debug?'http://':'https://';
+			var url = scheme + ip + "mmtcexam/oneedit";
+			console.log("[ajax_url]: " + url);
+			$.ajax({
+			    url : url,
+			    type: "POST",
+			    data : postParam,
+			    dataType: "json",
+			    async:false,
+			    success: function(data, textStatus, jqXHR)
+			    {
+			        console.log("[AJAX_good]: " + data.toString());
+			        var result =  data;//jQuery.parseJSON(data);
+			        var index = result.test.serialNo - 1;
+			        var test = p.tests[testItor];
+			        test.pic = result.test.pic;
+			        test.dirty = false;
+			        if(test.hasOwnProperty('isnew') && test.isnew == true)
+			        	p.tests[testItor].isnew = false;
+			    },
+			    error: function (jqXHR, textStatus, errorThrown)
+			    {
+			        console.log("[AJAX_fail]: " + errorThrown);			 
+			    }
+			});
 			showTest4View();
 		}
 	});
@@ -179,16 +211,6 @@ $(document).ready(function() {
 	//Submit.
 	$('#sbtbtn').on('click', function (e) {
 		p.user = "${pageContext.request.userPrincipal.name}";
-		testStartTime = window.localStorage.getItem('start_time');
-		var curDate = new Date();
-		p.end = Date.now();//Date.parse(curDate);
-		p.beg = testStartTime;//Date.parse(testStartTime);
-		//p.testdur = (Date.parse(curDate) - Date.parse(testStartTime))/1000;
-		console.log("s: " + testStartTime);
-		console.log("c: " + curDate);
-		console.log(Date.parse(curDate));
-		console.log(Date.parse(testStartTime));
-		console.log((Date.parse(curDate) - Date.parse(testStartTime))/1000);
 		$('input[name="tests"]').attr("value",JSON.stringify(p));
 		clearInterval(timerIntervalObj);
 	});
@@ -334,6 +356,7 @@ $(document).ready(function() {
 			$('#sbtdiv').html('');
 			$('#qh').children().last().remove();
 			$('#quescol').html('');
+			$('#piccol').html('');
 			$('#optcol').html('');
 			var answell = $('#answell');
 			answell.html('');
@@ -346,7 +369,7 @@ $(document).ready(function() {
 			var curSN = testItor + 1;
 			$('#qh').append("<label>Item " + curSN + " of "+ total +"</label>");
 			
-			$('#quescol').append("<div class=\"thumbnail\"><label for=\"pic_input\"><img id=\"picholder\" class=\"img-responsive\" src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/></label><input id=\"pic_input\" type=\"file\" name=\"file\"/></div>");	
+			$('#piccol').append("<img id=\"picholder\" class=\"img-thumbnail img-responsive\" src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/><input id=\"pic_input\" type=\"file\" name=\"file\"/>");	
 			$('#pic_input').on('change',function(){
 				console.log("[picchange]: " + $(this).val());
 				var filePath = $(this).val();
@@ -354,10 +377,8 @@ $(document).ready(function() {
 					var picholder = $('#picholder');
 					var reader = new FileReader();
 					reader.onload = function(e){
-						//console.log("[load]: " + e.target.result);
 						picholder.prop('src',e.target.result);
-						//$(this).prop('src',"file://"+filePath);
-						p.tests[testItor].pic=e.target.result;//"file:///"+filePath;
+						p.tests[testItor].pic=e.target.result;
 						window.sessionStorage.setItem('test',e.target.result);
 					}		
 					reader.readAsDataURL($(this)[0].files[0]);
@@ -478,6 +499,7 @@ $(document).ready(function() {
 			console.log('cur: ' + testItor);
 			$('#qh').children().last().remove();
 			$('#quescol').html('');
+			$('#piccol').html('');
 			$('#optcol').html('');			
 			var answell = $('#answell');
 			answell.html('');
@@ -488,14 +510,14 @@ $(document).ready(function() {
 			//Pic
 			$('#qh').append("<label>Item " + curSN + " of "+ total +"</label>");
 			if(typeof p.tests[testItor].pic != 'undefined'){
-				if(p.tests[testItor].dirty == true){
+				if(p.tests[testItor].hasOwnProperty('dirty') && p.tests[testItor].dirty == true){
 					//$('#quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img \"img-responsive\" src=\"" + p.tests[testItor].pic+ "\"/></div>");					
-					$('#quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img id=\"picholder\" \"img-responsive\"/></div>");	
+					$('#piccol').append("<img id=\"picholder\" \"img-thumbnail img-responsive\"/>");	
 					$('#picholder').prop('src',window.sessionStorage.getItem('test'));
 					console.log("[setsrc]: " + p.tests[testItor].pic);
 					
 				}else{
-					$('#quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img \"img-responsive\" src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/></div>");
+					$('#piccol').append("<img \"img-thumbnail img-responsive\" src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/>");
 				}
 			}
 			//Question
@@ -662,6 +684,10 @@ $(document).ready(function() {
 </div>
 </div>
 <hr>
+<div class="row">
+<div class="col-sm-3" id="piccol">
+</div>
+</div>
 <div class="row">
 <div class="col-sm-8" id="quescol">
 

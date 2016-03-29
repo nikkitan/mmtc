@@ -12,7 +12,6 @@ public class Test {
 	public Test(){
 		taking = null;
 	}
-	
 	public JsonArray getQuestion() {
 		return question;
 	}
