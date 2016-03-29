@@ -5,5 +5,5 @@
 package com.mmtc.exam;
 
 public class BuildConfig {
-	public static final Boolean DEBUG = false;
+	public static final Boolean DEBUG = true;
 }
