@@ -23,6 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Properties;
@@ -261,7 +262,7 @@ public class HomeController {
 		jSuite.add("tests", jTests);
 		String strJ = gson.toJson(jSuite).replace("\\", "\\\\");
 		request.setAttribute("tests",strJ);
-		return new ModelAndView("execedit");
+		return new ModelAndView("execedit","debug",DEBUG);
 	}
 
 	@RequestMapping(value = "/edittest/{tid}", method = RequestMethod.GET)
@@ -353,37 +354,76 @@ public class HomeController {
 	}
 	
 	private Boolean updateTest(String suite, Test test){
+		if(suite.length() == 0 || test.getSerialNo() == null)
+			return false;
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		String sql = "SELECT pk FROM testsuite WHERE name=?";
-		long suitePK = 0L;
+		long suitePK = -1L;
 		try {
 			Connection conn = dataSource.getConnection();
 			PreparedStatement prepStmt = conn.prepareStatement(sql);
 			prepStmt.setString(1, suite);
 			ResultSet rs = prepStmt.executeQuery();
-			if(rs != null && rs.isBeforeFirst()){
+			if(rs != null && rs.next()){
 				suitePK = rs.getLong("pk");
 			}else{
 				logger.error("[saveTest]: Could not find suite of " + suite + " !");
+				rs.close();
 				prepStmt.close();
 				conn.close();
 				return false;
 			}
-			
-			sql = "UPDATE test SET question=?,options=?,answer=?," 
-					+ "testsuite_pk=?,keywords=?,pic=?,watchword=?,"
-					+ "tips=?,updatedat=NOW() WHERE testsuite_pk = ? AND serial=?";
+			rs.close();
 			prepStmt.close();
-			prepStmt = conn.prepareStatement(sql);
-			prepStmt.setString(1, test.getQuestion().toString());
-			prepStmt.setString(2, test.getAnswers().toString());
-			prepStmt.setLong(3, suitePK);
-			prepStmt.setString(4, test.getKeywords().toString());
-			prepStmt.setString(5, test.getPic());
-			prepStmt.setString(6, test.getWatchword().toString());
-			prepStmt.setString(7, test.getTips().toString());
+
+			sql = "UPDATE test SET ";
+			String sqlSuffix = "updatedat=NOW() WHERE testsuite_pk = ? AND serial=?";
+			HashMap<String,String> columns = new HashMap<String,String>();
+			if(test.getQuestion() != null){
+				columns.put("question", test.getQuestion().toString());
+			}
+			if(test.getOptions() != null){
+				columns.put("options", test.getOptions().toString());
+			}			
+			if(test.getAnswers() != null){
+				columns.put("answer", test.getAnswers().toString());			
+			}
+		
+			if(test.getKeywords() != null){
+				columns.put("keywords", test.getKeywords().toString());			
+			}			
+			if(test.getPic() != null){
+				columns.put("pic", test.getPic().toString());						
+			}
+			if(test.getWatchword() != null){
+				columns.put("watchword", test.getWatchword().toString());						
+			}
+			if(test.getTips() != null){
+				columns.put("tips", test.getTips().toString());						
+			}
 			
-			prepStmt.executeUpdate();
+			if(columns.size() > 0){
+				for(String key:columns.keySet()){
+					sql += key;
+					sql += "=";
+					sql += "?,";
+				}
+				sql += "testsuite_pk=?,";
+			}
+			sql += sqlSuffix;
+			prepStmt = conn.prepareStatement(sql);	
+			int i = 1;
+			for(String key:columns.keySet()){
+				prepStmt.setNString(i, columns.get(key));
+				++i;
+			}
+			prepStmt.setLong(i, suitePK);
+			++i;
+			prepStmt.setLong(i, suitePK);
+			++i;
+			prepStmt.setInt(i, test.getSerialNo());
+			logger.debug("[finalPrepStmt]: " + prepStmt.toString());
+			//prepStmt.executeUpdate();
 			prepStmt.close();
 			conn.close();
 			
@@ -429,7 +469,7 @@ public class HomeController {
 			PreparedStatement prepStmt = conn.prepareStatement(sql);
 			prepStmt.setString(1, suite);
 			ResultSet rs = prepStmt.executeQuery();
-			if(rs != null && rs.isBeforeFirst()){
+			if(rs != null && rs.next()){
 				suitePK = rs.getLong("pk");
 			}else{
 				//suite doesn't exist.
@@ -481,7 +521,7 @@ public class HomeController {
 			PreparedStatement prepStmt = conn.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS);
 			prepStmt.setString(1, name);
 			ResultSet rs = prepStmt.executeQuery();
-			if(rs != null && rs.isBeforeFirst()){
+			if(rs != null && rs.next()){
 				newSuitePK = rs.getLong(0);
 			}else{
 				logger.error("[saveTest]: Could not get PK of new suite of " + name + " !");
@@ -548,15 +588,41 @@ public class HomeController {
 			t.setSerialNo(testObj.get("serialNo").getAsInt());
 		}
 		t.setSuite(suite);
-		if(testObj.get("tips") != null){
-			t.setTips(testObj.get("tips").getAsJsonArray());
+		JsonElement elm = testObj.get("tips");
+		if(elm != null){
+			if(elm.isJsonArray() == true){
+				t.setTips(testObj.get("tips").getAsJsonArray());
+			}else{
+				if(elm.getAsString().length() > 0){
+					JsonArray tipArr = new JsonArray();
+					tipArr.add(elm);
+					t.setTips(tipArr);
+				}
+			}
 		}
-		if(testObj.get("watchword") != null){
-			t.setWatchword(testObj.get("watchword").getAsJsonArray());
+		elm = testObj.get("watchword");
+		if(elm != null){
+			if(elm.isJsonArray() == true){
+				t.setTips(testObj.get("watchword").getAsJsonArray());
+			}else{
+				if(elm.getAsString().length() > 0){
+					JsonArray tipArr = new JsonArray();
+					tipArr.add(elm);
+					t.setWatchword(tipArr);
+				}
+			}
+		}	
+		JsonObject result = new JsonObject();
+		if(updateTest(suite,t) == false){
+			result.add("result", new JsonPrimitive(false));
+		}else{
+			result.add("result", new JsonPrimitive(true));			
 		}
-		updateTest(suite,t);
 		
-		return "{\"result\":\"success\"}";
+		Gson gson = new Gson();
+		result.add("test", gson.toJsonTree(t));
+		String strJ = gson.toJson(result).replace("\\", "\\\\");	
+		return strJ;
 	}
 	@RequestMapping(value = "/submitedit", method = RequestMethod.POST)
 	public @ResponseBody ModelAndView submitEditPOST(
