@@ -106,13 +106,10 @@ $(document).ready(function() {
 		
 	//New Test Btn.
 	$('#newbtn').on('click', function (e) {
-		console.log("[new1] " + curMode);
 		p.tests.splice(testItor,0,{"dirty":true,"isnew":true,"serialNo":testItor});
 		window.localStorage.setItem("tests",JSON.stringify(p));
 		curMode = edit;
 		showTest4Edit();
-		console.log("[new2] " + curMode);
-
 	});
 	
 	
@@ -176,32 +173,38 @@ $(document).ready(function() {
 			$.ajaxPrefilter(function (options, originalOptions, jqXHR) {
 			  jqXHR.setRequestHeader('X-CSRF-Token', "${_csrf.token}");
 			});
-			p.tests[testItor].pic=window.sessionStorage.getItem('test');
+			p.tests[testItor].pic=window.sessionStorage.getItem('pic'+testItor);
 			var postParam = {"suite":p.suite,"test":JSON.stringify(p.tests[testItor])};
-			var ip = debug?'localhost:8080/':'mmtctest.com/';
-			var scheme = debug?'http://':'https://';
-			var url = scheme + ip + "mmtcexam/oneedit";
-			console.log("[ajax_url]: " + url);
+			var ip = debug == true?'localhost:8080/':'www.mmtctest.com/';
+			var scheme = debug == true?'http://':'https://';
+			var subdomain = debug == true? "mmtcexam/oneedit":"oneedit";
+			var url = scheme + ip + subdomain;
 			$.ajax({
 			    url : url,
 			    type: "POST",
 			    data : postParam,
 			    dataType: "json",
-			    async:false,
+			    async:true,
 			    success: function(data, textStatus, jqXHR)
 			    {
 			        console.log("[AJAX_good]: " + data.toString());
 			        var result =  data;//jQuery.parseJSON(data);
 			        var index = result.test.serialNo - 1;
-			        var test = p.tests[testItor];
+			        var test = p.tests[index];
 			        test.pic = result.test.pic;
 			        test.dirty = false;
 			        if(test.hasOwnProperty('isnew') && test.isnew == true)
-			        	p.tests[testItor].isnew = false;
+			        	p.tests[index].isnew = false;
+			        if(curMode==e)
+			        	showTest4Edit();
+			        else
+			        	showTest4View();
+					window.sessionStorage.removeItem("pic"+index,e.target.result);
 			    },
 			    error: function (jqXHR, textStatus, errorThrown)
 			    {
-			        console.log("[AJAX_fail]: " + errorThrown);			 
+			        console.log("[AJAX_fail]: " + errorThrown);	
+			        
 			    }
 			});
 			showTest4View();
@@ -223,9 +226,7 @@ $(document).ready(function() {
 			curTestObj.question = [];		
 			var q = $('textarea[name="ques"]').val();
 			if(typeof q != 'undefiend'){
-				if(q.charAt(1) != '.'){
-					q = testItor + '.' + q;
-				}
+				q = testItor+1 + '.' + q;
 				curTestObj.question.push(q);
 			}
 			
@@ -277,7 +278,6 @@ $(document).ready(function() {
 				curTestObj.tips=$('textarea[name="tips"]').val();	
 			}
 		}
-		console.log("[save]: " + curTestObj);
 	}
 	
 	function genReviewTable(){
@@ -350,7 +350,6 @@ $(document).ready(function() {
 	//Display tests.
 	function showTest4Edit(){
 		if(testItor > -1 && testItor < total){
-			console.log('[show4Edit]');
 			$('#prvnxtrvwdiv').html('');
 			$('#delnewdiv').html('');
 			$('#sbtdiv').html('');
@@ -371,7 +370,6 @@ $(document).ready(function() {
 			
 			$('#piccol').append("<img id=\"picholder\" class=\"img-thumbnail img-responsive\" src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/><input id=\"pic_input\" type=\"file\" name=\"file\"/>");	
 			$('#pic_input').on('change',function(){
-				console.log("[picchange]: " + $(this).val());
 				var filePath = $(this).val();
 				if(typeof FileReader != 'undefined'){
 					var picholder = $('#picholder');
@@ -379,7 +377,7 @@ $(document).ready(function() {
 					reader.onload = function(e){
 						picholder.prop('src',e.target.result);
 						p.tests[testItor].pic=e.target.result;
-						window.sessionStorage.setItem('test',e.target.result);
+						window.sessionStorage.setItem("pic"+testItor,e.target.result);
 					}		
 					reader.readAsDataURL($(this)[0].files[0]);
 				}else{
@@ -387,7 +385,8 @@ $(document).ready(function() {
 				}
 			});
 			if(typeof p.tests[testItor].question != 'undefined'){
-				$('#quescol').append("<textarea name=\"ques\" class=\"form-control\">" + p.tests[testItor].question[0] + "</textarea>");
+				var dotIndex = p.tests[testItor].question[0].indexOf('.');
+				$('#quescol').append("<textarea name=\"ques\" class=\"form-control\">" + p.tests[testItor].question[0].substring(dotIndex+1) + "</textarea>");
 			}else{
 				$('#quescol').append("<textarea name=\"ques\" class=\"form-control\" placeholder=\"Question\"></textarea>");				
 			}
@@ -441,8 +440,8 @@ $(document).ready(function() {
 			answell.append("<button type=\"button\" id=\"pluskwdbtn\" class=\"btn btn-info\">");
 			answell.children().last()
 			.on('click',function(){
-				$("#kwden").append("<textarea class=\"form-control\"> </textarea>");	
-				$("#kwdch").append("<textarea class=\"form-control\"> </textarea>");
+				$("#kwden").append("<textarea name=\"kwd\" class=\"form-control\"> </textarea>");	
+				$("#kwdch").append("<textarea name=\"kwd\" class=\"form-control\"> </textarea>");
 			});
 			answell.children().last().append("<span class=\"glyphicon glyphicon-plus\"></span>");
 			
@@ -471,8 +470,8 @@ $(document).ready(function() {
 			answell.append("<button type=\"button\"  id=\"pluswdbtn\" class=\"btn btn-info\">");
 			$("#pluswdbtn").append("<span class=\"glyphicon glyphicon-plus\"></span>");
 			$("#pluswdbtn").on('click',function(){
-				$("#wwden").append("<textarea class=\"form-control\"> </textarea>");	
-				$("#wwdch").append("<textarea class=\"form-control\"> </textarea>");							
+				$("#wwden").append("<textarea name=\"wwd\" class=\"form-control\"> </textarea>");	
+				$("#wwdch").append("<textarea name=\"wwd\" class=\"form-control\"> </textarea>");							
 			});
 			answell.append("<button type=\"button\" id=\"minuswdbtn\" class=\"btn btn-info\">");
 			answell.children().last()
@@ -496,7 +495,6 @@ $(document).ready(function() {
 	//Display tests.
 	function showTest4View(){
 		if(testItor > -1 && testItor < total){
-			console.log('cur: ' + testItor);
 			$('#qh').children().last().remove();
 			$('#quescol').html('');
 			$('#piccol').html('');
@@ -513,8 +511,8 @@ $(document).ready(function() {
 				if(p.tests[testItor].hasOwnProperty('dirty') && p.tests[testItor].dirty == true){
 					//$('#quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img \"img-responsive\" src=\"" + p.tests[testItor].pic+ "\"/></div>");					
 					$('#piccol').append("<img id=\"picholder\" \"img-thumbnail img-responsive\"/>");	
-					$('#picholder').prop('src',window.sessionStorage.getItem('test'));
-					console.log("[setsrc]: " + p.tests[testItor].pic);
+					$('#picholder').prop('src',window.sessionStorage.getItem('pic'+testItor));
+					//console.log("[setsrc]: " + p.tests[testItor].pic);
 					
 				}else{
 					$('#piccol').append("<img \"img-thumbnail img-responsive\" src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/>");
