@@ -377,7 +377,18 @@ public class HomeController {
 			String sqlSuffix = "updatedat=NOW() WHERE testsuite_pk = ? AND serial=?";
 			HashMap<String,String> columns = new HashMap<String,String>();
 			if(test.getQuestion() != null){
-				columns.put("question", test.getQuestion().toString());
+				JsonArray quesArr = test.getQuestion();
+				for(int i = 0; i < quesArr.size(); ++i){
+					String cur = quesArr.get(i).getAsString();
+					if(cur.indexOf(".") != -1){
+						cur = cur.substring(cur.indexOf(".") + 1);
+					}
+					quesArr.set(i, new JsonPrimitive(cur));
+					
+				}
+				
+				logger.info("[updateTest_Q]: " + quesArr.toString());
+				columns.put("question", quesArr.toString());
 			}
 			if(test.getOptions() != null){
 				columns.put("options", test.getOptions().toString());
@@ -420,7 +431,7 @@ public class HomeController {
 			++i;
 			prepStmt.setInt(i, test.getSerialNo());
 			logger.debug("[finalPrepStmt]: " + prepStmt.toString());
-			//prepStmt.executeUpdate();
+			prepStmt.executeUpdate();
 			prepStmt.close();
 			conn.close();
 			
@@ -573,6 +584,9 @@ public class HomeController {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		//Upload to S3.
+		File outFile = new File(destDir+encFileName); 
+		uploadS3(outFile);
 		Test t = new Test();
 		t.setAnswers(testObj.get("answers").getAsJsonArray());
 		if(testObj.get("kwds") != null){
@@ -1392,6 +1406,7 @@ public class HomeController {
 				found = new Test();
 				serial = Integer.toString(s.getInt("serial"));
 				if(s.getString("question").equals("[\"NOQUESTION\"]") == false){
+					logger.info("[getTestsForSuite_Q]: " + s.getString("question"));
 					elem = jp.parse(s.getString("question"));
 					jsonArr = elem.getAsJsonArray();
 					temp = jsonArr.get(0).getAsString();
