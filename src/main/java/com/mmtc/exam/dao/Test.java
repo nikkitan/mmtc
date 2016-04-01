@@ -1,7 +1,4 @@
 package com.mmtc.exam.dao;
-
-import java.util.ArrayList;
-
 import com.google.gson.JsonArray;
 
 public class Test {

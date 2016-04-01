@@ -28,10 +28,6 @@ import static com.mmtc.exam.BuildConfig.DEBUG;
 public class MMTCCtxListener extends ContextLoaderListener {
 
 	private static final Logger logger = LoggerFactory.getLogger(MMTCCtxListener.class);
-	
-	private String defaultDb;
-	private String dbUser;
-	private String dbPW;
 
 	private class S3DownloadThread extends Thread{
 		
@@ -71,7 +67,7 @@ public class MMTCCtxListener extends ContextLoaderListener {
 				dir2Save += "pic";
 				dir2Save += File.separator;	
 				dir2Save += dlObj.getKey();
-				dir2Save += ".png";
+				//dir2Save += ".png";
 				try {
 					out = new FileOutputStream(dir2Save);
 				} catch (FileNotFoundException e) {
