@@ -47,6 +47,16 @@ label[for="chekedit"]{
 #delbtn.notorig{
 	margin-right:6px;
 }
+div.row.disabled{
+	background-color: #A9A9A9;
+}
+div.row.disabled{
+	background-color: #A9A9A9;
+}
+#testrootpanel.container-fluid.bg-3.disabled{
+	background-color: #808080;	
+}
+
 </style>
 <script type="text/javascript">
 $(document).on("contextmenu", function (event) { event.preventDefault(); });
@@ -66,7 +76,7 @@ $(document).ready(function() {
 	<% String origTest=(String)request.getAttribute("tests");%>
 	var oo = '<%=origTest%>';
 	var p = jQuery.parseJSON(oo);
-	window.localStorage.setItem('tests',oo);	
+	window.sessionStorage.setItem('tests',oo);	
 	var total = p.tests.length;
 	
 	//Next test.
@@ -101,13 +111,30 @@ $(document).ready(function() {
 	
 	//Delete Test Btn.
 	$('#delbtn').on('click', function (e) {
-		p.tests.splice(testItor,1);
+		if(p.tests[testItor].hasOwnProperty('del')
+				&& typeof p.tests[testItor].del != 'undefined'){
+			if(p.tests[testItor].del == false){
+				p.tests[testItor].del = true;
+				$(this).text('Recover');
+				disableTestGUI();
+			}else{
+				p.tests[testItor].del = false;		
+				$(this).text('Delete');
+				enableTestGUI();
+			}
+		}else{
+			console.log('[2_recover]');
+			p.tests[testItor].del = true;
+			$(this).text('Recover');
+			disableTestGUI();
+		}
+		window.sessionStorage.setItem('tests',JSON.stringify(p));
 	});
 		
 	//New Test Btn.
 	$('#newbtn').on('click', function (e) {
-		p.tests.splice(testItor,0,{"dirty":true,"isnew":true,"serialNo":testItor});
-		window.localStorage.setItem("tests",JSON.stringify(p));
+		p.tests.splice(testItor,0,{"dirty":true,"isnew":true,"serialNo":testItor+1});
+		window.sessionStorage.setItem("tests",JSON.stringify(p));
 		curMode = edit;
 		showTest4Edit();
 	});
@@ -150,10 +177,29 @@ $(document).ready(function() {
 			});
 			curDom = $('#delnewdiv');
 			curDom.append(delBtn);
+			curDom.children().last().on('click', function (e) {
+				if(p.tests[testItor].hasOwnProperty('del')
+						&& typeof p.tests[testItor].del != 'undefined'){
+					if(p.tests[testItor].del == false){
+						p.tests[testItor].del = true;
+						$(this).text('Recover');
+						disableTestGUI();
+					}else{
+						p.tests[testItor].del = false;		
+						$(this).text('Delete');
+						enableTestGUI();
+					}
+				}else{
+					p.tests[testItor].del = true;
+					$(this).text('Recover');
+					disableTestGUI();
+				}
+				window.sessionStorage.setItem('tests',JSON.stringify(p));
+			});
 			curDom.append(newBtn);
 			curDom.children().last().on('click', function (e) {
 				p.tests.splice(testItor,0,{"dirty":true,"isnew":true,"serialNo":testItor});
-				window.localStorage.setItem("tests",JSON.stringify(p));
+				window.sessionStorage.setItem("tests",JSON.stringify(p));
 				curMode = edit;
 				showTest4Edit();
 				
@@ -179,7 +225,7 @@ $(document).ready(function() {
 			var scheme = debug == true?'http://':'https://';
 			var subdomain = debug == true? "mmtcexam/oneedit":"oneedit";
 			var url = scheme + ip + subdomain;
-			$.ajax({
+			/*$.ajax({
 			    url : url,
 			    type: "POST",
 			    data : postParam,
@@ -206,7 +252,7 @@ $(document).ready(function() {
 			        console.log("[AJAX_fail]: " + errorThrown);	
 			        
 			    }
-			});
+			});*/
 			showTest4View();
 		}
 	});
@@ -278,6 +324,19 @@ $(document).ready(function() {
 				curTestObj.tips=$('textarea[name="tips"]').val();	
 			}
 		}
+		
+		//we need to increment serial# by 1 for tests after new test.
+		if(curTestObj.hasOwnProperty('isnew')
+				&& curTestObj.isnew == true){
+			var index = curTestObj.serialNo;
+			var t;
+			for(var i = index; i < p.tests.length; ++i){
+				t = p.tests[i];
+				t.serialNo += 1;
+				t.question[0] = t.question[0].substring(t.question[0].indexOf('.'));
+				t.question[0] = t.serialNo + t.question[0];
+			}
+		}
 	}
 	
 	function genReviewTable(){
@@ -308,8 +367,14 @@ $(document).ready(function() {
 			}
 			review += markedPrefix
 			if(p.tests[i].hasOwnProperty('dirty')
-					&& p.tests[i].dirty != 'undefined'){
+					&& p.tests[i].dirty != 'undefined'
+					&& p.tests[i].dirty == true){
 				review += 'E';
+			}
+			else if(p.tests[i].hasOwnProperty('del')
+					&& p.tests[i].del != 'undefined'
+					&& p.tests[i].del == true){
+				review += 'D';
 			}
 			review += itemSuffix;
 			review += divEndTag;//close item col1;
@@ -492,6 +557,20 @@ $(document).ready(function() {
 		}
 	}
 	
+	//Disable GUI.
+	function disableTestGUI(){
+		$('#testrootpanel').addClass('disabled');
+		$('#ques').css('color','#D3D3D3');
+		$('#chekedit').prop('disabled',true);
+		$('input[name="optradio"]').prop('disabled',true);
+	}
+	//Enable GUI.
+	function enableTestGUI(){
+		$('#testrootpanel').removeClass('disabled');
+		$('#ques').css('color','black');
+		$('#chekedit').prop('disabled',false);
+		$('input[name="optradio"]').prop('disabled',false);
+	}
 	//Display tests.
 	function showTest4View(){
 		if(testItor > -1 && testItor < total){
@@ -501,7 +580,6 @@ $(document).ready(function() {
 			$('#optcol').html('');			
 			var answell = $('#answell');
 			answell.html('');
-			answell.addClass('hidden');
 			$('#chekedit').prop('checked',false);
 			$('label[for="chekedit"]').text('Edit');
 			var curSN = testItor + 1;
@@ -547,7 +625,7 @@ $(document).ready(function() {
 						function(){
 							//onclicked, cache clicked option to local storage.
 							p.tests[testItor].taking = {"stuans":$(this).parent().text().charAt(0)}
-							window.localStorage.setItem('tests',JSON.stringify(p));						
+							window.sessionStorage.setItem('tests',JSON.stringify(p));						
 					});
 				}
 			}else{
@@ -580,6 +658,21 @@ $(document).ready(function() {
 			
 			if(typeof p.tests[testItor].tips != 'undefined'){
 				answell.append("Tips:"+ p.tests[testItor].tips);
+			}
+			
+			
+			if(p.tests[testItor].hasOwnProperty('del')
+				&& typeof p.tests[testItor].del != 'undefined'){
+				if(p.tests[testItor].del == true){
+					$('#delbtn').text('Recover');
+					disableTestGUI();	
+				}else{
+					$('#delbtn').text('Delete');
+					enableTestGUI();
+				}
+			}else{
+				$('#delbtn').text('Delete');
+				enableTestGUI();
 			}
 		}
 	}
