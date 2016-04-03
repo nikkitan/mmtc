@@ -138,8 +138,7 @@ $(document).ready(function() {
 		curMode = edit;
 		showTest4Edit();
 	});
-	
-	
+		
 	//Ans <p> in Review Modal.
 	$('#rvwModal').on('hide.bs.modal', function (e) {
 		testItor = parseInt(window.localStorage.getItem('modelsel'));
@@ -221,11 +220,13 @@ $(document).ready(function() {
 			});
 			p.tests[testItor].pic=window.sessionStorage.getItem('pic'+testItor);
 			var postParam = {"suite":p.suite,"test":JSON.stringify(p.tests[testItor])};
-			var ip = debug == true?'localhost:8080/':'www.mmtctest.com/';
-			var scheme = debug == true?'http://':'https://';
-			var subdomain = debug == true? "mmtcexam/oneedit":"oneedit";
+			var ip = debug == "true"?'localhost:8080/':'www.mmtctest.com/';
+			var scheme = debug == "true"?'http://':'https://';
+			var subdomain = debug == "true"? "mmtcexam/oneedit":"oneedit";
 			var url = scheme + ip + subdomain;
-			/*$.ajax({
+			console.log("[ajaxDEBUG]: " + debug);
+			console.log("[ajax2]: " + url);
+			$.ajax({
 			    url : url,
 			    type: "POST",
 			    data : postParam,
@@ -252,7 +253,7 @@ $(document).ready(function() {
 			        console.log("[AJAX_fail]: " + errorThrown);	
 			        
 			    }
-			});*/
+			});
 			showTest4View();
 		}
 	});
@@ -573,6 +574,7 @@ $(document).ready(function() {
 	}
 	//Display tests.
 	function showTest4View(){
+		console.log("[debug]: " + debug);
 		if(testItor > -1 && testItor < total){
 			$('#qh').children().last().remove();
 			$('#quescol').html('');

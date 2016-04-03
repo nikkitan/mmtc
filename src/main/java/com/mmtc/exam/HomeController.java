@@ -446,13 +446,13 @@ public class HomeController {
 		
 		return true;
 	}
-	private Boolean addTest(String suite, Test test){
-		
+	
+	private Boolean addTest(String suite, Test test){		
 		ArrayList<Test> tests = getTestsForSuite(suite);
 		int i = 0;
 		for(; i < tests.size(); ++i){
 			if(tests.get(i).getSerialNo() == test.getSerialNo()){
-				//We'll insert new test before found n-th test.
+				//We'll insert new test before n-th test.
 				break;
 			}
 		}
@@ -470,6 +470,7 @@ public class HomeController {
 		//Put tests back to db.
 		return addTests(suite,tests);
 	}
+	
 	private Boolean addTests(String suite, ArrayList<Test> tests){
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		String sql = "SELECT pk FROM testsuite WHERE name=?";
@@ -559,7 +560,6 @@ public class HomeController {
 			@RequestParam ("suite") String suite,
 			@RequestParam ("test") String test) {
 		logger.info(request.getRequestURL().toString());
-		logger.info(test);
 
 		JsonParser jp = new JsonParser();
 		JsonObject testObj = jp.parse(test).getAsJsonObject();
@@ -627,10 +627,11 @@ public class HomeController {
 			}
 		}	
 		JsonObject result = new JsonObject();
-		if(updateTest(suite,t) == false){
-			result.add("result", new JsonPrimitive(false));
+		if(testObj.get("isnew") != null && testObj.get("isnew").getAsBoolean() == true){
+			logger.info("[oneedit]: Add new test.");
+			result.add("result", new JsonPrimitive(addTest(suite,t)));
 		}else{
-			result.add("result", new JsonPrimitive(true));			
+			result.add("result", new JsonPrimitive(updateTest(suite,t)));		
 		}
 		
 		Gson gson = new Gson();
