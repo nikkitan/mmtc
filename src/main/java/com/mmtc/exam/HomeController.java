@@ -254,7 +254,7 @@ public class HomeController {
 			HttpServletRequest request, 
 			HttpServletResponse response){
 		logger.info(request.getRequestURL().toString());
-		ArrayList<Test> tests = getTestsForSuite(ts.getName());
+		ArrayList<Test> tests = getTestsForDisplayForSuite(ts.getName());
 		JsonObject jSuite = new JsonObject();
 		jSuite.addProperty("suite", ts.getName());
 		Gson gson = new Gson();
@@ -451,7 +451,7 @@ public class HomeController {
 		ArrayList<Test> tests = getTestsForSuite(suite);
 		int i = 0;
 		for(; i < tests.size(); ++i){
-			if(tests.get(i).getSerialNo() == test.getSerialNo()){
+			if(tests.get(i).getSerialNo().equals(test.getSerialNo())){
 				//We'll insert new test before n-th test.
 				break;
 			}
@@ -470,11 +470,32 @@ public class HomeController {
 		//Put tests back to db.
 		return addTests(suite,tests);
 	}
-	
+	private Boolean deleteSuite(String suite){
+		Boolean result = true;
+		String sql = "DELETE FROM testsuite WHERE name=?";
+		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
+		Connection conn = null;
+		try {
+			conn = dataSource.getConnection();
+			PreparedStatement prepStmt = conn.prepareStatement(sql);
+			prepStmt.setString(1, suite);
+			prepStmt.executeUpdate();
+			prepStmt.close();
+			conn.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			logger.error("[deleteSuite]: " + e.toString());
+			result = false;
+			e.printStackTrace();
+		}
+		
+		
+		return result;
+	}
 	private Boolean addTests(String suite, ArrayList<Test> tests){
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		String sql = "SELECT pk FROM testsuite WHERE name=?";
-		long suitePK = 0L;
+		long suitePK = -1L;
 		Connection conn = null;
 		try {
 			conn = dataSource.getConnection();
@@ -483,11 +504,17 @@ public class HomeController {
 			ResultSet rs = prepStmt.executeQuery();
 			if(rs != null && rs.next()){
 				suitePK = rs.getLong("pk");
+				deleteSuite(suite);
+				suitePK = addEmptySuite(suite);
 			}else{
 				//suite doesn't exist.
 				prepStmt.close();
 				conn.close();
 				suitePK = addEmptySuite(suite);
+			}
+			if(suitePK == -1L){
+				logger.error("[addTests]: CANNOT FIND suite PK: " + suite);
+			}else{
 				sql="INSERT INTO test (testsuite_pk,question,options,answer,"
 					+ "keywords,pic,serial,watchword,tips,createdat,updatedat)"
 					+ " VALUES (?,?,?,?,?,?,?,?,?,NOW(),NOW())";
@@ -498,15 +525,29 @@ public class HomeController {
 					prepStmt.setString(2, t.getQuestion().toString());
 					prepStmt.setString(3, t.getOptions().toString());
 					prepStmt.setString(4, t.getAnswers().toString());
-					prepStmt.setString(5, t.getKeywords().toString());
+					if(t.getKeywords() == null){
+						prepStmt.setNString(5, null);//prepStmt.setNull(5, sqlType);
+					}else{
+						prepStmt.setNString(5, t.getKeywords().toString());
+					}
 					prepStmt.setString(6, t.getPic());
 					prepStmt.setInt(7, t.getSerialNo());
-					prepStmt.setString(8, t.getWatchword().toString());
-					prepStmt.setString(9, t.getTips().toString());
+					if(t.getWatchword() == null){
+						prepStmt.setString(8, null);
+					}else{
+						prepStmt.setString(8, t.getWatchword().toString());						
+					}
+					if(t.getTips() == null){
+						prepStmt.setString(9, null);						
+					}else{
+						prepStmt.setString(9, t.getTips().toString());
+					}
 					prepStmt.addBatch();
-				}				
+				}	
+				prepStmt.executeBatch();
 				conn.commit();
 				conn.setAutoCommit(true);
+				prepStmt.clearBatch();
 				prepStmt.close();
 				conn.close();
 				
@@ -527,14 +568,15 @@ public class HomeController {
 	private Long addEmptySuite(String name){
 		long newSuitePK = -1L;
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
-		String sql = "INSERT INTO testsuite (name) VALUES(?)";
+		String sql = "INSERT INTO testsuite (name) VALUES (?)";
 		try {
 			Connection conn = dataSource.getConnection();
 			PreparedStatement prepStmt = conn.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS);
 			prepStmt.setString(1, name);
-			ResultSet rs = prepStmt.executeQuery();
+			prepStmt.executeUpdate();
+			ResultSet rs = prepStmt.getGeneratedKeys();
 			if(rs != null && rs.next()){
-				newSuitePK = rs.getLong(0);
+				newSuitePK = rs.getLong(1);
 			}else{
 				logger.error("[saveTest]: Could not get PK of new suite of " + name + " !");
 				prepStmt.close();
@@ -588,8 +630,10 @@ public class HomeController {
 			e.printStackTrace();
 		}
 		//Upload to S3.
-		File outFile = new File(destDir+encFileName); 
-		uploadS3(outFile);
+		if(DEBUG == false){
+			File outFile = new File(destDir+encFileName); 
+			uploadS3(outFile);
+		}
 		Test t = new Test();
 		t.setAnswers(testObj.get("answers").getAsJsonArray());
 		if(testObj.get("kwds") != null){
@@ -1184,7 +1228,7 @@ public class HomeController {
 			@PathVariable String s,
 			@ModelAttribute("ts") TestSuite suite) {
 		logger.info(request.getRequestURL().toString());
-		ArrayList<Test> tests = getTestsForSuite(s);
+		ArrayList<Test> tests = getTestsForDisplayForSuite(s);
 		Random random = new Random();
 		if(suite.getIsQuestionRandom() != null){
 			Test lastUnStruck = null;
@@ -1403,9 +1447,8 @@ public class HomeController {
 		}
 		return tests;
 	}
-
 	private ArrayList<Test> getTestsForSuite(String suite){
-		logger.info("getTestForSuite()!");
+		logger.info("getTestsForSuite()!");
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		ArrayList<Test> tests = new ArrayList<Test>();
 		String sql = "SELECT serial, updatedat, question, options,answer,keywords,pic,tips,watchword FROM test WHERE testsuite_pk IN (SELECT pk FROM testsuite WHERE name=?) ORDER BY serial";
@@ -1428,21 +1471,19 @@ public class HomeController {
 				found = new Test();
 				serial = Integer.toString(s.getInt("serial"));
 				if(s.getString("question").equals("[\"NOQUESTION\"]") == false){
-					logger.info("[getTestsForSuite_Q]: " + s.getString("question"));
+					//logger.info("[getTestsForDisplayForSuite_Q]: " + s.getString("question"));
 					elem = jp.parse(s.getString("question"));
 					jsonArr = elem.getAsJsonArray();
-					temp = jsonArr.get(0).getAsString();
-					temp = serial + "." + temp;
-					jsonArr.set(0, new JsonPrimitive(temp));
 					found.setQuestion(jsonArr);
 				}else{
 					//Really odd, ought have been filtered out in uploadtestsuite.
-					logger.error("[getTestsForSuite] NOQUESTION found!! TestSuite[" + suite + "][" + serial + "]");
+					logger.error("[getTestsForDisplayForSuite] NOQUESTION found!! TestSuite[" + suite + "][" + serial + "]");
 					continue;
 				}
 				
 				
-				if(s.getString("watchword").equals("[\"NOHIGHLIGHT\"]") == false){
+				if(s.getString("watchword") != null 
+					&& s.getString("watchword").equals("[\"NOHIGHLIGHT\"]") == false){
 					elem = jp.parse(s.getString("watchword"));
 					jsonArr = elem.getAsJsonArray();
 					found.setWatchword(jsonArr);
@@ -1461,14 +1502,100 @@ public class HomeController {
 					found.setOptions(jsonArr);
 				}
 				
-				if(s.getString("keywords").equals("[\"NOKEYWORD\"]") == false){
+				if(s.getString("keywords") != null
+					&& s.getString("keywords").equals("[\"NOKEYWORD\"]") == false){
 					elem = jp.parse(s.getString("keywords"));
 					jsonArr = elem.getAsJsonArray();
 					found.setKeywords(jsonArr);
 				}
 				
 				found.setPic(s.getString("pic"));
-				if(s.getString("tips").equals("[\"NOTIPS\"]") == false){
+				if(s.getString("tips") != null && s.getString("tips").equals("[\"NOTIPS\"]") == false){
+					elem = jp.parse(s.getString("tips"));
+					jsonArr = elem.getAsJsonArray();
+					found.setTips(jsonArr);					
+				}
+				found.setId(encrypt(curUser + "MendezMasterTrainingCenter6454",suite + "-" + serial));
+				if(DEBUG == true){
+					found.setSuite(suite);
+				}
+				found.setSerialNo(Integer.valueOf(serial));	
+				tests.add(found);
+			}
+			conn.close();
+		}catch(Exception e){
+			e.printStackTrace();
+			logger.error("[testsuite] " + e.getMessage());			
+		}
+		return tests;		
+	}
+	private ArrayList<Test> getTestsForDisplayForSuite(String suite){
+		logger.info("getTestsForDisplayForSuite()!");
+		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
+		ArrayList<Test> tests = new ArrayList<Test>();
+		String sql = "SELECT serial, updatedat, question, options,answer,keywords,pic,tips,watchword FROM test WHERE testsuite_pk IN (SELECT pk FROM testsuite WHERE name=?) ORDER BY serial";
+		PreparedStatement preparedSql = null;
+		Connection conn = null;
+	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+	    String curUser = auth.getName();
+		try{
+			conn = dataSource.getConnection();
+			preparedSql = conn.prepareStatement(sql);
+			preparedSql.setString(1, suite);
+			ResultSet s = preparedSql.executeQuery();
+			String serial = null;
+			JsonParser jp = new JsonParser();
+			String temp;
+			Test found = null;
+			JsonElement elem = null;
+			JsonArray jsonArr = null;
+			while(s.next()){
+				found = new Test();
+				serial = Integer.toString(s.getInt("serial"));
+				if(s.getString("question").equals("[\"NOQUESTION\"]") == false){
+					//logger.info("[getTestsForDisplayForSuite_Q]: " + s.getString("question"));
+					elem = jp.parse(s.getString("question"));
+					jsonArr = elem.getAsJsonArray();
+					temp = jsonArr.get(0).getAsString();
+					temp = serial + "." + temp;
+					jsonArr.set(0, new JsonPrimitive(temp));
+					found.setQuestion(jsonArr);
+				}else{
+					//Really odd, ought have been filtered out in uploadtestsuite.
+					logger.error("[getTestsForDisplayForSuite] NOQUESTION found!! TestSuite[" + suite + "][" + serial + "]");
+					continue;
+				}
+				
+				
+				if(s.getString("watchword") != null 
+					&& s.getString("watchword").equals("[\"NOHIGHLIGHT\"]") == false){
+					elem = jp.parse(s.getString("watchword"));
+					jsonArr = elem.getAsJsonArray();
+					found.setWatchword(jsonArr);
+				}
+				
+				if(s.getString("answer").equals("[\"NOANSWER\"]") == false
+						&& s.getString("answer").equals("[\"NOANS\"]") == false){
+					elem = jp.parse(s.getString("answer"));
+					jsonArr = elem.getAsJsonArray();
+					found.setAnswers(jsonArr);
+				}
+
+				if(s.getString("options").equals("[\"NOOPT\"]") == false){
+					elem = jp.parse(s.getString("options"));
+					jsonArr = elem.getAsJsonArray();
+					found.setOptions(jsonArr);
+				}
+				
+				if(s.getString("keywords") != null
+					&& s.getString("keywords").equals("[\"NOKEYWORD\"]") == false){
+					elem = jp.parse(s.getString("keywords"));
+					jsonArr = elem.getAsJsonArray();
+					found.setKeywords(jsonArr);
+				}
+				
+				found.setPic(s.getString("pic"));
+				if(s.getString("tips") != null && s.getString("tips").equals("[\"NOTIPS\"]") == false){
 					elem = jp.parse(s.getString("tips"));
 					jsonArr = elem.getAsJsonArray();
 					found.setTips(jsonArr);					
@@ -1636,7 +1763,7 @@ public class HomeController {
 			rs.close();			
 			prepStmt.close();
 			
-			tests = getTestsForSuite(suite);
+			tests = getTestsForDisplayForSuite(suite);
 			
 			
 			sql = "SELECT stuans, test_taking_serial,orig_test_serial, test_taking_options "
