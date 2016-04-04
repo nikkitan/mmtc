@@ -72,12 +72,11 @@ var curMode = view;
 var curDom;
 $(document).ready(function() {
 	//Get and save in JSON.
-	var debug = "${debug}";
+	var debug = JSON.parse("${debug}");
 	<% String origTest=(String)request.getAttribute("tests");%>
 	var oo = '<%=origTest%>';
-	var p = jQuery.parseJSON(oo);
+	var p = $.parseJSON(oo);
 	window.sessionStorage.setItem('tests',oo);	
-	var total = p.tests.length;
 	
 	//Next test.
 	var testItor = 0;
@@ -134,7 +133,6 @@ $(document).ready(function() {
 	//New Test Btn.
 	$('#newbtn').on('click', function (e) {
 		p.tests.splice(testItor,0,{"dirty":true,"isnew":true,"serialNo":testItor+1});
-		window.sessionStorage.setItem("tests",JSON.stringify(p));
 		curMode = edit;
 		showTest4Edit();
 	});
@@ -220,12 +218,10 @@ $(document).ready(function() {
 			});
 			p.tests[testItor].pic=window.sessionStorage.getItem('pic'+testItor);
 			var postParam = {"suite":p.suite,"test":JSON.stringify(p.tests[testItor])};
-			var ip = debug == "true"?'localhost:8080/':'www.mmtctest.com/';
-			var scheme = debug == "true"?'http://':'https://';
-			var subdomain = debug == "true"? "mmtcexam/oneedit":"oneedit";
+			var ip = debug == true?'localhost:8080/':'www.mmtctest.com/';
+			var scheme = debug == true?'http://':'https://';
+			var subdomain = debug == true? "mmtcexam/oneedit":"oneedit";
 			var url = scheme + ip + subdomain;
-			console.log("[ajaxDEBUG]: " + debug);
-			console.log("[ajax2]: " + url);
 			$.ajax({
 			    url : url,
 			    type: "POST",
@@ -338,6 +334,7 @@ $(document).ready(function() {
 				t.question[0] = t.serialNo + t.question[0];
 			}
 		}
+		window.sessionStorage.setItem("tests",JSON.stringify(p));
 	}
 	
 	function genReviewTable(){
@@ -415,7 +412,7 @@ $(document).ready(function() {
 
 	//Display tests.
 	function showTest4Edit(){
-		if(testItor > -1 && testItor < total){
+		if(testItor > -1 && testItor < p.tests.length){
 			$('#prvnxtrvwdiv').html('');
 			$('#delnewdiv').html('');
 			$('#sbtdiv').html('');
@@ -432,7 +429,7 @@ $(document).ready(function() {
 				$('label[for="chekedit"]').text('Uncheck to finalize editing.');
 			}
 			var curSN = testItor + 1;
-			$('#qh').append("<label>Item " + curSN + " of "+ total +"</label>");
+			$('#qh').append("<label>Item " + curSN + " of "+ p.tests.length +"</label>");
 			
 			$('#piccol').append("<img id=\"picholder\" class=\"img-thumbnail img-responsive\" src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/><input id=\"pic_input\" type=\"file\" name=\"file\"/>");	
 			$('#pic_input').on('change',function(){
@@ -575,7 +572,7 @@ $(document).ready(function() {
 	//Display tests.
 	function showTest4View(){
 		console.log("[debug]: " + debug);
-		if(testItor > -1 && testItor < total){
+		if(testItor > -1 && testItor < p.tests.length){
 			$('#qh').children().last().remove();
 			$('#quescol').html('');
 			$('#piccol').html('');
@@ -586,7 +583,7 @@ $(document).ready(function() {
 			$('label[for="chekedit"]').text('Edit');
 			var curSN = testItor + 1;
 			//Pic
-			$('#qh').append("<label>Item " + curSN + " of "+ total +"</label>");
+			$('#qh').append("<label>Item " + curSN + " of "+ p.tests.length +"</label>");
 			if(typeof p.tests[testItor].pic != 'undefined'){
 				if(p.tests[testItor].hasOwnProperty('dirty') && p.tests[testItor].dirty == true){
 					//$('#quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img \"img-responsive\" src=\"" + p.tests[testItor].pic+ "\"/></div>");					
