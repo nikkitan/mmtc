@@ -148,6 +148,10 @@ $(document).ready(function() {
 		p.tests[testItor].dirty = true;
 		if(curMode == view){
 			curMode = edit;
+			if(p.tests[testItor].hasOwnProperty('pic')
+				&& p.tests[testItor].pic != null){
+				window.sessionStorage.setItem('_origpic'+testItor,p.tests[testItor].pic);
+			}
 			showTest4Edit();
 		}else{
 			//Save dirty data.
@@ -216,7 +220,6 @@ $(document).ready(function() {
 			$.ajaxPrefilter(function (options, originalOptions, jqXHR) {
 			  jqXHR.setRequestHeader('X-CSRF-Token', "${_csrf.token}");
 			});
-			p.tests[testItor].pic=window.sessionStorage.getItem('pic'+testItor);
 			var postParam = {"suite":p.suite,"test":JSON.stringify(p.tests[testItor])};
 			var ip = debug == true?'localhost:8080/':'www.mmtctest.com/';
 			var scheme = debug == true?'http://':'https://';
@@ -233,15 +236,18 @@ $(document).ready(function() {
 			        console.log("[AJAX_good]: " + data.toString());
 			        var result =  data;//jQuery.parseJSON(data);
 			        var index = result.test.serialNo - 1;
-			        var test = p.tests[index];
+			        /*var test = p.tests[index];
 			        test.pic = result.test.pic;
 			        test.dirty = false;
 			        if(test.hasOwnProperty('isnew') && test.isnew == true)
 			        	p.tests[index].isnew = false;
+			        */
+			        p.tests[index] = result.test;
 			        if(curMode==e)
 			        	showTest4Edit();
 			        else
 			        	showTest4View();
+			        
 					window.sessionStorage.removeItem("pic"+index,e.target.result);
 			    },
 			    error: function (jqXHR, textStatus, errorThrown)
@@ -265,7 +271,14 @@ $(document).ready(function() {
 	function saveTestFromGUI(){
 		var curTestObj = p.tests[testItor];
 		if(curTestObj.dirty == true || curTestObj.isnew == true){
-			curTestObj.pic = $('#pic_input').prop('src');	
+			console.log('[inputFILE]' + $('#pic_input').val());
+			if($('#pic_input').val().length > 0){
+				curTestObj.pic = $('#picholder').prop('src');
+				curTestObj.newpic = true;
+			}else{
+				curTestObj.pic = "${pageContext.request.contextPath}/resources/pic/" + window.sessionStorage.getItem('_origpic'+testItor);
+				window.sessionStorage.removeItem('_origpic'+testItor);
+			}
 			curTestObj.question = [];		
 			var q = $('textarea[name="ques"]').val();
 			if(typeof q != 'undefiend'){
@@ -281,14 +294,14 @@ $(document).ready(function() {
 							value.value = String.fromCharCode(index+65) + '.' + value.value;
 						}
 						curTestObj.options.push(value.value);
-					}else{
+					}/*else{
 						if(value.getAttribute('placeholder').length > 0){
 							curTestObj.options.push(value.getAttribute('placeholder'));
 						}else{
 							//overwrite though input is empty.
 							curTestObj.options.push(String.fromCharCode(index+65) + '.' + value.value);
 						}
-					}
+					}*/
 				}
 			});
 			curTestObj.answers = [];
@@ -571,7 +584,6 @@ $(document).ready(function() {
 	}
 	//Display tests.
 	function showTest4View(){
-		console.log("[debug]: " + debug);
 		if(testItor > -1 && testItor < p.tests.length){
 			$('#qh').children().last().remove();
 			$('#quescol').html('');
@@ -584,13 +596,10 @@ $(document).ready(function() {
 			var curSN = testItor + 1;
 			//Pic
 			$('#qh').append("<label>Item " + curSN + " of "+ p.tests.length +"</label>");
-			if(typeof p.tests[testItor].pic != 'undefined'){
+			if(p.tests[testItor].hasOwnProperty('pic') && p.tests[testItor].pic != 'undefined'){
 				if(p.tests[testItor].hasOwnProperty('dirty') && p.tests[testItor].dirty == true){
-					//$('#quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img \"img-responsive\" src=\"" + p.tests[testItor].pic+ "\"/></div>");					
 					$('#piccol').append("<img id=\"picholder\" \"img-thumbnail img-responsive\"/>");	
-					$('#picholder').prop('src',window.sessionStorage.getItem('pic'+testItor));
-					//console.log("[setsrc]: " + p.tests[testItor].pic);
-					
+					$('#picholder').prop('src',p.tests[testItor].pic);//window.sessionStorage.getItem('pic'+testItor));					
 				}else{
 					$('#piccol').append("<img \"img-thumbnail img-responsive\" src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/>");
 				}
