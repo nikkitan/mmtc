@@ -57,6 +57,11 @@ div.row.disabled{
 	background-color: #808080;	
 }
 
+#delpicbtn {
+    position: absolute;
+    left: 10px;
+    top: 0px;
+}
 </style>
 <script type="text/javascript">
 $(document).on("contextmenu", function (event) { event.preventDefault(); });
@@ -272,12 +277,14 @@ $(document).ready(function() {
 		var curTestObj = p.tests[testItor];
 		if(curTestObj.dirty == true || curTestObj.isnew == true){
 			console.log('[inputFILE]' + $('#pic_input').val());
-			if($('#pic_input').val().length > 0){
+			if($('#pic_input').val() != null && $('#pic_input').val().length > 0){
 				curTestObj.pic = $('#picholder').prop('src');
 				curTestObj.newpic = true;
 			}else{
-				curTestObj.pic = "${pageContext.request.contextPath}/resources/pic/" + window.sessionStorage.getItem('_origpic'+testItor);
-				window.sessionStorage.removeItem('_origpic'+testItor);
+				if(window.sessionStorage.getItem('_origpic'+testItor) != null){
+					curTestObj.pic = "${pageContext.request.contextPath}/resources/pic/" + window.sessionStorage.getItem('_origpic'+testItor);
+					window.sessionStorage.removeItem('_origpic'+testItor);
+				}
 			}
 			curTestObj.question = [];		
 			var q = $('textarea[name="ques"]').val();
@@ -443,8 +450,17 @@ $(document).ready(function() {
 			}
 			var curSN = testItor + 1;
 			$('#qh').append("<label>Item " + curSN + " of "+ p.tests.length +"</label>");
-			
-			$('#piccol').append("<img id=\"picholder\" class=\"img-thumbnail img-responsive\" src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/><input id=\"pic_input\" type=\"file\" name=\"file\"/>");	
+			if(p.tests[testItor].hasOwnProperty('pic')
+				&& typeof p.tests[testItor].pic != 'undefined'
+				&& p.tests[testItor].pic.length > 0
+				&& p.tests[testItor].pic != 'null'){
+				$('#piccol').append("<div><img id=\"picholder\" class=\"img-thumbnail img-responsive\" src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/>"
+						+"<button type=\"button\" id=\"delpicbtn\" class=\"btn btn-info\"><span class=\"glyphicon glyphicon-remove\"></span></button></div>"
+						+"<input id=\"pic_input\" type=\"file\" name=\"file\"/>");	
+			}else{
+				$('#piccol').append("<div><img id=\"picholder\" class=\"img-thumbnail img-responsive\" src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/>"
+						+"<input id=\"pic_input\" type=\"file\" name=\"file\"/>");					
+			}
 			$('#pic_input').on('change',function(){
 				var filePath = $(this).val();
 				if(typeof FileReader != 'undefined'){

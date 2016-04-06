@@ -658,6 +658,7 @@ public class HomeController {
 		t.setOptions(testObj.get("options").getAsJsonArray());
 		
 		JsonArray quesJArr = testObj.get("question").getAsJsonArray();
+		JsonElement quesPrefixedBySerial = quesJArr.get(0);
 		int dotPos = quesJArr.get(0).getAsString().indexOf(".");
 		if(dotPos != -1){
 			quesJArr.set(0, new JsonPrimitive(quesJArr.get(0).getAsString().substring(dotPos+1)));
@@ -700,6 +701,7 @@ public class HomeController {
 		}
 		
 		Gson gson = new Gson();
+		t.getQuestion().set(0, quesPrefixedBySerial);
 		result.add("test", gson.toJsonTree(t));
 		String strJ = gson.toJson(result).replace("\\", "\\\\");	
 		return strJ;
