@@ -533,14 +533,14 @@ public class HomeController {
 					prepStmt.setString(6, t.getPic());
 					prepStmt.setInt(7, t.getSerialNo());
 					if(t.getWatchword() == null){
-						prepStmt.setString(8, null);
+						prepStmt.setNString(8, null);
 					}else{
-						prepStmt.setString(8, t.getWatchword().toString());						
+						prepStmt.setNString(8, t.getWatchword().toString());						
 					}
 					if(t.getTips() == null){
-						prepStmt.setString(9, null);						
+						prepStmt.setNString(9, null);						
 					}else{
-						prepStmt.setString(9, t.getTips().toString());
+						prepStmt.setNString(9, t.getTips().toString());
 					}
 					prepStmt.addBatch();
 				}	
@@ -605,43 +605,64 @@ public class HomeController {
 
 		JsonParser jp = new JsonParser();
 		JsonObject testObj = jp.parse(test).getAsJsonObject();
-		String destDir = request.getSession().getServletContext().getRealPath("/");//servletCtx.getRealPath("/");
-		destDir += "resources";
-		destDir += File.separator;
-		destDir += "pic";
-		destDir += File.separator;
-		logger.info("[2_save_img_2] " + destDir);
-	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-	    String curUser = auth.getName();		
-		String strB64Pic = testObj.get("pic").getAsString();
-		String encFileName = encrypt(curUser + "MendezMasterTrainingCenter6454_testpickey",suite + "-" + testObj.get("serialNo").getAsString());			
-		strB64Pic = strB64Pic.substring(strB64Pic.indexOf(",")+1);
-		byte[] rawPicBytes = Base64.decodeBase64(strB64Pic);
-		logger.debug("[pic_enc_name]: " + encFileName);
-		try {
-			FileOutputStream out = new FileOutputStream(destDir+encFileName);
-			out.write(rawPicBytes);
-			out.close();
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		//Upload to S3.
-		if(DEBUG == false){
-			File outFile = new File(destDir+encFileName); 
-			uploadS3(outFile);
-		}
 		Test t = new Test();
+	    if(testObj.get("pic") != null
+	    	&& testObj.get("pic").isJsonNull() == false){
+	    	if(testObj.get("newpic") != null
+	    	&& testObj.get("newpic").isJsonNull() == false
+	    	&& testObj.get("newpic").getAsBoolean() == true){
+				String destDir = request.getSession().getServletContext().getRealPath("/");
+				destDir += "resources";
+				destDir += File.separator;
+				destDir += "pic";
+				destDir += File.separator;
+				logger.info("[2_save_img_2] " + destDir);
+			    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+			    String curUser = auth.getName();
+			    String encFileName = null;
+				String strB64Pic = testObj.get("pic").getAsString();
+				encFileName = encrypt(curUser + "MendezMasterTrainingCenter6454_testpickey",suite + "-" + testObj.get("serialNo").getAsString());			
+				strB64Pic = strB64Pic.substring(strB64Pic.indexOf(",")+1);
+				byte[] rawPicBytes = Base64.decodeBase64(strB64Pic);
+				logger.debug("[pic_enc_name]: " + encFileName);
+				try {
+					FileOutputStream out = new FileOutputStream(destDir+encFileName);
+					out.write(rawPicBytes);
+					out.close();
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				t.setPic(encFileName);
+				//Upload to S3.
+				if(DEBUG == false){
+					File outFile = new File(destDir+encFileName); 
+					uploadS3(outFile);
+				}
+			}else{
+				String pic = testObj.get("pic").getAsString();
+				pic = pic.substring(pic.lastIndexOf("pic/")+4);
+				t.setPic(pic);
+			}
+			
+
+	    }
+
 		t.setAnswers(testObj.get("answers").getAsJsonArray());
 		if(testObj.get("kwds") != null){
 			t.setKeywords(testObj.get("kwds").getAsJsonArray());
 		}
 		t.setOptions(testObj.get("options").getAsJsonArray());
-		t.setPic(encFileName);
-		t.setQuestion(testObj.get("question").getAsJsonArray());
+		
+		JsonArray quesJArr = testObj.get("question").getAsJsonArray();
+		int dotPos = quesJArr.get(0).getAsString().indexOf(".");
+		if(dotPos != -1){
+			quesJArr.set(0, new JsonPrimitive(quesJArr.get(0).getAsString().substring(dotPos+1)));
+		}		
+		t.setQuestion(quesJArr);
 		if(testObj.get("serialNo") != null){
 			t.setSerialNo(testObj.get("serialNo").getAsInt());
 		}
