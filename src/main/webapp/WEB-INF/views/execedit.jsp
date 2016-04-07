@@ -455,8 +455,15 @@ $(document).ready(function() {
 				&& p.tests[testItor].pic.length > 0
 				&& p.tests[testItor].pic != 'null'){
 				$('#piccol').append("<div><img id=\"picholder\" class=\"img-thumbnail img-responsive\" src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/>"
-						+"<button type=\"button\" id=\"delpicbtn\" class=\"btn btn-info\"><span class=\"glyphicon glyphicon-remove\"></span></button></div>"
-						+"<input id=\"pic_input\" type=\"file\" name=\"file\"/>");	
+						+"<button type=\"button\" id=\"delpicbtn\" class=\"btn btn-info\"><span class=\"glyphicon glyphicon-remove\"></span></button></div>");
+				$('#piccol').children().children()
+				.last().on('click',function(){
+					p.tests[testItor].pic = null;
+					p.tests[testItor].delpic = true;
+					$('#picholder').prop('src',null);
+				});
+						
+				$('#piccol').append("<input id=\"pic_input\" type=\"file\" name=\"file\"/>");	
 			}else{
 				$('#piccol').append("<div><img id=\"picholder\" class=\"img-thumbnail img-responsive\" src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/>"
 						+"<input id=\"pic_input\" type=\"file\" name=\"file\"/>");					
@@ -485,25 +492,30 @@ $(document).ready(function() {
 						
 			//Options.
 			if(p.tests[testItor].hasOwnProperty('dirty')
-				&& typeof p.tests[testItor].options != 'undefined'){
-				var opts = p.tests[testItor].options;
-				for(var i = 0; i < opts.length; ++i){
-					var opt = opts[i];
-					var id = "opt" + i;
-					$('#optcol').append("<input id=\"" + id + "\"type=\"text\" name=\"opt\" placeholder=\"" + opt + "\"></input><br>");
-				}
-			}else{
-				var optcol = $('#optcol');
-				optcol.append("<div class=\"row\">");
-				optcol.children().last().append("<div id=\"opt\" class=\"col-xs-5\">");
-				optcol.children().last().append("<div class=\"col-xs-5\">");
+				&& p.tests[testItor].dirty == true){
+				if(typeof p.tests[testItor].options != 'undefined'
+					&& p.tests[testItor].options.length > 0){
+					var opts = p.tests[testItor].options;
+					for(var i = 0; i < opts.length; ++i){
+						var opt = opts[i];
+						var id = "opt" + i;
+						$('#optcol').append("<input id=\"" + id + "\"type=\"text\" name=\"opt\" placeholder=\"" + opt + "\"></input><br>");
+					}
+				}else{
+					//Still need to provide option boxes even no options before edit.
+					var optcol = $('#optcol');
+					optcol.append("<div class=\"row\">");
+					optcol.children().last().append("<div id=\"opt\" class=\"col-xs-5\">");
+					optcol.children().last().append("<div class=\"col-xs-5\">");
 
-				optcol = $('#opt');
-				
-				optcol.append("<input name=\"opt\" type=\"text\" placeholder=\"Option A\">");
-				optcol.append("<input name=\"opt\" type=\"text\" placeholder=\"Option B\">");
-				optcol.append("<input name=\"opt\" type=\"text\" placeholder=\"Option C\">");
-				optcol.append("<input name=\"opt\" type=\"text\" placeholder=\"Option D\">");
+					optcol = $('#opt');
+					
+					optcol.append("<input name=\"opt\" type=\"text\" placeholder=\"Option A\">");
+					optcol.append("<input name=\"opt\" type=\"text\" placeholder=\"Option B\">");
+					optcol.append("<input name=\"opt\" type=\"text\" placeholder=\"Option C\">");
+					optcol.append("<input name=\"opt\" type=\"text\" placeholder=\"Option D\">");
+					
+				}
 			}
 			
 			//Answer area
