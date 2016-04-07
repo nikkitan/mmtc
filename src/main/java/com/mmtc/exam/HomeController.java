@@ -7,6 +7,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
@@ -390,12 +392,11 @@ public class HomeController {
 					
 				}
 				
-				logger.info("[updateTest_Q]: " + quesArr.toString());
 				columns.put("question", quesArr.toString());
 			}
 			if(test.getOptions() != null){
 				columns.put("options", test.getOptions().toString());
-			}			
+			}		
 			if(test.getAnswers() != null){
 				columns.put("answer", test.getAnswers().toString());			
 			}
@@ -405,6 +406,8 @@ public class HomeController {
 			}			
 			if(test.getPic() != null){
 				columns.put("pic", test.getPic().toString());						
+			}else{
+				columns.put("pic", null);
 			}
 			if(test.getWatchword() != null){
 				columns.put("watchword", test.getWatchword().toString());						
@@ -645,7 +648,30 @@ public class HomeController {
 			}else{
 				String pic = testObj.get("pic").getAsString();
 				pic = pic.substring(pic.lastIndexOf("pic/")+4);
-				t.setPic(pic);
+				if(testObj.get("delpic") != null
+					&& testObj.get("delpic").getAsBoolean() == true){
+					String destDir = request.getSession().getServletContext().getRealPath("/");
+					destDir += "resources";
+					destDir += File.separator;
+					destDir += "pic";
+					destDir += File.separator;
+					final String file2Del = destDir + pic;
+					//launch separate thread to delete local picture file.
+					new Thread(){
+						public void run(){
+							try {
+								Files.delete(Paths.get(file2Del));
+							} catch (IOException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+								logger.error("[oneeditPOST]: Failed deleting local pic, " + e.toString());
+							}
+						}
+					}.start();
+				}else{
+					//Prepare file-name-only to return back to client if pic was not edited.
+					t.setPic(pic);
+				}
 			}
 			
 
