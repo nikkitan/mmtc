@@ -123,7 +123,7 @@ public class HomeController {
 	
 	private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
 	private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");	
-    private final int AES_KEYLENGTH = 128;	// change this as desired for the security level you want
+    private final int AES_KEYLENGTH = 128;//change this as desired for the security level.
 	 
 	@RequestMapping(value = {"/","/index"}, method = RequestMethod.GET)
 	public @ResponseBody ModelAndView root(Locale locale, Model model) {
@@ -739,69 +739,64 @@ public class HomeController {
 			HttpSession session,
 			HttpServletRequest request, 
 			HttpServletResponse response,
-			@RequestParam("file") MultipartFile file) {
-		if(file.getSize() > 0L){
-		FileInputStream in = null;
-		try {
-			in = (FileInputStream) file.getInputStream();
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-			return new ModelAndView("result","result","Failed getting INPUT STREAM.");
+			@RequestParam("testdata") String tests) {
+		ModelAndView v = new ModelAndView();
+		logger.info(request.getRequestURL().toString());
+		JsonParser jsonParser = new JsonParser();
+		JsonObject jsonTestSuite = jsonParser.parse(tests).getAsJsonObject();
+		//Check if test editor is authenticated user.
+		String user = null;
+		if(request.getUserPrincipal().getName().equals(jsonTestSuite.get("user").getAsString()) == false){
+			v.setViewName("result");
+			v.addObject("result","Editing failed: Test taker and logged-in user are different.");
+			return v;
+		}else
+			user = request.getUserPrincipal().getName();
 
+		//Check for deleted tests and update to database.
+		String suite = jsonTestSuite.get("suite").getAsString();
+		ArrayList<Test> curTests = getTestsForSuite(suite);
+		JsonArray jsonTests = jsonTestSuite.get("tests").getAsJsonArray();
+		Boolean hasDeletedTest = false;
+		for(int i = jsonTests.size() - 1; i > -1; --i){
+			JsonObject t = jsonTests.get(i).getAsJsonObject();
+			if(t.get("del") != null && t.get("del").getAsBoolean() == true){
+				hasDeletedTest = true;
+				int sn = t.get("serialNo").getAsInt();
+				curTests.remove(sn-1);
+			}
 		}
-		String destDir = request.getSession().getServletContext().getRealPath("/");//servletCtx.getRealPath("/");
-		destDir += "resources";
-		destDir += File.separator;
-		destDir += "pic";
-		destDir += File.separator;
-	    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-	    String curUser = auth.getName();
-		String encFileName = encrypt(curUser + "MendezMasterTrainingCenter6454_testpickey","test");			
+		//Adjust test serial numbers.
+		for(int j = 0; j < curTests.size(); ++j){
+			curTests.get(j).setSerialNo(j+1);
+		}
+		//Update to DB.
+		if(hasDeletedTest == true){
+			if(curTests.size() > 0){
+				addTests(suite,curTests);
+			}else{
+				//remove suite.
+				DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
+				Connection conn = null;
+	    		PreparedStatement prepStmt = null;
+    			try {
+					conn = dataSource.getConnection();
+					String sql = "DELETE FROM testsuite WHERE name=?";
+					prepStmt = conn.prepareStatement(sql);
+					prepStmt.setString(1, suite);
+					prepStmt.executeUpdate();					
+	    			prepStmt.close();
+	    			conn.close();					
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}	
+    			
 
-		FileOutputStream out = null;
-		try {
-			out = new FileOutputStream(destDir+encFileName+".png");
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			File f = new File(destDir);
-			if(f.mkdir() == false){
-				logger.error("[VERY BAD] Failed creating picture folder in CATALINA_HOME.");
+
 			}
-			return new ModelAndView("result","result","Failed getting OUTPUT STREAM.");
 		}
-		
-		int readBytes = 0;
-		byte[] buffer = new byte[8192];
-		try {
-			while ((readBytes = in.read(buffer, 0, 8192)) != -1) {
-				logger.info("===ddd=======");
-				out.write(buffer, 0, readBytes);
-			}
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} 
-		logger.info("[DONE_SAVING_IMG]");
-		try {
-			in.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		try {
-			out.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		}else{
-			return new ModelAndView("result","result","0 file size.");
-		}
-		
-		
-		return new ModelAndView("result","result","Non 0 file size.");
+		return new ModelAndView("home");
 	}
 	//http://www.jayway.com/2014/09/09/asynchronous-spring-service/
 	//http://docs.aws.amazon.com/AWSSdkDocsJava/latest/DeveloperGuide/java-dg-roles.html

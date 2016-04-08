@@ -75,6 +75,7 @@ var view = 'v';
 var edit = 'e';
 var curMode = view;
 var curDom;
+
 $(document).ready(function() {
 	//Get and save in JSON.
 	var debug = JSON.parse("${debug}");
@@ -146,7 +147,14 @@ $(document).ready(function() {
 	$('#rvwModal').on('hide.bs.modal', function (e) {
 		testItor = parseInt(window.localStorage.getItem('modelsel'));
 		showTest4View();
-	});	
+	});
+	
+	//Review Modal
+	$('#rvwModal').on('show.bs.modal', function (event) {
+	  var modal = $(this);
+	  modal.find('.modal-title').html('Test Suite of ' + p.suite);
+	  modal.find('.modal-body').html(genReviewTable());
+	})
 	
 	//Edit checkbox.
 	$('#chekedit').on('click', function (e) {
@@ -211,14 +219,11 @@ $(document).ready(function() {
 				
 			});
 			curDom = $('#sbtdiv');
+			curDom.append("<input type=\"hidden\" name=\"testdata\" />" 
+					      + "<input type=\"hidden\" name=\"${_csrf.parameterName}\" value=\"${_csrf.token}\"/>");
 			curDom.append(sbtBtn).on('click', function (e) {
 				p.user = "${pageContext.request.userPrincipal.name}";
-				testStartTime = window.localStorage.getItem('start_time');
-				var curDate = new Date();
-				p.end = Date.now();
-				p.beg = testStartTime;
-				$('input[name="tests"]').attr("value",JSON.stringify(p));
-				clearInterval(timerIntervalObj);
+				$('input[name="testdata"]').attr("value",JSON.stringify(p));
 			});
 			curMode = view;
 			//Ajax upload.
@@ -238,21 +243,9 @@ $(document).ready(function() {
 			    async:true,
 			    success: function(data, textStatus, jqXHR)
 			    {
-			        console.log("[AJAX_good]: " + data.toString());
-			        var result =  data;//jQuery.parseJSON(data);
+			        var result =  data;
 			        var index = result.test.serialNo - 1;
-			        /*var test = p.tests[index];
-			        test.pic = result.test.pic;
-			        test.dirty = false;
-			        if(test.hasOwnProperty('isnew') && test.isnew == true)
-			        	p.tests[index].isnew = false;
-			        */
 			        p.tests[index] = result.test;
-			        if(curMode==e)
-			        	showTest4Edit();
-			        else
-			        	showTest4View();
-			        
 					window.sessionStorage.removeItem("pic"+index,e.target.result);
 			    },
 			    error: function (jqXHR, textStatus, errorThrown)
@@ -268,21 +261,23 @@ $(document).ready(function() {
 	//Submit.
 	$('#sbtbtn').on('click', function (e) {
 		p.user = "${pageContext.request.userPrincipal.name}";
-		$('input[name="tests"]').attr("value",JSON.stringify(p));
-		clearInterval(timerIntervalObj);
+		$('input[name="testdata"]').attr("value",JSON.stringify(p));
+		
 	});
 	
 	
 	function saveTestFromGUI(){
 		var curTestObj = p.tests[testItor];
 		if(curTestObj.dirty == true || curTestObj.isnew == true){
-			console.log('[inputFILE]' + $('#pic_input').val());
 			if($('#pic_input').val() != null && $('#pic_input').val().length > 0){
 				curTestObj.pic = $('#picholder').prop('src');
 				curTestObj.newpic = true;
 			}else{
 				if(window.sessionStorage.getItem('_origpic'+testItor) != null){
-					curTestObj.pic = "${pageContext.request.contextPath}/resources/pic/" + window.sessionStorage.getItem('_origpic'+testItor);
+					if(curTestObj.hasOwnProperty('delpic') == false
+					|| curTestObj.delpic == false){
+						curTestObj.pic = "${pageContext.request.contextPath}/resources/pic/" + window.sessionStorage.getItem('_origpic'+testItor);
+					}
 					window.sessionStorage.removeItem('_origpic'+testItor);
 				}
 			}
@@ -301,21 +296,22 @@ $(document).ready(function() {
 							value.value = String.fromCharCode(index+65) + '.' + value.value;
 						}
 						curTestObj.options.push(value.value);
-					}/*else{
-						if(value.getAttribute('placeholder').length > 0){
+					}else{
+						if(value.getAttribute('placeholder').length > 0
+							&& value.getAttribute('placeholder') != ('Option ' + String.fromCharCode(index+65))){							
 							curTestObj.options.push(value.getAttribute('placeholder'));
-						}else{
+						}/*else{
 							//overwrite though input is empty.
 							curTestObj.options.push(String.fromCharCode(index+65) + '.' + value.value);
-						}
-					}*/
+						}*/
+					}
 				}
 			});
 			curTestObj.answers = [];
 			curDom = $('input[name="ans"]');
 			if(typeof curDom.val() != 'undefined'){
 				if(curDom.val().length > 0){
-					curTestObj.answers.push(curDom.val());
+					curTestObj.answers.push(curDom.val().toUpperCase());
 				}else{
 					if(curDom.prop('placeholder').length>0){
 						curTestObj.answers.push(curDom.prop('placeholder'));
@@ -421,13 +417,6 @@ $(document).ready(function() {
 		review += divEndTag;//close root col in modal.
 		return review;
 	}
-	//Review Modal
-	$('#rvwModal').on('show.bs.modal', function (event) {
-	  var button = $(event.relatedTarget);
-	  var recipient = button.data('whatever');
-	  var modal = $(this);
-	  modal.find('.modal-body').html(genReviewTable());
-	})
 
 
 	//Display tests.
@@ -460,7 +449,7 @@ $(document).ready(function() {
 				.last().on('click',function(){
 					p.tests[testItor].pic = null;
 					p.tests[testItor].delpic = true;
-					$('#picholder').prop('src',null);
+					$('#picholder').prop('src','deleted');
 				});
 						
 				$('#piccol').append("<input id=\"pic_input\" type=\"file\" name=\"file\"/>");	
@@ -496,11 +485,17 @@ $(document).ready(function() {
 				if(typeof p.tests[testItor].options != 'undefined'
 					&& p.tests[testItor].options.length > 0){
 					var opts = p.tests[testItor].options;
-					for(var i = 0; i < opts.length; ++i){
+					var i = 0;
+					for(; i < opts.length; ++i){
 						var opt = opts[i];
 						var id = "opt" + i;
 						$('#optcol').append("<input id=\"" + id + "\"type=\"text\" name=\"opt\" placeholder=\"" + opt + "\"></input><br>");
 					}
+					//add empty box for if user wants to add options, but no more than 4 options.
+					for(; i < 4; ++i){
+						$('#optcol').append("<input name=\"opt\" type=\"text\" placeholder=\"Option "+String.fromCharCode(i+65)+"\">");						
+					}
+					
 				}else{
 					//Still need to provide option boxes even no options before edit.
 					var optcol = $('#optcol');
@@ -509,7 +504,6 @@ $(document).ready(function() {
 					optcol.children().last().append("<div class=\"col-xs-5\">");
 
 					optcol = $('#opt');
-					
 					optcol.append("<input name=\"opt\" type=\"text\" placeholder=\"Option A\">");
 					optcol.append("<input name=\"opt\" type=\"text\" placeholder=\"Option B\">");
 					optcol.append("<input name=\"opt\" type=\"text\" placeholder=\"Option C\">");
@@ -780,7 +774,7 @@ $(document).ready(function() {
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
-        <h4 class="modal-title">Test Review</h4>
+        <h4 class="modal-title"></h4>
       </div>
       <div class="modal-body">
         
@@ -842,7 +836,7 @@ $(document).ready(function() {
 </div>
 <div style="text-align:right" class="col-sm-4" id="sbtdiv">
 <!-- pause,end exam -->
-<input type="hidden" name="tests" />
+<input type="hidden" name="testdata" />
 <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
 <input type="submit" value="Submit" id="sbtbtn"/> 
 </div>
