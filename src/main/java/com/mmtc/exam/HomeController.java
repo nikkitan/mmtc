@@ -20,7 +20,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -61,11 +60,8 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -94,7 +90,7 @@ import com.mmtc.exam.dao.MMTCUser;
 import com.mmtc.exam.dao.Test;
 import com.mmtc.exam.dao.TestSuite;
 import com.mmtc.exam.dao.TestTaking;
-
+//http://stackoverflow.com/questions/11271449/how-can-i-have-list-of-all-users-logged-in-via-spring-secuirty-my-web-applicat
 //http://springinpractice.com/2010/07/06/spring-security-database-schemas-for-mysql
 //http://www.jsptut.com/
 //http://docs.spring.io/spring/docs/current/spring-framework-reference/html/spring-form-tld.html
@@ -473,15 +469,37 @@ public class HomeController {
 		//Put tests back to db.
 		return addTests(suite,tests);
 	}
-	private Boolean deleteSuite(String suite){
+	private Boolean deleteSuite(String suite, long suitePK){
 		Boolean result = true;
-		String sql = "DELETE FROM testsuite WHERE name=?";
+		String sql = null;
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		Connection conn = null;
+		PreparedStatement prepStmt = null;
+
+		if(suitePK == -1L){
+			sql = "SELECT pk FROM testsuite WHERE name = ?";
+			try {
+				prepStmt = conn.prepareStatement(sql);
+				prepStmt.setString(1, suite);
+				ResultSet rs = prepStmt.executeQuery();
+				if(rs != null && rs.next() == true){
+					suitePK = rs.getLong(1);
+				}
+				prepStmt.close();
+				conn.close();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				logger.error("[deleteSuite]: Failed getting PK from testsuite for suite " + suite + ", " + e.toString());
+				return false;
+			}
+			
+		}
 		try {
+			sql = "DELETE FROM test WHERE testsuite_pk = ?";
 			conn = dataSource.getConnection();
-			PreparedStatement prepStmt = conn.prepareStatement(sql);
-			prepStmt.setString(1, suite);
+			prepStmt = conn.prepareStatement(sql);
+			prepStmt.setLong(1, suitePK);
 			prepStmt.executeUpdate();
 			prepStmt.close();
 			conn.close();
@@ -507,7 +525,7 @@ public class HomeController {
 			ResultSet rs = prepStmt.executeQuery();
 			if(rs != null && rs.next()){
 				suitePK = rs.getLong("pk");
-				deleteSuite(suite);
+				deleteSuite(suite,suitePK);
 				suitePK = addEmptySuite(suite);
 			}else{
 				//suite doesn't exist.
