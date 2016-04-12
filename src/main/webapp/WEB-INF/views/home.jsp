@@ -41,7 +41,9 @@
 		<ul>
 			<li><a href="${pageContext.request.contextPath}/testsuite">Exam Simulations</a></li>
 			<% if (request.isUserInRole("ROLE_ADMIN")) {%>
-			<li><a href="${pageContext.request.contextPath}/addtestsuite">Add Exams</a></li>
+			<li><a href="${pageContext.request.contextPath}/emptysuite">Add Suite</a></li>
+			<li><a href="${pageContext.request.contextPath}/delsuite">Delete Suite</a></li>
+			<li><a href="${pageContext.request.contextPath}/uploadtestsuite">Upload Suite</a></li>
 			<li><a href="${pageContext.request.contextPath}/edittests">Edit Exams</a></li>
 			<li><a href="${pageContext.request.contextPath}/adduser">Add New Student</a></li>
 			<% } %>
