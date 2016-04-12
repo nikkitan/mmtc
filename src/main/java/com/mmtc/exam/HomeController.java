@@ -167,12 +167,64 @@ public class HomeController {
 		//return new ModelAndView("testsuite");//,"model",resultModel);
 		return resultView;
 	}
-	@RequestMapping(value="/addtestsuite", method=RequestMethod.GET)
-    public String addTestSuiteGET(Locale locale, Model model,
+	@RequestMapping(value="/emptysuite", method=RequestMethod.GET)
+    public String emptySuiteGET(Locale locale, Model model,
 			HttpServletRequest request, 
 			HttpServletResponse response){
 		logger.debug(request.getRequestURL().toString());
 		return "addsuite";
+	}
+	@RequestMapping(value="/delsuite", method=RequestMethod.GET)
+    public @ResponseBody ModelAndView deleteSuiteGET(Locale locale, Model model,
+			HttpServletRequest request, 
+			HttpServletResponse response){
+		logger.debug(request.getRequestURL().toString());
+		TestSuite ts = new TestSuite(null);
+		ModelAndView v = new ModelAndView();
+		v.setViewName("delsuite");
+		v.addObject("ts", ts);
+		ArrayList<String> suites = getTestSuites();	
+		v.addObject("suites", suites);
+		return v;
+	}
+	@RequestMapping(value="/delsuite", method=RequestMethod.POST)
+    public @ResponseBody ModelAndView deleteSuitePOST(Locale locale, Model model,
+			HttpServletRequest request, 
+			HttpServletResponse response,
+			@ModelAttribute("ts") TestSuite ts){
+		logger.debug(request.getRequestURL().toString());
+		ModelAndView v = new ModelAndView();
+		v.setViewName("result");
+		if(deleteSuite(ts.getName(),-1L) == false){
+			v.addObject("result", "Failed deleting suite of " + ts.getName());
+			return v;
+		}
+		v.addObject("result", "Deletion of suite of " + ts.getName() + " is successful!");
+		return v;
+	}
+	@RequestMapping(value="/postemptysuite", method=RequestMethod.POST)
+    public @ResponseBody ModelAndView postEmptySuitePOST(
+			HttpServletRequest request, 
+			HttpServletResponse response,
+			@RequestParam ("suite") String suite){
+		logger.info(request.getRequestURL().toString());
+		ModelAndView v = new ModelAndView();
+		v.setViewName("result");
+		if(addEmptySuite(suite) == -1L){
+			v.addObject("result", "Failed creating new suite of " + suite);
+			return v;
+		}
+		
+		v.addObject("result", "New suite of " + suite + " is created successfully!");
+		
+		return v;
+	}
+	@RequestMapping(value="/uploadtestsuite", method=RequestMethod.GET)
+    public String addTestSuiteGET(Locale locale, Model model,
+			HttpServletRequest request, 
+			HttpServletResponse response){
+		logger.debug(request.getRequestURL().toString());
+		return "uploadsuite";
 	}
 	//http://www.codejava.net/frameworks/spring/spring-mvc-form-handling-tutorial-and-example
 	@RequestMapping(value="/adduser", method=RequestMethod.GET)
@@ -479,6 +531,7 @@ public class HomeController {
 		if(suitePK == -1L){
 			sql = "SELECT pk FROM testsuite WHERE name = ?";
 			try {
+				conn = dataSource.getConnection();
 				prepStmt = conn.prepareStatement(sql);
 				prepStmt.setString(1, suite);
 				ResultSet rs = prepStmt.executeQuery();
@@ -495,8 +548,25 @@ public class HomeController {
 			}
 			
 		}
+		sql = "DELETE FROM test_taking WHERE testsuite_name = ?";
 		try {
-			sql = "DELETE FROM test WHERE testsuite_pk = ?";
+			conn = dataSource.getConnection();
+			prepStmt = conn.prepareStatement(sql);
+			prepStmt.setString(1, suite);
+			//prepStmt.setString(2, user);
+			prepStmt.executeUpdate();
+			prepStmt.close();
+			conn.close();
+			
+		} catch (SQLException e1) {
+			// TODO Auto-generated catch block
+			logger.error("[deleteSuite]:Failed deleting test_taking for suite  " + suite +  ", " + e1.toString());
+			e1.printStackTrace();
+			result = false;			
+		}
+		sql = "DELETE FROM testsuite WHERE pk = ?";
+
+		try {
 			conn = dataSource.getConnection();
 			prepStmt = conn.prepareStatement(sql);
 			prepStmt.setLong(1, suitePK);
@@ -768,8 +838,9 @@ public class HomeController {
 			v.setViewName("result");
 			v.addObject("result","Editing failed: Test taker and logged-in user are different.");
 			return v;
-		}else
+		}else{
 			user = request.getUserPrincipal().getName();
+		}
 
 		//Check for deleted tests and update to database.
 		String suite = jsonTestSuite.get("suite").getAsString();
@@ -794,24 +865,7 @@ public class HomeController {
 				addTests(suite,curTests);
 			}else{
 				//remove suite.
-				DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
-				Connection conn = null;
-	    		PreparedStatement prepStmt = null;
-    			try {
-					conn = dataSource.getConnection();
-					String sql = "DELETE FROM testsuite WHERE name=?";
-					prepStmt = conn.prepareStatement(sql);
-					prepStmt.setString(1, suite);
-					prepStmt.executeUpdate();					
-	    			prepStmt.close();
-	    			conn.close();					
-				} catch (SQLException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}	
-    			
-
-
+				deleteSuite(suite,-1L);
 			}
 		}
 		return new ModelAndView("home");
