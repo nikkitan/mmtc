@@ -42,7 +42,7 @@
 <div class="container-fluid bg-3">
 <div class="row">
 <h4> Choose File to Upload in Server </h4>
-<form action="postemptysuite" method="post" enctype="multipart/form-data">
+<form action="uploadtestsuite" method="post" enctype="multipart/form-data">
 <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
 <table><!-- ROOT -->
 <tr>
@@ -51,13 +51,18 @@
 <tr>
 <td>
 
-Name of new test suite:<input type="text" name="suite" />
+Name of this test suite:<input type="text" name="name" />
 
 </td>
 </tr>
 <tr>
 <td>
-<input type="submit" value="Add" /></td>
+Test suite file:<input type="file" name="file" />
+</td>
+</tr>
+<tr>
+<td>
+<input type="submit" value="upload" /></td>
 </tr>
 
 </table> 

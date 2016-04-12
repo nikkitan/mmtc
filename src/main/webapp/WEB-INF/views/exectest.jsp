@@ -135,9 +135,8 @@ $(document).ready(function() {
 		p.user = "${pageContext.request.userPrincipal.name}";
 		testStartTime = window.sessionStorage.getItem('start_time');
 		var curDate = new Date();
-		p.end = Date.now();//Date.parse(curDate);
-		p.beg = testStartTime;//Date.parse(testStartTime);
-		//p.testdur = (Date.parse(curDate) - Date.parse(testStartTime))/1000;
+		p.end = Date.now();
+		p.beg = testStartTime;
 		console.log("s: " + testStartTime);
 		console.log("c: " + curDate);
 		console.log(Date.parse(curDate));
@@ -205,12 +204,7 @@ $(document).ready(function() {
 	}
 	//Review Modal
 	$('#rvwModal').on('show.bs.modal', function (event) {
-	  var button = $(event.relatedTarget) // Button that triggered the modal
-	  var recipient = button.data('whatever') // Extract info from data-* attributes
-	  // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
-	  // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
 	  var modal = $(this)
-	  //modal.find('.modal-title').text('New message to ' + recipient)
 	  modal.find('.modal-body').html(genReviewTable());
 	})
 	//Show/Hide answer.
