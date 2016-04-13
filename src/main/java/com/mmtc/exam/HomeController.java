@@ -139,7 +139,21 @@ public class HomeController {
 		
 		return "home";
 	}	
-	
+	@RequestMapping(value = {"/error"}, method = RequestMethod.GET)
+	public @ResponseBody ModelAndView errorGET(
+			Locale locale, 
+			Model model,
+			@RequestParam(required=false) String msg) {
+		ModelAndView view = new ModelAndView();
+		view.setViewName("result");
+		if(msg!=null && msg.length() > 0){
+			view.addObject("result", msg);
+		}else{
+			view.addObject("result","Oooops! Something went wrong and please try again later.");
+		}
+		return view;
+
+	}	
 	@RequestMapping(value = "/testsuite", method = RequestMethod.GET)
 	public @ResponseBody ModelAndView examGET(Locale locale, Model model,
 			HttpServletRequest request, 
@@ -1924,7 +1938,9 @@ public class HomeController {
 			conn.close();
 		}catch(Exception e){
 			e.printStackTrace();
-			logger.error("[execans] " + e.getMessage());			
+			logger.error("[execans] " + e.getMessage());	
+			//Say the testsuite student took was deleted by editor....
+			
 		}		
 		JsonObject jSuite = new JsonObject();
 		jSuite.addProperty("suite", suite);
@@ -1999,6 +2015,7 @@ public class HomeController {
 		PreparedStatement prepStmt = null;
 		JsonObject t = null;
 		long newRowID = -1L;
+		Boolean isTestTakingInserted = true;
 		try{
 			Connection conn = dataSource.getConnection();
 			tt = sdf.format(sdt);
@@ -2016,12 +2033,21 @@ public class HomeController {
 			conn.close();
 		}catch(Exception e){
 			e.printStackTrace();
-			logger.error("[submitans] " + e.getMessage());			
+			logger.error("[submitans] " + e.getMessage());	
+			isTestTakingInserted = false;
 		}
-		ArrayList<JsonArray> testSplits = splitJsonArray(3,jArrTests);
-		for(int i = 0; i < testSplits.size(); ++i){
-			InsertTestAnsThread insertThread = new InsertTestAnsThread(dataSource,testSplits.get(i), newRowID);
-			insertThread.start();
+		if(isTestTakingInserted == true){
+			//Insertion test_taking failed, so we don't insert details of this test taking.
+			if(jArrTests.size() > 10){
+				ArrayList<JsonArray> testSplits = splitJsonArray(3,jArrTests);
+				for(int i = 0; i < testSplits.size(); ++i){
+					InsertTestAnsThread insertThread = new InsertTestAnsThread(dataSource,testSplits.get(i), newRowID);
+					insertThread.start();
+				}
+			}else{
+				InsertTestAnsThread insertThread = new InsertTestAnsThread(dataSource,jArrTests, newRowID);
+				insertThread.start();			
+			}
 		}
 		v.setViewName("review");
 		v.addObject("participant", user);

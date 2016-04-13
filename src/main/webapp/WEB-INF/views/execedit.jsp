@@ -145,7 +145,7 @@ $(document).ready(function() {
 		
 	//Ans <p> in Review Modal.
 	$('#rvwModal').on('hide.bs.modal', function (e) {
-		testItor = parseInt(window.localStorage.getItem('modelsel'));
+		testItor = parseInt(window.sessionStorage.getItem('modelsel'));
 		showTest4View();
 	});
 	
@@ -396,14 +396,14 @@ $(document).ready(function() {
 			if(p.tests[i].hasOwnProperty("taking")
 					&& p.tests[i].taking != 'undefined'){
 				review += itemPrefix;
-				review += "\" onclick='window.localStorage.setItem(\"modelsel\","+i+"); $(\"#rvwModal\").modal(\"hide\");' ";
+				review += "\" onclick='window.sessionStorage.setItem(\"modelsel\","+i+"); $(\"#rvwModal\").modal(\"hide\");' ";
 				review += ">";
 				review += i+1;
 				review += ":";
 				review += p.tests[i].taking.stuans;				
 			}else{
 				review += itemPrefix;
-				review += "\" onclick='window.localStorage.setItem(\"modelsel\","+i+"); $(\"#rvwModal\").modal(\"hide\");' ";
+				review += "\" onclick='window.sessionStorage.setItem(\"modelsel\","+i+"); $(\"#rvwModal\").modal(\"hide\");' ";
 				review += "class=\"notanswered\">";
 				review += i+1;
 				review += ":";
