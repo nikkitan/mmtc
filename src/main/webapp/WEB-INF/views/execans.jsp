@@ -48,6 +48,14 @@ $(document).ready(function() {
 	//Get and save in JSON.
 	<% String origTest=(String)request.getAttribute("tests");%>
 	var oo = '<%=origTest%>';
+	if(oo == null || typeof oo == 'undefined' || oo.length == 0){
+		oo = null;//window.sessionStorage.getItem('tests');
+		if(oo == null || oo.length == 0){
+			//Really bad...nothing from server, nor from local storage....
+			window.location.replace("${pageContext.request.contextPath}/error?msg=Your previous test data was lost. Please contact Elaine or Nikki for solutions.");
+		}
+	}
+	
 	var p = jQuery.parseJSON(oo);
 	window.sessionStorage.setItem('tests',oo);	
 	var total = p.tests.length;
@@ -247,7 +255,6 @@ $(document).ready(function() {
 	
 	//Display tests.
 	function showTest(){
-		console.log('[curTest] ' + curTest);
 		if(curTest > -1 && curTest < total){
 			$('#testrootpanel #qh').children().last().remove();
 			$('#testrootpanel #quescol').html('');
@@ -265,7 +272,8 @@ $(document).ready(function() {
 						+ p.tests[curTest].question[0] +"</h4></div>")
 			}
 			var opts;
-			if(typeof p.tests[curTest].taking != 'undefined'){
+			if(typeof p.tests[curTest].taking != 'undefined'
+				&& typeof p.tests[curTest].taking.options != 'undefined'){
 				opts = p.tests[curTest].taking.options;
 			}else{
 				opts = p.tests[curTest].options;
