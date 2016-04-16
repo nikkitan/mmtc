@@ -38,9 +38,6 @@
 </nav>
 
 <!-- First Container -->
-  <!-- <h3 class="margin">Welcome to MMTC! 加州最大按摩职照培训中心！(這裡會放照片跑馬燈)</h3>
-   <img src="bird.jpg" class="imgresponsive img-circle margin" style="display:inline" alt="Bird" width="350" height="350">
-  <h3>I'm an adventurer</h3> -->
   <div id="myCarousel" class="carousel slide" data-ride="carousel">
 	  <!-- Indicators -->
 	  <ol class="carousel-indicators">

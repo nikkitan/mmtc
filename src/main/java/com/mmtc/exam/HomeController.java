@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.InvalidAlgorithmParameterException;
@@ -90,6 +91,11 @@ import com.mmtc.exam.dao.MMTCUser;
 import com.mmtc.exam.dao.Test;
 import com.mmtc.exam.dao.TestSuite;
 import com.mmtc.exam.dao.TestTaking;
+
+import net.spy.memcached.AddrUtil;
+import net.spy.memcached.BinaryConnectionFactory;
+import net.spy.memcached.ClientMode;
+import net.spy.memcached.MemcachedClient;
 //http://stackoverflow.com/questions/11271449/how-can-i-have-list-of-all-users-logged-in-via-spring-secuirty-my-web-applicat
 //http://springinpractice.com/2010/07/06/spring-security-database-schemas-for-mysql
 //http://www.jsptut.com/
@@ -134,8 +140,12 @@ public class HomeController {
 		logger.info("Welcome home! The client locale is {}.", locale);
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 
-		int i = dataSource.getPoolSize();
-		logger.info("Pool size: " + i);
+		int p = dataSource.getPoolSize();
+		int i = dataSource.getIdle();
+		int a = dataSource.getActive();
+		logger.info("Pool size: " + p);
+		logger.info("Idle size: " + i);
+		logger.info("Active size: " + a);
 		
 		return "home";
 	}	
@@ -252,18 +262,24 @@ public class HomeController {
 		view.addObject("us", user);
         return view;
 	}
+
 	
 	@RequestMapping(value="/adduser", method=RequestMethod.POST)
     public @ResponseBody ModelAndView addUserPOST(
-    		@ModelAttribute("us") MMTCUser user,
+    		//@ModelAttribute("us") MMTCUser user,
 			HttpServletRequest request, 
-			HttpServletResponse response){
+			HttpServletResponse response,
+			@RequestParam(required=true,value="firstname") String firstName,
+			@RequestParam(required=true,value="firstname") String lastName,
+			@RequestParam(required=true,value="email") String email,
+			@RequestParam(required=true,value="pwd") String pwd,
+			@RequestParam(required=false,value="emailpwd") String emailPWD){
 		logger.info(request.getRequestURL().toString());
 		boolean hasError = false;
 		ArrayList<SimpleGrantedAuthority> authorities = new ArrayList<SimpleGrantedAuthority>();
 		authorities.add(new SimpleGrantedAuthority("STU"));
 		try {
-			jdbcDaoMgr.createMMTCUser(new MMTCUser(user.getUsername(),user.getPassword(), authorities));
+			jdbcDaoMgr.createMMTCUser(new MMTCUser(email,pwd, email, firstName, lastName, authorities));
 		} catch (SQLException e) {
 			e.printStackTrace();
 			logger.error("[adduser] FAILED create NEW user!!!!");
@@ -275,9 +291,9 @@ public class HomeController {
 		props.put("mail.smtp.starttls.enable", "true");
 		mailSender.setJavaMailProperties(props);
         SimpleMailMessage msg = new SimpleMailMessage(this.emailRegMsgTemplate);
-        msg.setTo(user.getEmail());
+        msg.setTo(email);
         msg.setText(
-            "Dear " + user.getUsername()
+            "Dear " + firstName + " " + lastName
                 + ", thank you for registering with MMTC! Your user name is your email. ");
         try{
             this.mailSender.send(msg);
@@ -1864,7 +1880,24 @@ public class HomeController {
 			@RequestParam("et") Long et){
 		ModelAndView v = new ModelAndView();
 		logger.info(request.getRequestURL().toString());
-
+		//Check cache.
+		try {
+			 MemcachedClient c = new MemcachedClient(new BinaryConnectionFactory(ClientMode.Dynamic),
+		              AddrUtil.getAddresses("memcache-mmtc-clus1.1xsokm.cfg.usw2.cache.amazonaws.com:11211"));
+			 String cacheKey = user+suite+st.toString()+et.toString();
+			Object testTakingCache = c.get(cacheKey);
+			if(testTakingCache != null){
+				logger.debug("[execans]: Fetch cache: " + testTakingCache.toString());
+			}else{
+				logger.debug("[execans]: Cache miss: " + cacheKey);
+			}
+			c.shutdown();
+		 } catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			logger.error("[submitans]: Failed opening Memcache connection: " + e.toString());
+		}		
+		
 		String sql = "SELECT pk FROM test_taking WHERE user_username=? "
 				+ "AND start_time = ? AND end_time=? AND testsuite_name=?";
 		
@@ -1939,8 +1972,9 @@ public class HomeController {
 		}catch(Exception e){
 			e.printStackTrace();
 			logger.error("[execans] " + e.getMessage());	
-			//Say the testsuite student took was deleted by editor....
-			
+			//Say the testsuite student took was deleted by our editor....
+			v.setViewName("execans");
+			return v;
 		}		
 		JsonObject jSuite = new JsonObject();
 		jSuite.addProperty("suite", suite);
@@ -2006,6 +2040,22 @@ public class HomeController {
 		String suiteAndTest = decryptTestID(user + "MendezMasterTrainingCenter6454",tempTest.get("id").getAsString());
 		String[] s_t = suiteAndTest.split("-");
 		
+		//Cache test data.
+		 try {
+			 MemcachedClient c = new MemcachedClient(new BinaryConnectionFactory(ClientMode.Dynamic),
+		              AddrUtil.getAddresses("memcache-mmtc-clus1.1xsokm.cfg.usw2.cache.amazonaws.com:11211"));
+			 String cacheKey = user+s_t[0]+String.valueOf(startTime)+String.valueOf(endTime);
+			Object testTakingCache = c.get(cacheKey);
+			if(testTakingCache == null){
+				logger.debug("[submitans]: Caching " + cacheKey);
+				c.set(cacheKey, 3600, jsonTestSuite.toString());
+			}
+			c.shutdown();
+		 } catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			logger.error("[submitans]: Failed opening Memcache connection: " + e.toString());
+		}		
 		
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		String sql = "INSERT INTO test_taking " 
@@ -2036,6 +2086,10 @@ public class HomeController {
 			logger.error("[submitans] " + e.getMessage());	
 			isTestTakingInserted = false;
 		}
+		
+
+		
+		
 		if(isTestTakingInserted == true){
 			//Insertion test_taking failed, so we don't insert details of this test taking.
 			if(jArrTests.size() > 10){

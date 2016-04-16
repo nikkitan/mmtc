@@ -19,6 +19,8 @@ public class MMTCUser implements UserDetails{
 	 */
 	private static final long serialVersionUID = -8884718288666724275L;
 	private String username;
+	private String firstname;
+	private String lastname;
 	private String password;
 	private String email;
 	private String emailpw;
@@ -37,7 +39,8 @@ public class MMTCUser implements UserDetails{
 		this.accountNonLocked = false;
 		this.authorities = null;		
 	}
-	public MMTCUser(String username, String password, boolean enabled,
+	public MMTCUser(String username, String password, 
+			String email, boolean enabled,
 			boolean accountNonExpired, boolean credentialsNonExpired,
 			boolean accountNonLocked, Collection<? extends GrantedAuthority> authorities){
 		if (((username == null) || "".equals(username)) || (password == null)) {
@@ -47,16 +50,24 @@ public class MMTCUser implements UserDetails{
 
 		this.username = username;
 		this.password = password;
+		this.email = email;
 		this.enabled = enabled;
 		this.accountNonExpired = accountNonExpired;
 		this.credentialsNonExpired = credentialsNonExpired;
 		this.accountNonLocked = accountNonLocked;
 		this.authorities = Collections.unmodifiableSet(sortAuthorities(authorities));
 	}
-	
-	public MMTCUser(String username, String password,
+	public MMTCUser(String username, String password, String email,
 			Collection<? extends GrantedAuthority> authorities) {
-		this(username, password, true, true, true, true, authorities);
+		this(username, password,email,true, true, true, true, authorities);
+	}
+	
+	public MMTCUser(String username, String password,String email,
+			String firstName, String lastName,
+			Collection<? extends GrantedAuthority> authorities) {
+		this(username, password, email, true, true, true, true, authorities);
+		this.firstname = firstName;
+		this.lastname = lastName;
 	}
 	public String getEmail() {
 		return email;
@@ -198,5 +209,17 @@ public class MMTCUser implements UserDetails{
 		}
 
 		return sb.toString();
+	}
+	public String getLastName() {
+		return lastname;
+	}
+	public void setLastName(String lastName) {
+		this.lastname = lastName;
+	}
+	public String getFirstName() {
+		return firstname;
+	}
+	public void setFirstName(String firstName) {
+		this.firstname = firstName;
 	}
 }

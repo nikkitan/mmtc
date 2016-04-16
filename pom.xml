@@ -226,7 +226,12 @@
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-config</artifactId>
 			<version>4.0.3.RELEASE</version>
-		</dependency>		
+		</dependency>
+		<dependency>
+			<groupId>net.spy.memcached</groupId>
+			<artifactId>AmazonElastiCacheClusterClient</artifactId>
+			<version>1.0.1</version>
+		</dependency>
 	</dependencies>
     <build>
         <plugins>
