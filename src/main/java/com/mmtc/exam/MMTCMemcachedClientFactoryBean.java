@@ -38,6 +38,7 @@ public class MMTCMemcachedClientFactoryBean extends AbstractFactoryBean<Memcache
 
 	@Override
 	protected MemcachedClient createInstance() throws Exception {
+		logger.debug("[createInstance]: Memcached connecting....");
 		mc = new MemcachedClient(new BinaryConnectionFactory(ClientMode.Dynamic),
 	              AddrUtil.getAddresses(servers));
 		return mc;
