@@ -116,6 +116,9 @@ public class HomeController {
 	private MMTCJdbcUserDetailsMgr jdbcDaoMgr;
 	
 	@Autowired
+	private MemcachedClient memcachedClient;
+	
+	@Autowired
 	private JavaMailSenderImpl mailSender;
 	
 	@Autowired
@@ -1881,21 +1884,12 @@ public class HomeController {
 		ModelAndView v = new ModelAndView();
 		logger.info(request.getRequestURL().toString());
 		//Check cache.
-		try {
-			 MemcachedClient c = new MemcachedClient(new BinaryConnectionFactory(ClientMode.Dynamic),
-		              AddrUtil.getAddresses("memcache-mmtc-clus1.1xsokm.cfg.usw2.cache.amazonaws.com:11211"));
-			 String cacheKey = user+suite+st.toString()+et.toString();
-			Object testTakingCache = c.get(cacheKey);
-			if(testTakingCache != null){
-				logger.debug("[execans]: Fetch cache: " + testTakingCache.toString());
-			}else{
-				logger.debug("[execans]: Cache miss: " + cacheKey);
-			}
-			c.shutdown();
-		 } catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			logger.error("[submitans]: Failed opening Memcache connection: " + e.toString());
+		String cacheKey = user+suite+st.toString()+et.toString();
+		Object testTakingCache = memcachedClient.get(cacheKey);
+		if(testTakingCache != null){
+			logger.debug("[execans]: Fetch cache: " + testTakingCache.toString());
+		}else{
+			logger.debug("[execans]: Cache miss: " + cacheKey);
 		}		
 		
 		String sql = "SELECT pk FROM test_taking WHERE user_username=? "
@@ -2041,21 +2035,12 @@ public class HomeController {
 		String[] s_t = suiteAndTest.split("-");
 		
 		//Cache test data.
-		 try {
-			 MemcachedClient c = new MemcachedClient(new BinaryConnectionFactory(ClientMode.Dynamic),
-		              AddrUtil.getAddresses("memcache-mmtc-clus1.1xsokm.cfg.usw2.cache.amazonaws.com:11211"));
-			 String cacheKey = user+s_t[0]+String.valueOf(startTime)+String.valueOf(endTime);
-			Object testTakingCache = c.get(cacheKey);
-			if(testTakingCache == null){
-				logger.debug("[submitans]: Caching " + cacheKey);
-				c.set(cacheKey, 3600, jsonTestSuite.toString());
-			}
-			c.shutdown();
-		 } catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			logger.error("[submitans]: Failed opening Memcache connection: " + e.toString());
-		}		
+	 	String cacheKey = user+s_t[0]+String.valueOf(startTime)+String.valueOf(endTime);
+	 	Object testTakingCache = memcachedClient.get(cacheKey);
+		if(testTakingCache == null){
+			logger.debug("[submitans]: Caching " + cacheKey);
+			memcachedClient.set(cacheKey, 3600, jsonTestSuite.toString());
+		}	
 		
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		String sql = "INSERT INTO test_taking " 

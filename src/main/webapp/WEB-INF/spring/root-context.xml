@@ -30,4 +30,9 @@
 	    <property name="from" value="${mailnotif.u}"/>
 	    <property name="subject" value="Your gmail is successfully registered to MMTC!"/>
 	</bean>	
+	
+  	<bean id="memcachedClient"
+     class="com.mmtc.exam.MMTCMemcachedClientFactoryBean">
+	   <property name="servers" value="${memcached.host}"/>
+	</bean> 
 </beans>
