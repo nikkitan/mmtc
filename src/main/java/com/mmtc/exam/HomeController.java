@@ -1883,99 +1883,114 @@ public class HomeController {
 			@RequestParam("et") Long et){
 		ModelAndView v = new ModelAndView();
 		logger.info(request.getRequestURL().toString());
+		JsonParser jp = new JsonParser();
 		//Check cache.
 		String cacheKey = user+suite+st.toString()+et.toString();
 		Object testTakingCache = memcachedClient.get(cacheKey);
+		JsonObject cache = null;
+
 		if(testTakingCache != null){
 			logger.debug("[execans]: Fetch cache: " + testTakingCache.toString());
+			cache = jp.parse(testTakingCache.toString()).getAsJsonObject();
 		}else{
 			logger.debug("[execans]: Cache miss: " + cacheKey);
-		}		
+		}	
+		String strJ = null;
+		if(cache == null){
+			
 		
-		String sql = "SELECT pk FROM test_taking WHERE user_username=? "
-				+ "AND start_time = ? AND end_time=? AND testsuite_name=?";
-		
-		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
-		Connection conn = null;
-		PreparedStatement prepStmt = null;
-		ArrayList<Test> tests = null;
-		ArrayList<Test> reorderedTests = null;
-		try{
-			long testTakingPK = 0L;			
-			TestTaking taking = null;
-			JsonArray options = null;
-			String strOptions;
-			int serial = 0;
-			JsonParser jp = new JsonParser();
-			conn = dataSource.getConnection();
-			prepStmt = conn.prepareStatement(sql);			
-			prepStmt.setString(1, user);
-			prepStmt.setTimestamp(2, new Timestamp(st));
-			prepStmt.setTimestamp(3, new Timestamp(et));
-			prepStmt.setString(4, suite);
-			ResultSet rs = prepStmt.executeQuery();
-			if(rs != null && rs.next()){
-				testTakingPK = rs.getLong(1);
+			String sql = "SELECT pk FROM test_taking WHERE user_username=? "
+					+ "AND start_time = ? AND end_time=? AND testsuite_name=?";
+			
+			DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
+			Connection conn = null;
+			PreparedStatement prepStmt = null;
+			ArrayList<Test> tests = null;
+			ArrayList<Test> reorderedTests = null;
+			try{
+				long testTakingPK = 0L;			
+				TestTaking taking = null;
+				JsonArray options = null;
+				String strOptions;
+				int serial = 0;
+				conn = dataSource.getConnection();
+				prepStmt = conn.prepareStatement(sql);			
+				prepStmt.setString(1, user);
+				prepStmt.setTimestamp(2, new Timestamp(st));
+				prepStmt.setTimestamp(3, new Timestamp(et));
+				prepStmt.setString(4, suite);
+				ResultSet rs = prepStmt.executeQuery();
+				if(rs != null && rs.next()){
+					testTakingPK = rs.getLong(1);
+				}
+				rs.close();			
+				prepStmt.close();
+				
+				tests = getTestsForDisplayForSuite(suite);
+				
+				
+				sql = "SELECT stuans, test_taking_serial,orig_test_serial, test_taking_options "
+						+ "FROM test_taking_snapshot WHERE test_taking_pk = ? ORDER BY test_taking_serial";
+				
+				prepStmt = conn.prepareStatement(sql);
+				prepStmt.setString(1, String.valueOf(testTakingPK));
+				rs = prepStmt.executeQuery();
+				if(rs != null){
+					if(reorderedTests == null){
+						reorderedTests = new ArrayList<Test>(tests.size());
+					}
+					String strQuestion;
+					JsonArray questionArr = null;
+					Test temp = null;
+					int testTakingSerial = 0;
+					int origTestSerial = 0;
+					while(rs.next()){
+						taking = null;
+						taking = new TestTaking();					
+						taking.setStuAns(rs.getString("stuans"));
+						testTakingSerial = rs.getInt("test_taking_serial");
+						taking.setSerial(String.valueOf(testTakingSerial));
+						strOptions = rs.getString("test_taking_options");
+						JsonElement elem = jp.parse(rs.getString("test_taking_options"));
+						options = elem.getAsJsonArray();
+						taking.setOptions(options);
+						origTestSerial = rs.getInt("orig_test_serial");
+						temp = tests.get(origTestSerial-1);
+						questionArr = temp.getQuestion();
+						strQuestion = questionArr.get(0).getAsString();
+						strQuestion = String.valueOf(testTakingSerial) + strQuestion.substring(strQuestion.indexOf("."));
+						questionArr.set(0, new JsonPrimitive(strQuestion));
+						//temp.setQuestion(questionArr);
+						temp.setTaking(taking);
+						
+						reorderedTests.add(temp);
+					}
+				}	
+				rs.close();
+				prepStmt.close();
+				conn.close();
+			}catch(Exception e){
+				e.printStackTrace();
+				logger.error("[execans] " + e.getMessage());	
+				//Say the testsuite student took was deleted by our editor....
+				v.setViewName("execans");
+				return v;
 			}
-			rs.close();			
-			prepStmt.close();
 			
-			tests = getTestsForDisplayForSuite(suite);
-			
-			
-			sql = "SELECT stuans, test_taking_serial,orig_test_serial, test_taking_options "
-					+ "FROM test_taking_snapshot WHERE test_taking_pk = ? ORDER BY test_taking_serial";
-			
-			prepStmt = conn.prepareStatement(sql);
-			prepStmt.setString(1, String.valueOf(testTakingPK));
-			rs = prepStmt.executeQuery();
-			if(rs != null){
-				if(reorderedTests == null){
-					reorderedTests = new ArrayList<Test>(tests.size());
-				}
-				String strQuestion;
-				JsonArray questionArr = null;
-				Test temp = null;
-				int testTakingSerial = 0;
-				int origTestSerial = 0;
-				while(rs.next()){
-					taking = null;
-					taking = new TestTaking();					
-					taking.setStuAns(rs.getString("stuans"));
-					testTakingSerial = rs.getInt("test_taking_serial");
-					taking.setSerial(String.valueOf(testTakingSerial));
-					strOptions = rs.getString("test_taking_options");
-					JsonElement elem = jp.parse(rs.getString("test_taking_options"));
-					options = elem.getAsJsonArray();
-					taking.setOptions(options);
-					origTestSerial = rs.getInt("orig_test_serial");
-					temp = tests.get(origTestSerial-1);
-					questionArr = temp.getQuestion();
-					strQuestion = questionArr.get(0).getAsString();
-					strQuestion = String.valueOf(testTakingSerial) + strQuestion.substring(strQuestion.indexOf("."));
-					questionArr.set(0, new JsonPrimitive(strQuestion));
-					//temp.setQuestion(questionArr);
-					temp.setTaking(taking);
-					
-					reorderedTests.add(temp);
-				}
-			}	
-			rs.close();
-			prepStmt.close();
-			conn.close();
-		}catch(Exception e){
-			e.printStackTrace();
-			logger.error("[execans] " + e.getMessage());	
-			//Say the testsuite student took was deleted by our editor....
-			v.setViewName("execans");
-			return v;
-		}		
-		JsonObject jSuite = new JsonObject();
-		jSuite.addProperty("suite", suite);
-		Gson gson = new Gson();
-		JsonArray jTests = (JsonArray)gson.toJsonTree(reorderedTests, new TypeToken<ArrayList<Test>>(){}.getType());
-		jSuite.add("tests", jTests);
-		String strJ = gson.toJson(jSuite).replace("\\", "\\\\");
+			JsonObject jSuite = new JsonObject();
+			jSuite.addProperty("suite", suite);
+			Gson gson = new Gson();
+			JsonArray jTests = (JsonArray)gson.toJsonTree(reorderedTests, new TypeToken<ArrayList<Test>>(){}.getType());
+			jSuite.add("tests", jTests);
+			strJ = gson.toJson(jSuite).replace("\\", "\\\\");
+		}else{
+			JsonObject jSuite = new JsonObject();
+			jSuite.addProperty("suite", cache.get("suite").getAsString());
+			Gson gson = new Gson();
+			jSuite.add("tests", cache.get("tests").getAsJsonArray());
+			strJ = gson.toJson(jSuite).replace("\\", "\\\\");
+		}
+
 		request.setAttribute("tests",strJ);		
 		
 		v.setViewName("execans");

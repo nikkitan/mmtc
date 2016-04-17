@@ -24,6 +24,7 @@
     	<property name="username" value="${mailnotif.u}"/>
     	<property name="password" value="${mailnotif.pw}"/>
 	</bean>
+
 	
 	<!-- this is a template message that we can pre-load with default state -->
 	<bean id="emailRegistrationTemplaetMsg" class="org.springframework.mail.SimpleMailMessage">
@@ -31,8 +32,16 @@
 	    <property name="subject" value="Your gmail is successfully registered to MMTC!"/>
 	</bean>	
 	
+	<beans profile="release">
   	<bean id="memcachedClient"
      class="com.mmtc.exam.MMTCMemcachedClientFactoryBean">
-	   <property name="servers" value="${memcached.host}"/>
+	   <property name="servers" value="${memcached.release.host}"/>
 	</bean> 
+	</beans>
+	<beans profile="debug">
+  	<bean id="memcachedClient"
+     class="com.mmtc.exam.MMTCMemcachedClientFactoryBean">
+	   <property name="servers" value="${memcached.release.host}"/>
+	</bean> 
+	</beans>
 </beans>
