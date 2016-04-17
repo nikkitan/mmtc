@@ -230,7 +230,7 @@
 		<dependency>
 			<groupId>net.spy.memcached</groupId>
 			<artifactId>AmazonElastiCacheClusterClient</artifactId>
-			<version>1.0.1</version>
+			<version>1.0</version>
 		</dependency>
 	</dependencies>
     <build>
