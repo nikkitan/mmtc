@@ -94,6 +94,7 @@ import com.mmtc.exam.dao.MMTCUser;
 import com.mmtc.exam.dao.Test;
 import com.mmtc.exam.dao.TestSuite;
 import com.mmtc.exam.dao.TestTaking;
+import net.spy.memcached.MemcachedClient;
 /**
  * Handles requests for the application home page.
  */
@@ -105,6 +106,9 @@ public class HomeController {
 	private JndiObjectFactoryBean jndiObjFactoryBean;
 	@Autowired
 	private MMTCJdbcUserDetailsMgr jdbcDaoMgr;
+
+	@Autowired
+	private MemcachedClient memcachedClient;
 	
 	@Autowired
 	private JavaMailSenderImpl mailSender;
@@ -131,12 +135,30 @@ public class HomeController {
 		logger.info("Welcome home! The client locale is {}.", locale);
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 
-		int i = dataSource.getPoolSize();
-		logger.info("Pool size: " + i);
+		int p = dataSource.getPoolSize();
+		int i = dataSource.getIdle();
+		int a = dataSource.getActive();
+		logger.info("Pool size: " + p);
+		logger.info("Idle size: " + i);
+		logger.info("Active size: " + a);
 		
 		return "home";
 	}	
-	
+	@RequestMapping(value = {"/error"}, method = RequestMethod.GET)
+	public @ResponseBody ModelAndView errorGET(
+			Locale locale, 
+			Model model,
+			@RequestParam(required=false) String msg) {
+		ModelAndView view = new ModelAndView();
+		view.setViewName("result");
+		if(msg!=null && msg.length() > 0){
+			view.addObject("result", msg);
+		}else{
+			view.addObject("result","Oooops! Something went wrong and please try again later.");
+		}
+		return view;
+
+	}	
 	@RequestMapping(value = "/testsuite", method = RequestMethod.GET)
 	public @ResponseBody ModelAndView examGET(Locale locale, Model model,
 			HttpServletRequest request, 
@@ -234,18 +256,24 @@ public class HomeController {
 		view.addObject("us", user);
         return view;
 	}
+
 	
 	@RequestMapping(value="/adduser", method=RequestMethod.POST)
     public @ResponseBody ModelAndView addUserPOST(
-    		@ModelAttribute("us") MMTCUser user,
+    		//@ModelAttribute("us") MMTCUser user,
 			HttpServletRequest request, 
-			HttpServletResponse response){
+			HttpServletResponse response,
+			@RequestParam(required=true,value="firstname") String firstName,
+			@RequestParam(required=true,value="firstname") String lastName,
+			@RequestParam(required=true,value="email") String email,
+			@RequestParam(required=true,value="pwd") String pwd,
+			@RequestParam(required=false,value="emailpwd") String emailPWD){
 		logger.info(request.getRequestURL().toString());
 		boolean hasError = false;
 		ArrayList<SimpleGrantedAuthority> authorities = new ArrayList<SimpleGrantedAuthority>();
 		authorities.add(new SimpleGrantedAuthority("STU"));
 		try {
-			jdbcDaoMgr.createMMTCUser(new MMTCUser(user.getUsername(),user.getPassword(), authorities));
+			jdbcDaoMgr.createMMTCUser(new MMTCUser(email,pwd, email, firstName, lastName, authorities));
 		} catch (SQLException e) {
 			e.printStackTrace();
 			logger.error("[adduser] FAILED create NEW user!!!!");
@@ -257,9 +285,9 @@ public class HomeController {
 		props.put("mail.smtp.starttls.enable", "true");
 		mailSender.setJavaMailProperties(props);
         SimpleMailMessage msg = new SimpleMailMessage(this.emailRegMsgTemplate);
-        msg.setTo(user.getEmail());
+        msg.setTo(email);
         msg.setText(
-            "Dear " + user.getUsername()
+            "Dear " + firstName + " " + lastName
                 + ", thank you for registering with MMTC! Your user name is your email. ");
         try{
             this.mailSender.send(msg);
@@ -793,7 +821,7 @@ public class HomeController {
 		elm = testObj.get("watchword");
 		if(elm != null){
 			if(elm.isJsonArray() == true){
-				t.setTips(testObj.get("watchword").getAsJsonArray());
+				t.setWatchword(testObj.get("watchword").getAsJsonArray());
 			}else{
 				if(elm.getAsString().length() > 0){
 					JsonArray tipArr = new JsonArray();
@@ -866,9 +894,6 @@ public class HomeController {
 		}
 		return new ModelAndView("home");
 	}
-	//http://www.jayway.com/2014/09/09/asynchronous-spring-service/
-	//http://docs.aws.amazon.com/AWSSdkDocsJava/latest/DeveloperGuide/java-dg-roles.html
->>>>>>> edittest
 	@RequestMapping(value = "/edittest/{tid}", method = RequestMethod.POST)
 	public @ResponseBody ModelAndView editTestPOST(
 			Locale locale,
@@ -1089,13 +1114,13 @@ public class HomeController {
 	                        {
 	                            case Cell.CELL_TYPE_NUMERIC:
 	                            	logger.info("[CELL_TYPE_NUMERIC]!");                           	
-	                                curValue = String.valueOf(cell.getNumericCellValue());
+	                                curValue = String.valueOf(cell.getNumericCellValue()).trim();
                                 	if(jArr == null)
-                                		jArr = new  JsonArray();
+                                		jArr = new JsonArray();
                             		jArr.add(curValue);	                                
 	                                break;
 	                            case Cell.CELL_TYPE_STRING:
-	                            	curValue = cell.getStringCellValue();
+	                            	curValue = cell.getStringCellValue().trim();
 	                            	logger.info("{}",curValue);
 	                            	if(isBadQuestion == false){
 	                            		if(isQuestion == true){
@@ -1135,7 +1160,7 @@ public class HomeController {
 		                            	}else{
 		                                	if(jArr == null)
 		                                		jArr = new  JsonArray();
-		                            		jArr.add(cell.getStringCellValue());
+		                            		jArr.add(cell.getStringCellValue().trim());
 		                            	}	                            		
 	                            	}
 	                            	
@@ -1324,7 +1349,8 @@ public class HomeController {
 		logger.info(request.getRequestURL().toString());
 		ArrayList<Test> tests = getTestsForDisplayForSuite(s);
 		Random random = new Random();
-		if(suite.getIsQuestionRandom() != null){
+		if(suite.getIsQuestionRandom() != null
+		&& suite.getIsQuestionRandom() == true){
 			Test lastUnStruck = null;
 			Test randomPickTest = null;
 			String fullQues = null;
@@ -1371,7 +1397,8 @@ public class HomeController {
 			 jArrQuestion.set(0, new JsonPrimitive(fullQues));
 			 tests.get(i).setQuestion(jArrQuestion);
 		}
-		if(suite.getIsChoiceRandom() != null){			
+		if(suite.getIsChoiceRandom() != null
+			&& suite.getIsChoiceRandom() == true){			
 			int r = 0;
 			int dotPos = -1;
 			String strTemp1;
@@ -1709,7 +1736,6 @@ public class HomeController {
 		return tests;
 		
 	}
-	//https://www.owasp.org/index.php/Using_the_Java_Cryptographic_Extensions
 	private String encrypt(String key, String secret2Encrypt){
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 	    MessageDigest md = null;
@@ -1828,88 +1854,114 @@ public class HomeController {
 			@RequestParam("et") Long et){
 		ModelAndView v = new ModelAndView();
 		logger.info(request.getRequestURL().toString());
+		JsonParser jp = new JsonParser();
+		//Check cache.
+		String cacheKey = user+suite+st.toString()+et.toString();
+		Object testTakingCache = memcachedClient.get(cacheKey);
+		JsonObject cache = null;
 
-		String sql = "SELECT pk FROM test_taking WHERE user_username=? "
-				+ "AND start_time = ? AND end_time=? AND testsuite_name=?";
+		if(testTakingCache != null){
+			logger.debug("[execans]: Fetch cache: " + testTakingCache.toString());
+			cache = jp.parse(testTakingCache.toString()).getAsJsonObject();
+		}else{
+			logger.debug("[execans]: Cache miss: " + cacheKey);
+		}	
+		String strJ = null;
+		if(cache == null){
+			
 		
-		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
-		Connection conn = null;
-		PreparedStatement prepStmt = null;
-		ArrayList<Test> tests = null;
-		ArrayList<Test> reorderedTests = null;
-		try{
-			long testTakingPK = 0L;			
-			TestTaking taking = null;
-			JsonArray options = null;
-			String strOptions;
-			int serial = 0;
-			JsonParser jp = new JsonParser();
-			conn = dataSource.getConnection();
-			prepStmt = conn.prepareStatement(sql);			
-			prepStmt.setString(1, user);
-			prepStmt.setTimestamp(2, new Timestamp(st));
-			prepStmt.setTimestamp(3, new Timestamp(et));
-			prepStmt.setString(4, suite);
-			ResultSet rs = prepStmt.executeQuery();
-			if(rs != null && rs.next()){
-				testTakingPK = rs.getLong(1);
+			String sql = "SELECT pk FROM test_taking WHERE user_username=? "
+					+ "AND start_time = ? AND end_time=? AND testsuite_name=?";
+			
+			DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
+			Connection conn = null;
+			PreparedStatement prepStmt = null;
+			ArrayList<Test> tests = null;
+			ArrayList<Test> reorderedTests = null;
+			try{
+				long testTakingPK = 0L;			
+				TestTaking taking = null;
+				JsonArray options = null;
+				String strOptions;
+				int serial = 0;
+				conn = dataSource.getConnection();
+				prepStmt = conn.prepareStatement(sql);			
+				prepStmt.setString(1, user);
+				prepStmt.setTimestamp(2, new Timestamp(st));
+				prepStmt.setTimestamp(3, new Timestamp(et));
+				prepStmt.setString(4, suite);
+				ResultSet rs = prepStmt.executeQuery();
+				if(rs != null && rs.next()){
+					testTakingPK = rs.getLong(1);
+				}
+				rs.close();			
+				prepStmt.close();
+				
+				tests = getTestsForDisplayForSuite(suite);
+				
+				
+				sql = "SELECT stuans, test_taking_serial,orig_test_serial, test_taking_options "
+						+ "FROM test_taking_snapshot WHERE test_taking_pk = ? ORDER BY test_taking_serial";
+				
+				prepStmt = conn.prepareStatement(sql);
+				prepStmt.setString(1, String.valueOf(testTakingPK));
+				rs = prepStmt.executeQuery();
+				if(rs != null){
+					if(reorderedTests == null){
+						reorderedTests = new ArrayList<Test>(tests.size());
+					}
+					String strQuestion;
+					JsonArray questionArr = null;
+					Test temp = null;
+					int testTakingSerial = 0;
+					int origTestSerial = 0;
+					while(rs.next()){
+						taking = null;
+						taking = new TestTaking();					
+						taking.setStuAns(rs.getString("stuans"));
+						testTakingSerial = rs.getInt("test_taking_serial");
+						taking.setSerial(String.valueOf(testTakingSerial));
+						strOptions = rs.getString("test_taking_options");
+						JsonElement elem = jp.parse(rs.getString("test_taking_options"));
+						options = elem.getAsJsonArray();
+						taking.setOptions(options);
+						origTestSerial = rs.getInt("orig_test_serial");
+						temp = tests.get(origTestSerial-1);
+						questionArr = temp.getQuestion();
+						strQuestion = questionArr.get(0).getAsString();
+						strQuestion = String.valueOf(testTakingSerial) + strQuestion.substring(strQuestion.indexOf("."));
+						questionArr.set(0, new JsonPrimitive(strQuestion));
+						//temp.setQuestion(questionArr);
+						temp.setTaking(taking);
+						
+						reorderedTests.add(temp);
+					}
+				}	
+				rs.close();
+				prepStmt.close();
+				conn.close();
+			}catch(Exception e){
+				e.printStackTrace();
+				logger.error("[execans] " + e.getMessage());	
+				//Say the testsuite student took was deleted by our editor....
+				v.setViewName("execans");
+				return v;
 			}
-			rs.close();			
-			prepStmt.close();
 			
-			tests = getTestsForDisplayForSuite(suite);
-			
-			
-			sql = "SELECT stuans, test_taking_serial,orig_test_serial, test_taking_options "
-					+ "FROM test_taking_snapshot WHERE test_taking_pk = ? ORDER BY test_taking_serial";
-			
-			prepStmt = conn.prepareStatement(sql);
-			prepStmt.setString(1, String.valueOf(testTakingPK));
-			rs = prepStmt.executeQuery();
-			if(rs != null){
-				if(reorderedTests == null){
-					reorderedTests = new ArrayList<Test>(tests.size());
-				}
-				String strQuestion;
-				JsonArray questionArr = null;
-				Test temp = null;
-				int testTakingSerial = 0;
-				int origTestSerial = 0;
-				while(rs.next()){
-					taking = null;
-					taking = new TestTaking();					
-					taking.setStuAns(rs.getString("stuans"));
-					testTakingSerial = rs.getInt("test_taking_serial");
-					taking.setSerial(String.valueOf(testTakingSerial));
-					strOptions = rs.getString("test_taking_options");
-					JsonElement elem = jp.parse(rs.getString("test_taking_options"));
-					options = elem.getAsJsonArray();
-					taking.setOptions(options);
-					origTestSerial = rs.getInt("orig_test_serial");
-					temp = tests.get(origTestSerial-1);
-					questionArr = temp.getQuestion();
-					strQuestion = questionArr.get(0).getAsString();
-					strQuestion = String.valueOf(testTakingSerial) + strQuestion.substring(strQuestion.indexOf("."));
-					questionArr.set(0, new JsonPrimitive(strQuestion));
-					//temp.setQuestion(questionArr);
-					temp.setTaking(taking);
-					
-					reorderedTests.add(temp);
-				}
-			}	
-			rs.close();
-			prepStmt.close();
-			conn.close();
-		}catch(Exception e){
-			e.printStackTrace();
-			logger.error("[execans] " + e.getMessage());			
-		}		
-		JsonObject jSuite = new JsonObject();
-		jSuite.addProperty("suite", suite);
-		Gson gson = new Gson();
-		JsonArray jTests = (JsonArray)gson.toJsonTree(reorderedTests, new TypeToken<ArrayList<Test>>(){}.getType());
-		jSuite.add("tests", jTests);
-		String strJ = gson.toJson(jSuite).replace("\\", "\\\\");
+			JsonObject jSuite = new JsonObject();
+			jSuite.addProperty("suite", suite);
+			Gson gson = new Gson();
+			JsonArray jTests = (JsonArray)gson.toJsonTree(reorderedTests, new TypeToken<ArrayList<Test>>(){}.getType());
+			jSuite.add("tests", jTests);
+			strJ = gson.toJson(jSuite).replace("\\", "\\\\");
+		}else{
+			JsonObject jSuite = new JsonObject();
+			jSuite.addProperty("suite", cache.get("suite").getAsString());
+			Gson gson = new Gson();
+			jSuite.add("tests", cache.get("tests").getAsJsonArray());
+			strJ = gson.toJson(jSuite).replace("\\", "\\\\");
+		}
+
 		request.setAttribute("tests",strJ);		
 		
 		v.setViewName("execans");
@@ -1968,6 +2020,15 @@ public class HomeController {
 		String suiteAndTest = decryptTestID(user + "MendezMasterTrainingCenter6454",tempTest.get("id").getAsString());
 		String[] s_t = suiteAndTest.split("-");
 		
+		//Cache test data.
+	 	String cacheKey = user+s_t[0]+String.valueOf(startTime)+String.valueOf(endTime);
+	 	if(memcachedClient != null){
+		 	Object testTakingCache = memcachedClient.get(cacheKey);
+			if(testTakingCache == null){
+				logger.debug("[submitans]: Caching " + cacheKey);
+				memcachedClient.set(cacheKey, 3600, jsonTestSuite.toString());
+			}	
+	 	}
 		
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		String sql = "INSERT INTO test_taking " 
@@ -1977,6 +2038,7 @@ public class HomeController {
 		PreparedStatement prepStmt = null;
 		JsonObject t = null;
 		long newRowID = -1L;
+		Boolean isTestTakingInserted = true;
 		try{
 			Connection conn = dataSource.getConnection();
 			tt = sdf.format(sdt);
@@ -1994,12 +2056,25 @@ public class HomeController {
 			conn.close();
 		}catch(Exception e){
 			e.printStackTrace();
-			logger.error("[submitans] " + e.getMessage());			
+			logger.error("[submitans] " + e.getMessage());	
+			isTestTakingInserted = false;
 		}
-		ArrayList<JsonArray> testSplits = splitJsonArray(3,jArrTests);
-		for(int i = 0; i < testSplits.size(); ++i){
-			InsertTestAnsThread insertThread = new InsertTestAnsThread(dataSource,testSplits.get(i), newRowID);
-			insertThread.start();
+		
+
+		
+		
+		if(isTestTakingInserted == true){
+			//Insertion test_taking failed, so we don't insert details of this test taking.
+			if(jArrTests.size() > 10){
+				ArrayList<JsonArray> testSplits = splitJsonArray(3,jArrTests);
+				for(int i = 0; i < testSplits.size(); ++i){
+					InsertTestAnsThread insertThread = new InsertTestAnsThread(dataSource,testSplits.get(i), newRowID);
+					insertThread.start();
+				}
+			}else{
+				InsertTestAnsThread insertThread = new InsertTestAnsThread(dataSource,jArrTests, newRowID);
+				insertThread.start();			
+			}
 		}
 		v.setViewName("review");
 		v.addObject("participant", user);

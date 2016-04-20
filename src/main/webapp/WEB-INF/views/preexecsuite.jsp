@@ -46,12 +46,12 @@
 </div>
 <div class="row">
 <div class="col-sm-12">
-<form:radiobutton path="isQuestionRandom" value="1"/> Randomize Questions
+<form:checkbox path="isQuestionRandom" value="1"/> Randomize Questions
 </div>
 </div>
 <div class="row">
 <div class="col-sm-12">
-<form:radiobutton path="isChoiceRandom" value="1"/> Randomize Choices 
+<form:checkbox path="isChoiceRandom" value="1"/> Randomize Choices 
 </div>
 </div>
 <div class="row">

@@ -39,7 +39,7 @@ implements UserDetailsService, UserDetailsManager  {
 			AuthorityNotFoundException {
 		logger.info("[loadUserByUsername] :" + name);
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
-		String sql = "SELECT username, password, enabled FROM users WHERE username=?";
+		String sql = "SELECT username, password, enabled ,email FROM users WHERE username=?";
 		PreparedStatement preparedSql = null;
 		Connection conn = null;
 		MMTCUser user = null;
@@ -52,8 +52,9 @@ implements UserDetailsService, UserDetailsManager  {
 				String username = r.getString("username");
 				String password = r.getString("password");
 				Boolean enabled = r.getBoolean("enabled");
+				String email = r.getString("email");
 				ArrayList<SimpleGrantedAuthority> authoList = loadUserAuthorities(username);
-				user = new MMTCUser(username, password,enabled,true,true,true,authoList);
+				user = new MMTCUser(username, password,email,enabled,true,true,true,authoList);
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -162,7 +163,7 @@ implements UserDetailsService, UserDetailsManager  {
 	public void createMMTCUser(MMTCUser newUser) throws SQLException{
 		logger.info("[createMMTCUser]!");
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
-		String sql = "INSERT INTO users (username, password, email, emailpw, enabled) VALUES (?,?,?,?,?)";
+		String sql = "INSERT INTO users (username, password, email, emailpw, enabled, fn,ln) VALUES (?,?,?,?,?,?,?)";
 		PreparedStatement preparedSql = null;
 		Connection conn = null;		
 		conn = dataSource.getConnection();					
@@ -172,6 +173,8 @@ implements UserDetailsService, UserDetailsManager  {
 		preparedSql.setString(3, newUser.getEmail());
 		preparedSql.setString(4, newUser.getEmailpw());
 		preparedSql.setInt(5, 1);
+		preparedSql.setString(6, newUser.getFirstName());
+		preparedSql.setString(7, newUser.getLastName());
 		preparedSql.executeUpdate();
 		preparedSql.close();
 		conn.close();

@@ -145,7 +145,7 @@ $(document).ready(function() {
 		
 	//Ans <p> in Review Modal.
 	$('#rvwModal').on('hide.bs.modal', function (e) {
-		testItor = parseInt(window.localStorage.getItem('modelsel'));
+		testItor = parseInt(window.sessionStorage.getItem('modelsel'));
 		showTest4View();
 	});
 	
@@ -281,11 +281,19 @@ $(document).ready(function() {
 					window.sessionStorage.removeItem('_origpic'+testItor);
 				}
 			}
+			var quesTrans;
+			if(curTestObj.question.length == 2){
+				//Preserve the second item.
+				quesTrans=curTestObj.question[1].toString();//deep copy.
+			}
 			curTestObj.question = [];		
 			var q = $('textarea[name="ques"]').val();
 			if(typeof q != 'undefiend'){
 				q = testItor+1 + '.' + q;
 				curTestObj.question.push(q);
+			}
+			if(quesTrans != null && typeof quesTrans != 'undefined' && quesTrans.length > 0){
+				curTestObj.question.push(quesTrans);
 			}
 			
 			curTestObj.options = [];
@@ -321,17 +329,25 @@ $(document).ready(function() {
 				}
 			}
 			curTestObj.kwds = [];
-			$('textarea[name="kwd"]').each(function(index,value){
-				if(typeof value.value != 'undefined'){
-					curTestObj.kwds.push(value.value);
-				}
-			});
+			var engKwd = $('#kwden > textarea[name="kwd"]');
+			var chKwd = $('#kwdch > textarea[name="kwd"]');
+			for(var i = 0; i < engKwd.length; ++i){
+				if(typeof engKwd[i] != 'undefined')
+					curTestObj.kwds.push(engKwd[i].value);
+				if(typeof chKwd[i] != 'undefined')
+					curTestObj.kwds.push(chKwd[i].value);				
+			}			
 			curTestObj.watchword = [];
-			$('textarea[name="wwd"]').each(function(index,value){
-				if(typeof value.value != 'undefined'){
-					curTestObj.watchword.push(value.value);
-				}
-			});
+			var engWwd = $('#wwden > textarea[name="wwd"]');
+			var chWwd = $('#wwdch > textarea[name="wwd"]');
+			for(var i = 0; i < engWwd.length; ++i){
+				if(typeof engWwd[i] != 'undefined')
+					curTestObj.watchword.push(engWwd[i].value);
+				if(typeof chWwd[i] != 'undefined')
+					curTestObj.watchword.push(chWwd[i].value);
+				
+			}
+			
 			curTestObj.tips = [];
 			if(typeof $('textarea[name="tips"]').val() != 'undefined'){
 				curTestObj.tips=$('textarea[name="tips"]').val();	
@@ -396,14 +412,14 @@ $(document).ready(function() {
 			if(p.tests[i].hasOwnProperty("taking")
 					&& p.tests[i].taking != 'undefined'){
 				review += itemPrefix;
-				review += "\" onclick='window.localStorage.setItem(\"modelsel\","+i+"); $(\"#rvwModal\").modal(\"hide\");' ";
+				review += "\" onclick='window.sessionStorage.setItem(\"modelsel\","+i+"); $(\"#rvwModal\").modal(\"hide\");' ";
 				review += ">";
 				review += i+1;
 				review += ":";
 				review += p.tests[i].taking.stuans;				
 			}else{
 				review += itemPrefix;
-				review += "\" onclick='window.localStorage.setItem(\"modelsel\","+i+"); $(\"#rvwModal\").modal(\"hide\");' ";
+				review += "\" onclick='window.sessionStorage.setItem(\"modelsel\","+i+"); $(\"#rvwModal\").modal(\"hide\");' ";
 				review += "class=\"notanswered\">";
 				review += i+1;
 				review += ":";
@@ -529,17 +545,17 @@ $(document).ready(function() {
 				var kwds = p.tests[testItor].kwds;
 				for(var i = 0; i < kwds.length; ++i){
 					if(i%2 == 0){
-						$("#kwden").append("<textarea name=\"kwd\" class=\"form-control\"> " + kwds[i] + "</textarea>");
+						$("#kwden").append("<textarea name=\"kwd\" class=\"form-control\">" + kwds[i] + "</textarea>");
 					}else{
-						$("#kwdch").append("<textarea name=\"kwd\" class=\"form-control\"> " + kwds[i] + "</textarea>");						
+						$("#kwdch").append("<textarea name=\"kwd\" class=\"form-control\">" + kwds[i] + "</textarea>");						
 					}
 				}
 			}
 			answell.append("<button type=\"button\" id=\"pluskwdbtn\" class=\"btn btn-info\">");
 			answell.children().last()
 			.on('click',function(){
-				$("#kwden").append("<textarea name=\"kwd\" class=\"form-control\"> </textarea>");	
-				$("#kwdch").append("<textarea name=\"kwd\" class=\"form-control\"> </textarea>");
+				$("#kwden").append("<textarea name=\"kwd\" class=\"form-control\"></textarea>");	
+				$("#kwdch").append("<textarea name=\"kwd\" class=\"form-control\"></textarea>");
 			});
 			answell.children().last().append("<span class=\"glyphicon glyphicon-plus\"></span>");
 			
@@ -557,19 +573,19 @@ $(document).ready(function() {
 			answell.children().last().append("<div id=\"wwdch\" class=\"col-xs-5\">");
 			if(typeof p.tests[testItor].watchword != 'undefined'){
 				var wwds = p.tests[testItor].watchword;
-				for(var i = 0; i < wwds.length; ++i){
-					if(i%2 != 0){
-						$("#wwden").append("<textarea name=\"wwd\" class=\"form-control\"> " + wwds[i] + "</textarea>");
+				for(var w = 0; w < wwds.length; ++w){
+					if(w%2 == 0){
+						$("#wwden").append("<textarea name=\"wwd\" class=\"form-control\">" + wwds[w] + "</textarea>");
 					}else{
-						$("#wwdch").append("<textarea name=\"wwd\" class=\"form-control\"> " + wwds[i] + "</textarea>");						
+						$("#wwdch").append("<textarea name=\"wwd\" class=\"form-control\">" + wwds[w] + "</textarea>");						
 					}
 				}
 			}
 			answell.append("<button type=\"button\"  id=\"pluswdbtn\" class=\"btn btn-info\">");
 			$("#pluswdbtn").append("<span class=\"glyphicon glyphicon-plus\"></span>");
 			$("#pluswdbtn").on('click',function(){
-				$("#wwden").append("<textarea name=\"wwd\" class=\"form-control\"> </textarea>");	
-				$("#wwdch").append("<textarea name=\"wwd\" class=\"form-control\"> </textarea>");							
+				$("#wwden").append("<textarea name=\"wwd\" class=\"form-control\"></textarea>");	
+				$("#wwdch").append("<textarea name=\"wwd\" class=\"form-control\"></textarea>");							
 			});
 			answell.append("<button type=\"button\" id=\"minuswdbtn\" class=\"btn btn-info\">");
 			answell.children().last()
@@ -675,15 +691,24 @@ $(document).ready(function() {
 				var kwds = p.tests[testItor].kwds;
 				answell.append("Keyword: " + kwds + "<br>");
 				for(var i = 0; i < kwds.length; i+=2){
-					answell.highlight(kwds[i]);
-					$('#ques').highlight(kwds[i]);
-					$('#optcol .radio .radiobtnopt').highlight(kwds[i]);					
+					$('#ques').highlight(kwds[i],{ wordsOnly: true, caseSensitive: true });
+					$('#optcol .radio .radiobtnopt').highlight(kwds[i],{wordsOnly: true, caseSensitive: true});	
+					answell.highlight(kwds[i],{wordsOnly: true, caseSensitive: true});
+
 				}
 			}
 			
 			
 			if(typeof p.tests[testItor].watchword != 'undefined'){
 				answell.append("Watchword:"+ p.tests[testItor].watchword + "<br>");
+				var wwd = p.tests[testItor].watchword;
+				for(var i = 0; i < wwd.length; i+=2){
+					$('#ques').highlight(wwd[i],{wordsOnly: true, caseSensitive: true});
+					$('#optcol .radio .radiobtnopt').highlight(wwd[i],{wordsOnly: true, caseSensitive: true});	
+					answell.highlight(wwd[i],{wordsOnly: true, caseSensitive: true});
+
+
+				}
 			}
 			
 			if(typeof p.tests[testItor].tips != 'undefined'){
