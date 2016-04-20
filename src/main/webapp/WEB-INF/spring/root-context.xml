@@ -41,7 +41,7 @@
 	<beans profile="debug">
   	<bean id="memcachedClient"
      class="com.mmtc.exam.MMTCMemcachedClientFactoryBean">
-	   <property name="servers" value="${memcached.release.host}"/>
+	   <property name="servers" value="${memcached.debug.host}"/>
 	</bean> 
 	</beans>
 </beans>
