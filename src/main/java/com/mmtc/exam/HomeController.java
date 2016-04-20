@@ -7,7 +7,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.InvalidAlgorithmParameterException;
@@ -91,10 +90,6 @@ import com.mmtc.exam.dao.MMTCUser;
 import com.mmtc.exam.dao.Test;
 import com.mmtc.exam.dao.TestSuite;
 import com.mmtc.exam.dao.TestTaking;
-
-import net.spy.memcached.AddrUtil;
-import net.spy.memcached.BinaryConnectionFactory;
-import net.spy.memcached.ClientMode;
 import net.spy.memcached.MemcachedClient;
 //http://stackoverflow.com/questions/11271449/how-can-i-have-list-of-all-users-logged-in-via-spring-secuirty-my-web-applicat
 //http://springinpractice.com/2010/07/06/spring-security-database-schemas-for-mysql
@@ -114,7 +109,7 @@ public class HomeController {
 	private JndiObjectFactoryBean jndiObjFactoryBean;
 	@Autowired
 	private MMTCJdbcUserDetailsMgr jdbcDaoMgr;
-	
+
 	@Autowired
 	private MemcachedClient memcachedClient;
 	
@@ -830,7 +825,7 @@ public class HomeController {
 		elm = testObj.get("watchword");
 		if(elm != null){
 			if(elm.isJsonArray() == true){
-				t.setTips(testObj.get("watchword").getAsJsonArray());
+				t.setWatchword(testObj.get("watchword").getAsJsonArray());
 			}else{
 				if(elm.getAsString().length() > 0){
 					JsonArray tipArr = new JsonArray();
@@ -1125,13 +1120,13 @@ public class HomeController {
 	                        {
 	                            case Cell.CELL_TYPE_NUMERIC:
 	                            	logger.info("[CELL_TYPE_NUMERIC]!");                           	
-	                                curValue = String.valueOf(cell.getNumericCellValue());
+	                                curValue = String.valueOf(cell.getNumericCellValue()).trim();
                                 	if(jArr == null)
-                                		jArr = new  JsonArray();
+                                		jArr = new JsonArray();
                             		jArr.add(curValue);	                                
 	                                break;
 	                            case Cell.CELL_TYPE_STRING:
-	                            	curValue = cell.getStringCellValue();
+	                            	curValue = cell.getStringCellValue().trim();
 	                            	logger.info("{}",curValue);
 	                            	if(isBadQuestion == false){
 	                            		if(isQuestion == true){
@@ -1171,7 +1166,7 @@ public class HomeController {
 		                            	}else{
 		                                	if(jArr == null)
 		                                		jArr = new  JsonArray();
-		                            		jArr.add(cell.getStringCellValue());
+		                            		jArr.add(cell.getStringCellValue().trim());
 		                            	}	                            		
 	                            	}
 	                            	
@@ -1379,7 +1374,8 @@ public class HomeController {
 		logger.info(request.getRequestURL().toString());
 		ArrayList<Test> tests = getTestsForDisplayForSuite(s);
 		Random random = new Random();
-		if(suite.getIsQuestionRandom() != null){
+		if(suite.getIsQuestionRandom() != null
+		&& suite.getIsQuestionRandom() == true){
 			Test lastUnStruck = null;
 			Test randomPickTest = null;
 			String fullQues = null;
@@ -1426,7 +1422,8 @@ public class HomeController {
 			 jArrQuestion.set(0, new JsonPrimitive(fullQues));
 			 tests.get(i).setQuestion(jArrQuestion);
 		}
-		if(suite.getIsChoiceRandom() != null){			
+		if(suite.getIsChoiceRandom() != null
+			&& suite.getIsChoiceRandom() == true){			
 			int r = 0;
 			int dotPos = -1;
 			String strTemp1;
@@ -2051,11 +2048,13 @@ public class HomeController {
 		
 		//Cache test data.
 	 	String cacheKey = user+s_t[0]+String.valueOf(startTime)+String.valueOf(endTime);
-	 	Object testTakingCache = memcachedClient.get(cacheKey);
-		if(testTakingCache == null){
-			logger.debug("[submitans]: Caching " + cacheKey);
-			memcachedClient.set(cacheKey, 3600, jsonTestSuite.toString());
-		}	
+	 	if(memcachedClient != null){
+		 	Object testTakingCache = memcachedClient.get(cacheKey);
+			if(testTakingCache == null){
+				logger.debug("[submitans]: Caching " + cacheKey);
+				memcachedClient.set(cacheKey, 3600, jsonTestSuite.toString());
+			}	
+	 	}
 		
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		String sql = "INSERT INTO test_taking " 
