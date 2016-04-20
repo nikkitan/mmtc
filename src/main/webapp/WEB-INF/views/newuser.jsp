@@ -66,57 +66,29 @@
   </div>
 </nav>
 <div class="container-fluid bg-3" id="testrootpanel">
-<table><!-- ROOT -->
-<tr>
-<td style="width:70%;">
-<form:form method="POST" action="adduser" commandName="us" >  
-<table>  
-    <tbody>
-    <tr>  
-    <td>  
-        <font color="red">*</font>User Name:
-    </td>  
-    <td>
-    	<form:input path="username" />
-    </td>
-    </tr>
-    <tr>  
-    <td>  
-        <font color="red">*</font>Password:
-    </td>  
-    <td>
-    	<form:password path="password" />
-    </td> 
-    </tr> 
-    <tr>  
-    <td>  
-        <font color="red">*</font>Email:
-    </td>  
-    <td>
-    	<form:input path="email" />
-    </td> 
-    </tr>
-    <tr>  
-    <td>  
-        <font color="red">*</font>Email Password:
-    </td>  
-    <td>
-    	<form:password path="emailpw" />
-    </td> 
-    </tr>  
-    <tr>  
-        <td>  
-            <input type="submit" value="Register">  
-        </td>  
-    </tr>  
-	</tbody>
-</table>  
+<div class="row">
+<div class="col-xs-12 col-md-5 col-lg-5">
+<form:form method="POST" action="adduser">  
+<div class="form-group">
+        <label for="fn">First Name:</label>
+    	<input type="text" name="firstname" class="form-control" placeholder="Your First Name" id="fn"/> 
+        <label for="ln">Last Name:</label>
+    	<input type="text" name="lastname" class="form-control" placeholder="Your Last Name" id="ln"/> 
+        <font color="red">*</font><label for="pw">Password:</label>
+    	<input type="password" name="pwd" class="form-control" placeholder="Create Your Password" id="pw"/> 
+        <font color="red">*</font><label for="em">Email:</label>
+    	<input type="email" name="email" class="form-control" placeholder="Your Email" id="em"/> 
+    <% if (request.isUserInRole("ROLE_ADMIN")) {%> 
+        <font color="red">***</font><label for="epw">Email Password:</label>
+    	<input type="password" name="emailpwd" class="form-control" placeholder="Password to student's email" id="epw"/> 
+    <% } %> 
+        <button type="submit" class="btn btn-primary">Register</button>  
+</div> 
 <input type="hidden" name="${_csrf.parameterName}"
 	value="${_csrf.token}" />  
 </form:form>
-</td>
-</tr>
-</table><!-- ROOT -->
+</div>
+</div>
 </div>
 <!-- Footer -->
 <footer class="container-fluid bg-4 text-center">
