@@ -186,7 +186,7 @@ $(document).ready(function() {
 				review += ">";
 				review += i+1;
 				review += ":";
-				review += p.tests[i].taking.stuans;				
+				review += p.tests[i].taking.stuAns;				
 			}else{
 				review += itemPrefix;
 				review += "class=\"notanswered\">";
@@ -273,7 +273,7 @@ $(document).ready(function() {
 				var opt = opts[i];
 				var id = "opt" + i;
 				if(typeof p.tests[curTest].taking != 'undefined'){
-					if(p.tests[curTest].taking.stuans == opt.charAt(0)){
+					if(p.tests[curTest].taking.stuAns == opt.charAt(0)){
 						$('#optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
 							+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\" checked>" + opt + "</label></div>");
 					}else{
@@ -287,7 +287,7 @@ $(document).ready(function() {
 				$('input[name="optradio"]').on('click',
 					function(){
 						//onclicked, cache clicked option to local storage.
-						p.tests[curTest].taking = {"stuans":$(this).parent().text().charAt(0)}
+						p.tests[curTest].taking = {"stuAns":$(this).parent().text().charAt(0)}
 						window.sessionStorage.setItem('tests',JSON.stringify(p));						
 				});
 			}

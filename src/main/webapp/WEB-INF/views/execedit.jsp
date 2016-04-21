@@ -416,7 +416,7 @@ $(document).ready(function() {
 				review += ">";
 				review += i+1;
 				review += ":";
-				review += p.tests[i].taking.stuans;				
+				review += p.tests[i].taking.stuAns;				
 			}else{
 				review += itemPrefix;
 				review += "\" onclick='window.sessionStorage.setItem(\"modelsel\","+i+"); $(\"#rvwModal\").modal(\"hide\");' ";
@@ -656,7 +656,7 @@ $(document).ready(function() {
 					var opt = opts[i];
 					var id = "opt" + i;
 					if(typeof p.tests[testItor].taking != 'undefined'){
-						if(p.tests[testItor].taking.stuans == opt.charAt(0)){
+						if(p.tests[testItor].taking.stuAns == opt.charAt(0)){
 							$('#optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
 								+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\" checked>" + opt + "</label></div>");
 						}else{
@@ -670,7 +670,7 @@ $(document).ready(function() {
 					$('input[name="optradio"]').on('click',
 						function(){
 							//onclicked, cache clicked option to local storage.
-							p.tests[testItor].taking = {"stuans":$(this).parent().text().charAt(0)}
+							p.tests[testItor].taking = {"stuAns":$(this).parent().text().charAt(0)}
 							window.sessionStorage.setItem('tests',JSON.stringify(p));						
 					});
 				}
