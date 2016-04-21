@@ -2021,8 +2021,8 @@ public class HomeController {
 		while(itor.hasNext()){
 			JsonElement cur = itor.next();
 			if(cur.getAsJsonObject().get("taking") != null){
-				if(cur.getAsJsonObject().get("taking").getAsJsonObject().get("stuans") != null){
-					stuAns = cur.getAsJsonObject().get("taking").getAsJsonObject().get("stuans").getAsString();
+				if(cur.getAsJsonObject().get("taking").getAsJsonObject().get("stuAns") != null){
+					stuAns = cur.getAsJsonObject().get("taking").getAsJsonObject().get("stuAns").getAsString();
 					//TODO: change this if in the future they start to use multi-selection questions.
 					correctAns = cur.getAsJsonObject().getAsJsonArray("answers").get(0).getAsString();
 					if(stuAns.equals(correctAns)){
@@ -2178,8 +2178,8 @@ public class HomeController {
 					}*/
 					test = tests.get(i).getAsJsonObject(); 
 					if(test.get("taking") != null
-						&& test.get("taking").getAsJsonObject().get("stuans") != null){
-						prepStmt.setString(1, test.get("taking").getAsJsonObject().get("stuans").getAsString());
+						&& test.get("taking").getAsJsonObject().get("stuAns") != null){
+						prepStmt.setString(1, test.get("taking").getAsJsonObject().get("stuAns").getAsString());
 					}else{
 						prepStmt.setString(1,"");
 					}
