@@ -18,6 +18,7 @@
 <body>
 
 <!-- Navbar -->
+<div class="row">
 <nav class="container-fluid navbar navbar-default">
   <div class="container">
     <div class="navbar-header">
@@ -36,8 +37,9 @@
     </div>
   </div>
 </nav>
-
+</div>
 <!-- First Container -->
+<div class="row">
   <div id="myCarousel" class="carousel slide" data-ride="carousel">
 	  <!-- Indicators -->
 	  <ol class="carousel-indicators">
@@ -76,8 +78,9 @@
 	 		<span class="sr-only">Next</span>
 		</a>
 	</div>
-
+</div>
 <!-- Second Container -->
+<div class="row">
 <div class="container-fluid bg-2 text-center">
   <h3 class="margin">Our Services</h3>
   <p>這裡要放業務流程（希望有插圖）</p>
@@ -85,8 +88,9 @@
     <span class="glyphicon glyphicon-search"></span> Search
   </a> -->
 </div>
-
+</div>
 <!-- Third Container (Grid) -->
+<div class="row">
 <div class="container-fluid bg-3 text-center">    
   <h3 class="margin">Hear what our students say</h3><br>
   <div class="row">
@@ -104,11 +108,12 @@
     </div>
   </div>
 </div>
-
+</div>
 <!-- Footer -->
+<div class="row">
 <footer class="container-fluid bg-4 text-center">
   <p>@2016 Mendez Master Training Center. All rights reserved.</p> 
 </footer>
-
+</div>
 </body>
 </html>
