@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.mmtc.exam.dao.Test;
+import com.mmtc.exam.dao.TestIO;
 
 @Controller
 public class DownloadController {
@@ -42,11 +43,13 @@ public class DownloadController {
 			HttpServletRequest request, 
 			HttpServletResponse response) {
 		Test t = new Test();
-		ModelAndView view = new ModelAndView();
-		view.setViewName("dlsuite");
-		ArrayList<String> suites = getTestSuites();	
+		ModelAndView v = new ModelAndView();
+		v.setViewName("dlsuite");
+		ArrayList<String> suites = TestIO.getTestSuites((DataSource) jndiObjFactoryBean.getObject());	
 		v.addObject("suites", suites);
-		return view;
+		v.addObject("t", t);
+
+		return v;
 
 	}
 	
