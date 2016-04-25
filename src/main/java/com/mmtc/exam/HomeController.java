@@ -434,6 +434,7 @@ public class HomeController {
 	private Boolean updateTest(String suite, Test test){
 		if(suite.length() == 0 || test.getSerialNo() == null)
 			return false;
+		logger.info("[updateTest] enter!");
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		String sql = "SELECT pk FROM testsuite WHERE name=?";
 		long suitePK = -1L;
@@ -839,6 +840,7 @@ public class HomeController {
 			logger.info("[oneedit]: Add new test.");
 			result.add("result", new JsonPrimitive(addTest(suite,t)));
 		}else{
+			logger.info("[oneedit]: Update test.");
 			result.add("result", new JsonPrimitive(updateTest(suite,t)));		
 		}
 		
@@ -1490,7 +1492,7 @@ public class HomeController {
 	}
 
 	private ArrayList<String> getTestSuites(){
-		logger.info("showTestSuites()!");
+		logger.info("getTestSuites()!");
 		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
 		ArrayList<String> suites = new ArrayList<String>();
 		String sql = "SELECT `name` FROM testsuite";
@@ -1892,6 +1894,7 @@ public class HomeController {
 		}else{
 			logger.debug("[execans]: Cache miss: " + cacheKey);
 		}	
+		cache = null;//TEMP
 		String strJ = null;
 		if(cache == null){
 			

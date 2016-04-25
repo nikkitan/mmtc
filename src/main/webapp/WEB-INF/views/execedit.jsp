@@ -231,7 +231,7 @@ $(document).ready(function() {
 			  jqXHR.setRequestHeader('X-CSRF-Token', "${_csrf.token}");
 			});
 			var postParam = {"suite":p.suite,"test":JSON.stringify(p.tests[testItor])};
-			var ip = debug == true?'localhost:8080/':'www.mmtctest.com/';
+			var ip = debug == true?'localhost:8080/':'52.207.215.19/';
 			var scheme = debug == true?'http://':'https://';
 			var subdomain = debug == true? "mmtcexam/oneedit":"oneedit";
 			var url = scheme + ip + subdomain;
@@ -282,7 +282,8 @@ $(document).ready(function() {
 				}
 			}
 			var quesTrans;
-			if(curTestObj.question.length == 2){
+			if(typeof curTestObj.question != 'undefined' 
+				&& curTestObj.question.length == 2){
 				//Preserve the second item.
 				quesTrans=curTestObj.question[1].toString();//deep copy.
 			}
