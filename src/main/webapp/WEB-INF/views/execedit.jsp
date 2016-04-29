@@ -690,11 +690,13 @@ $(document).ready(function() {
 
 			if(typeof p.tests[testItor].kwds != 'undefined'){
 				var kwds = p.tests[testItor].kwds;
+				var kwd;
 				answell.append("Keyword: " + kwds + "<br>");
 				for(var i = 0; i < kwds.length; i+=2){
-					$('#ques').highlight(kwds[i],{ wordsOnly: true, caseSensitive: true });
-					$('#optcol .radio .radiobtnopt').highlight(kwds[i],{wordsOnly: true, caseSensitive: true});	
-					answell.highlight(kwds[i],{wordsOnly: true, caseSensitive: true});
+					kwd = kwds[i].trim();
+					$('#ques').highlight(kwd);
+					$('#optcol .radio .radiobtnopt').highlight(kwd);	
+					answell.highlight(kwd);
 
 				}
 			}
@@ -703,10 +705,12 @@ $(document).ready(function() {
 			if(typeof p.tests[testItor].watchword != 'undefined'){
 				answell.append("Watchword:"+ p.tests[testItor].watchword + "<br>");
 				var wwd = p.tests[testItor].watchword;
+				var ww;
 				for(var i = 0; i < wwd.length; i+=2){
-					$('#ques').highlight(wwd[i],{wordsOnly: true, caseSensitive: true});
-					$('#optcol .radio .radiobtnopt').highlight(wwd[i],{wordsOnly: true, caseSensitive: true});	
-					answell.highlight(wwd[i],{wordsOnly: true, caseSensitive: true});
+					ww = wwd[i].trim();
+					$('#ques').highlight(ww);
+					$('#optcol .radio .radiobtnopt').highlight(ww);	
+					answell.highlight(ww);
 
 
 				}
@@ -749,7 +753,7 @@ $(document).ready(function() {
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>                        
       </button>
-      <a class="navbar-brand" href="#">MMTC 全方位专业按摩培训</a>
+      <a class="navbar-brand" href="${pageContext.request.contextPath}/index">MMTC 全方位专业按摩培训</a>
     </div>
     <div class="collapse navbar-collapse" id="myNavbar">
       <ul class="nav navbar-nav navbar-right">

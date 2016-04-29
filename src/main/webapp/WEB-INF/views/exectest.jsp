@@ -9,8 +9,8 @@
 <script src="${pageContext.request.contextPath}/resources/js/jquery-2.1.4.min.js" type="text/javascript"></script>
 <script src="${pageContext.request.contextPath}/resources/js/jquery.highlight.js" type="text/javascript"></script>
 <script src="${pageContext.request.contextPath}/resources/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
-<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/bootstrap/css/bootstrap.min.css">
-<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/css/style3.css">
+<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/bootstrap/css/bootstrap.min.css"/>
+<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/css/style3.css"/>
 
 <style type="text/css">
 .highlight{
@@ -220,17 +220,27 @@ $(document).ready(function() {
 
 			if(typeof p.tests[curTest].kwds != 'undefined'){
 				var kwds = p.tests[curTest].kwds;
+				var kwd;
 				answell.append("Keyword: " + kwds + "<br>");
 				for(var i = 0; i < kwds.length; i+=2){
-					answell.highlight(kwds[i]);
-					$('#ques').highlight(kwds[i]);
-					$('#optcol .radio .radiobtnopt').highlight(kwds[i]);					
+					kwd = kwds[i].trim();
+					answell.highlight(kwd);
+					$('#ques').highlight(kwd);
+					$('#optcol .radio .radiobtnopt').highlight(kwd);					
 				}
 			}
 			
 			
 			if(typeof p.tests[curTest].watchword != 'undefined'){
 				answell.append("Watchword:"+ p.tests[curTest].watchword + "<br>");
+				var wwds = p.tests[curTest].watchword;
+				var wwd;
+				for(var i = 0; i < wwds.length; i+=2){
+					wwd = wwds[i].trim();
+					answell.highlight(wwd);
+					$('#ques').highlight(wwd);
+					$('#optcol .radio .radiobtnopt').highlight(wwd);					
+				}
 			}
 			
 			if(typeof p.tests[curTest].tips != 'undefined'){
