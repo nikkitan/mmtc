@@ -26,6 +26,9 @@ label#wrongsel{
 p.wrongans{
 	color:red;
 }
+#ques>h3{
+	font-weight:500;
+}
 </style>
 <script type="text/javascript">
 function updateRemainingTime(endTime){
@@ -265,10 +268,10 @@ $(document).ready(function() {
 			$('#qh').append("<h4>Item " + curSN + " of "+ total +"</h4>");
 			if(typeof p.tests[curTest].pic != 'undefined'){
 				$('#quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[curTest].pic+ "\"/></div>")
-				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h4>" + p.tests[curTest].question[0] + "</h4>");
+				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h3>" + p.tests[curTest].question[0] + "</h3>");
 			}else{
-				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h4>" 
-						+ p.tests[curTest].question[0] +"</h4></div>")
+				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h3>" 
+						+ p.tests[curTest].question[0] +"</h3></div>")
 			}
 			var opts;
 			if(typeof p.tests[curTest].taking != 'undefined'
@@ -440,13 +443,13 @@ $(document).ready(function() {
 </div>
 <hr>
 <div class="row">
-<div class="col-sm-8" id="quescol">
+<div class="col-sm-8 col-lg-10" id="quescol">
 
 </div>
 
 </div>
 <div class="row">
-<div class="col-sm-8" id="optcol">
+<div class="col-sm-8 col-lg-10" id="optcol">
 <!-- radio buttons -->
 </div>
 </div>

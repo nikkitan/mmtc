@@ -62,6 +62,10 @@ div.row.disabled{
     left: 10px;
     top: 0px;
 }
+
+#ques>h3{
+	font-weight:500;
+}
 </style>
 <script type="text/javascript">
 $(document).on("contextmenu", function (event) { event.preventDefault(); });
@@ -645,9 +649,9 @@ $(document).ready(function() {
 			}
 			//Question
 			if(typeof p.tests[testItor].question != "undefined"){
-				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h4>" + p.tests[testItor].question[0] + "</h4>");
+				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h3>" + p.tests[testItor].question[0] + "</h3>");
 			}else{
-				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h4></h4></div>")
+				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h3></h3></div>")
 			}
 			
 			if(p.tests[testItor].hasOwnProperty("options")
@@ -840,13 +844,13 @@ $(document).ready(function() {
 </div>
 </div>
 <div class="row">
-<div class="col-sm-8" id="quescol">
+<div class="col-sm-8 col-lg-10" id="quescol">
 
 </div>
 
 </div>
 <div class="row">
-<div class="col-sm-4" id="optcol">
+<div class="col-sm-4 col-lg-10" id="optcol">
 <!-- OPTIONS -->
 </div>
 </div>
