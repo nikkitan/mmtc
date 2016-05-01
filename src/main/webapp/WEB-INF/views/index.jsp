@@ -3,6 +3,7 @@
     pageEncoding="UTF-8" session="false"%>
 <!DOCTYPE html>
 <head>
+<meta http-equiv="X-UA-Compatible" content="IE=9"><!-- IE 11 fix -->
 <meta charset="utf8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <script src="${pageContext.request.contextPath}/resources/js/jquery-2.1.4.min.js" type="text/javascript"></script>
