@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.Future;
 
 import javax.crypto.BadPaddingException;
@@ -60,6 +61,7 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -85,6 +87,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.reflect.TypeToken;
+import com.mmtc.MMTCVisitor;
 import com.mmtc.exam.auth.MMTCJdbcUserDetailsMgr;
 import com.mmtc.exam.dao.MMTCUser;
 import com.mmtc.exam.dao.Test;
@@ -248,6 +251,67 @@ public class HomeController {
 		logger.debug(request.getRequestURL().toString());
 		return "uploadsuite";
 	}
+	
+	@RequestMapping(value="/signup", method=RequestMethod.GET)
+    public @ResponseBody ModelAndView signUpGET(
+			HttpServletRequest request, 
+			HttpServletResponse response){
+		logger.info(request.getRequestURL().toString());
+		MMTCVisitor newVisitor = new MMTCVisitor();
+		ModelAndView view = new ModelAndView();
+		view.setViewName("signup");
+		view.addObject("newvisitor", newVisitor);
+		String [] webSources = new String[6];
+		webSources[0] = "yelp.com";
+		webSources[1] = "星島日報";
+		webSources[2] = "洛衫机华人资讯网";
+		webSources[3] = "湾区华人资讯网";
+		webSources[4] = "美国在线";
+		webSources[5] = "Other";
+		view.addObject("sources", webSources);
+
+        return view;
+	}
+	
+	@RequestMapping(value="/signup", method=RequestMethod.POST)
+    public @ResponseBody ModelAndView signUpPOST(
+			HttpServletRequest request, 
+			HttpServletResponse response,
+			@RequestParam("firstname") String fn,
+			@RequestParam("lastname") String ln,
+			@RequestParam("email") String email,
+			@RequestParam("msg") String msg){
+		logger.info(request.getRequestURL().toString());
+	    boolean hasError = false;
+		
+		//Send confirmation email.
+		Properties props = new Properties();
+		props.put("mail.smtp.starttls.enable", "true");
+		mailSender.setJavaMailProperties(props);
+        SimpleMailMessage mail = new SimpleMailMessage(this.emailRegMsgTemplate);
+        mail.setTo(email);
+        mail.setText(
+            "Dear " + fn + " " + ln
+                + ", thank you for signin up for MMTC's program info."
+                + "We will contact you shortly with complete curriculum information.");
+        try{
+            this.mailSender.send(mail);
+        }
+        catch (MailException ex) {
+            // simply log it and go on...
+            logger.error(ex.getMessage());
+            hasError = true;
+        }
+        
+		ModelAndView view = new ModelAndView();
+		view.setViewName("result");
+		if(hasError == false)
+			view.addObject("result", "New user added successfully. Please check you email for confirmation!");
+		else
+			view.addObject("result", "Failed adding new user. Please try again.");
+        return view;
+	}
+	
 	//http://www.codejava.net/frameworks/spring/spring-mvc-form-handling-tutorial-and-example
 	@RequestMapping(value="/adduser", method=RequestMethod.GET)
     public @ResponseBody ModelAndView addUserGET(
@@ -273,7 +337,10 @@ public class HomeController {
 			@RequestParam(required=true,value="pwd") String pwd,
 			@RequestParam(required=false,value="emailpwd") String emailPWD){
 		logger.info(request.getRequestURL().toString());
-		boolean hasError = false;
+	    //MMTCUser user = (MMTCUser)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+	    //ArrayList<? extends GrantedAuthority> curUserAuth= (ArrayList<? extends GrantedAuthority>) user.getAuthorities();
+	    
+	    boolean hasError = false;
 		ArrayList<SimpleGrantedAuthority> authorities = new ArrayList<SimpleGrantedAuthority>();
 		authorities.add(new SimpleGrantedAuthority("STU"));
 		try {

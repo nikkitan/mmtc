@@ -2,7 +2,7 @@ package com.mmtc.exam.dao;
 
 import com.google.gson.JsonArray;
 
-//Representing data of each test-taking by different student.
+//Representing data of each test-taking by different students.
 public class TestTaking {
 	public TestTaking(){
 		stuAns = null;
