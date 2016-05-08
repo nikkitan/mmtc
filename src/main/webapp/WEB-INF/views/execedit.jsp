@@ -236,7 +236,7 @@ $(document).ready(function() {
 			  jqXHR.setRequestHeader('X-CSRF-Token', "${_csrf.token}");
 			});
 			var postParam = {"suite":p.suite,"test":JSON.stringify(p.tests[testItor])};
-			var ip = debug == true?'localhost:8080/':'52.207.215.19/';
+			var ip = debug == true?'localhost:8080/':'www.mmtctest.com/';
 			var scheme = debug == true?'http://':'https://';
 			var subdomain = debug == true? "mmtcexam/oneedit":"oneedit";
 			var url = scheme + ip + subdomain;

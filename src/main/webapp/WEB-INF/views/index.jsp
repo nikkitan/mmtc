@@ -17,7 +17,6 @@
 </style>
 </head>
 <body>
-
 <!-- Navbar -->
 <div class="row">
 <nav class="container-fluid navbar navbar-default">
@@ -33,7 +32,7 @@
     <div class="collapse navbar-collapse" id="myNavbar">
       <ul class="nav navbar-nav navbar-right">
         <li><a href="${pageContext.request.contextPath}/login">Log in</a></li>
-        <li><a href="${pageContext.request.contextPath}/adduser" id="signup" class="btn btn-signup">Sign Up</a></li>
+        <li><a href="${pageContext.request.contextPath}/signup" id="signup" class="btn btn-signup">Sign Up</a></li>
       </ul>
     </div>
   </div>
