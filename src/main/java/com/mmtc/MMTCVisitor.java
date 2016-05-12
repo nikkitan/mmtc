@@ -29,14 +29,6 @@ public class MMTCVisitor {
 		this.email = email;
 	}
 
-	public String getAddress() {
-		return address;
-	}
-
-	public void setAddress(String address) {
-		this.address = address;
-	}
-
 	public String getMsg() {
 		return msg;
 	}
@@ -72,7 +64,6 @@ public class MMTCVisitor {
 	private String firstName;
 	private String lastName;
 	private String email;
-	private String address;
 	private String msg;
 	private String webLead;
 	private Boolean isAltWebLead;

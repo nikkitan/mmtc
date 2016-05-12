@@ -65,9 +65,9 @@
   	border-radius: 5px;
 }
 .arrow {
-  position: relative;
-  left:90px;
-  top:8px;
+  position: absolute;
+  left:150px;
+  top:15px;
   pointer-events: none;
 }
 
@@ -131,18 +131,18 @@ function dropdown_selected(elem){
 <form:form method="POST" action="signup" commandName="newvisitor">
 <div class="form-group">
         <label for="fn">First Name:</label>
-    	<input type="text" name="firstname" class="form-control" placeholder="Your First Name" id="fn"/> 
+    	<form:input type="text" name="firstname" class="form-control" placeholder="Your First Name" path="firstName" id="fn"/> 
         <label for="ln">Last Name:</label>
-    	<input type="text" name="lastname" class="form-control" placeholder="Your Last Name" id="ln"/> 
+    	<form:input type="text" name="lastname" class="form-control" placeholder="Your Last Name" id="ln" path="lastName"/> 
         <label for="em">Email:</label>
-    	<input type="email" name="email" class="form-control" placeholder="Your Email" id="em"/>
-        <label for="adr">Address:</label>
-    	<input type="text" name="address" class="form-control" placeholder="Your Address" id="adr"/>  
-   		<label for="msg">How Did You Hear About Us?</label><br>
+    	<form:input type="email" name="email" class="form-control" placeholder="Your Email" id="em" path="email"/>
+        <label for="msg">How Can We Help?:</label>
+    	<form:input type="text" name="msg" class="form-control" placeholder="" id="msg" path="msg"/>  
+   		<label for="adleadsel">How Did You Hear About Us?</label><br>
 		<div class="select">
 		<span class="arrow"></span>
-		<form:select id="adleadsel" path="webLead" onchange="$('#altweblead').prop('disabled',false);if($('#adleadsel :selected').text() == 'Others'){$('#altweblead').focus();}" items="${sources}"></form:select>
-		<form:input path="altWebLead" id="altweblead" disabled="true"/>
+		<form:select id="adleadsel" path="webLead" onchange="$('#altweblead').prop('disabled',false);if($('#adleadsel :selected').text() == 'Other'){$('#altweblead').focus();}" items="${sources}"></form:select>
+		<form:input id="altweblead" disabled="true" path="altWebLead"/>
 		</div>
 		<br>
         <button type="submit" class="btn btn-primary">Register</button>  
