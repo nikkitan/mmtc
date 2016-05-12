@@ -356,7 +356,7 @@ $(document).ready(function() {
 			
 			curTestObj.tips = [];
 			if(typeof $('textarea[name="tips"]').val() != 'undefined'){
-				curTestObj.tips=$('textarea[name="tips"]').val();	
+				curTestObj.tips=$('textarea[name="tips"]').val().replace(/n/g,"<br>");	
 			}
 		}
 		

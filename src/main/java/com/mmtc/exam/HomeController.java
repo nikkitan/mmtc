@@ -261,13 +261,26 @@ public class HomeController {
 		ModelAndView view = new ModelAndView();
 		view.setViewName("signup");
 		view.addObject("newvisitor", newVisitor);
-		String [] webSources = new String[6];
-		webSources[0] = "yelp.com";
-		webSources[1] = "星島日報";
-		webSources[2] = "洛衫机华人资讯网";
-		webSources[3] = "湾区华人资讯网";
-		webSources[4] = "美国在线";
-		webSources[5] = "Other";
+		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
+		ArrayList<String> webSources = null;
+		try {
+			Connection conn = dataSource.getConnection();
+			Statement stmt = conn.createStatement();
+			String sql = "SELECT name FROM weblead";
+			ResultSet r = stmt.executeQuery(sql);
+			if(r.isBeforeFirst()){
+				webSources = new ArrayList<String>();
+				while(r.next()){
+					webSources.add(r.getString(1));
+				}
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		if(webSources == null)
+			webSources = new ArrayList<String>();
+		webSources.add("Other");
 		view.addObject("sources", webSources);
 
         return view;
@@ -277,10 +290,7 @@ public class HomeController {
     public @ResponseBody ModelAndView signUpPOST(
 			HttpServletRequest request, 
 			HttpServletResponse response,
-			@RequestParam("firstname") String fn,
-			@RequestParam("lastname") String ln,
-			@RequestParam("email") String email,
-			@RequestParam("msg") String msg){
+			@ModelAttribute("newvisitor") MMTCVisitor visitor){
 		logger.info(request.getRequestURL().toString());
 	    boolean hasError = false;
 		
@@ -289,9 +299,9 @@ public class HomeController {
 		props.put("mail.smtp.starttls.enable", "true");
 		mailSender.setJavaMailProperties(props);
         SimpleMailMessage mail = new SimpleMailMessage(this.emailRegMsgTemplate);
-        mail.setTo(email);
+        mail.setTo(visitor.getEmail());
         mail.setText(
-            "Dear " + fn + " " + ln
+            "Dear " + visitor.getFirstName() + " " + visitor.getLastName()
                 + ", thank you for signin up for MMTC's program info."
                 + "We will contact you shortly with complete curriculum information.");
         try{
@@ -303,12 +313,79 @@ public class HomeController {
             hasError = true;
         }
         
+        //Save to db.
+		DataSource dataSource = (DataSource) jndiObjFactoryBean.getObject();
+		Connection conn = null;
+		int webLeadPK = -1;
+		try {
+			conn = dataSource.getConnection();
+			PreparedStatement prepStmt = null;
+			String sql;
+			if(visitor.getWebLead().equals("Other")){
+				sql="INSERT into weblead (name,count) VALUES (?,?);";
+				prepStmt = conn.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS);
+				prepStmt.setNString(1, visitor.getAltWebLead());
+				prepStmt.setInt(2, 1);
+				prepStmt.executeUpdate();
+				ResultSet r = prepStmt.getGeneratedKeys();
+				if(r.next()){
+					webLeadPK = r.getInt(1);
+				}
+				prepStmt.close();
+				prepStmt = null;
+				sql = "INSERT INTO webvisitor (fn,ln,email,msg,weblead)"
+						+ " VALUES (?,?,?,?,?)";
+				prepStmt = conn.prepareStatement(sql);
+				prepStmt.setString(1, visitor.getFirstName());
+				prepStmt.setString(2, visitor.getLastName());
+				prepStmt.setString(3, visitor.getEmail());
+				prepStmt.setString(4, visitor.getMsg());
+				prepStmt.setInt(5, webLeadPK);
+				prepStmt.executeUpdate();
+				conn.close();
+				prepStmt.close();
+				
+			}else{
+				if(visitor.getWebLead() != null){
+					sql="UPDATE weblead SET count=count+1 WHERE name=?";
+					prepStmt = conn.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS);
+					prepStmt.setNString(1, visitor.getWebLead());
+					prepStmt.executeUpdate();
+					ResultSet r = prepStmt.getGeneratedKeys();
+					if(r.next()){
+						webLeadPK = r.getInt(1);
+					}else{
+						//TODO: Update failed or record not found....
+					}
+					prepStmt.close();
+					prepStmt = null;
+				}
+				sql = "INSERT INTO webvisitor (fn,ln,email,msg,weblead)"
+						+ " VALUES (?,?,?,?,?)";
+				prepStmt = conn.prepareStatement(sql);
+				prepStmt.setString(1, visitor.getFirstName());
+				prepStmt.setString(2, visitor.getLastName());
+				prepStmt.setString(3, visitor.getEmail());
+				prepStmt.setString(4, visitor.getMsg());
+				prepStmt.setInt(5, webLeadPK);
+				prepStmt.executeUpdate();
+				conn.close();
+				prepStmt.close();
+				
+			}
+			
+			conn.close();
+			prepStmt.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			logger.error("[signUpPOST]: Failed insert/update weblead table for new visitor info!");
+		}
+
+        
 		ModelAndView view = new ModelAndView();
 		view.setViewName("result");
-		if(hasError == false)
-			view.addObject("result", "New user added successfully. Please check you email for confirmation!");
-		else
-			view.addObject("result", "Failed adding new user. Please try again.");
+		view.addObject("result", "Thank you for signing up for MMTC's program info!");
         return view;
 	}
 	

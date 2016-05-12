@@ -59,7 +59,7 @@
 	    <div class="collapse navbar-collapse" id="myNavbar">
 	      <ul class="nav navbar-nav navbar-right">
 	        <li><a href="${pageContext.request.contextPath}/index">Home</a></li>
-	        <li><a id="signup" class="btn btn-danger" href="${pageContext.request.contextPath}/adduser">Sign Up</a></li>
+	        <li><a id="signup" class="btn btn-danger" href="${pageContext.request.contextPath}/signup">Sign Up</a></li>
 	      </ul>
 	    </div>
 	  </div>
