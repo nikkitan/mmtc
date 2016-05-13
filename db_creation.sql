@@ -98,3 +98,23 @@ CREATE TABLE `test_pic` (
   `name` varchar(255) NOT NULL,
   PRIMARY KEY (`pk`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+CREATE TABLE `webvisitor` (
+  `pk` int(11) NOT NULL AUTO_INCREMENT,
+  `fn` mediumtext,
+  `ln` mediumtext,
+  `email` varchar(255) DEFAULT NULL,
+  `msg` mediumtext,
+  `weblead` int(11) DEFAULT NULL,
+  PRIMARY KEY (`pk`),
+  UNIQUE KEY `pk_UNIQUE` (`pk`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
+
+CREATE TABLE `weblead` (
+  `pk` int(11) NOT NULL AUTO_INCREMENT,
+  `name` mediumtext NOT NULL,
+  `count` bigint(11) DEFAULT NULL,
+  PRIMARY KEY (`pk`),
+  UNIQUE KEY `pk_UNIQUE` (`pk`)
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8;
