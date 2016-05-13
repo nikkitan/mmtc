@@ -624,7 +624,13 @@ public class HomeController {
 		
 			if(test.getKeywords() != null){
 				columns.put("keywords", test.getKeywords().toString());			
-			}			
+			}else{
+				JsonArray nokeyword = new JsonArray();
+				nokeyword.add("NOKEYWORD");
+				columns.put("keywords", nokeyword.toString());
+				nokeyword = null;				
+			}
+			
 			if(test.getPic() != null){
 				columns.put("pic", test.getPic().toString());						
 			}else{
