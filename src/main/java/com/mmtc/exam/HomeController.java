@@ -641,7 +641,7 @@ public class HomeController {
 			}else{
 				JsonArray nohighlight = new JsonArray();
 				nohighlight.add("NOHIGHLIGHT");
-				columns.put("tips", nohighlight.toString());
+				columns.put("watchword", nohighlight.toString());
 				nohighlight = null;				
 			}
 			

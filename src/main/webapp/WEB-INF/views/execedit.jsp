@@ -334,31 +334,36 @@ $(document).ready(function() {
 					}
 				}
 			}
-			curTestObj.kwds = [];
+			delete curTestObj.kwds;
 			var engKwd = $('#kwden > textarea[name="kwd"]');
 			var chKwd = $('#kwdch > textarea[name="kwd"]');
 			for(var i = 0; i < engKwd.length; ++i){
-				if(typeof engKwd[i] != 'undefined')
+				curTestObj.kwds = [];
+				if(typeof engKwd[i] != 'undefined' && engKwd[i].value.length > 0){
 					curTestObj.kwds.push(engKwd[i].value);
-				if(typeof chKwd[i] != 'undefined')
-					curTestObj.kwds.push(chKwd[i].value);				
+					if(typeof chKwd[i] != 'undefined' && chKwd[i].value.length > 0)
+						curTestObj.kwds.push(chKwd[i].value);	
+				}			
 			}			
-			curTestObj.watchword = [];
+			delete curTestObj.watchword;
 			var engWwd = $('#wwden > textarea[name="wwd"]');
 			var chWwd = $('#wwdch > textarea[name="wwd"]');
 			for(var i = 0; i < engWwd.length; ++i){
-				if(typeof engWwd[i] != 'undefined')
+				curTestObj.watchword = [];
+				if(typeof engWwd[i] != 'undefined' && engWwd[i].value.length > 0){
 					curTestObj.watchword.push(engWwd[i].value);
-				if(typeof chWwd[i] != 'undefined')
-					curTestObj.watchword.push(chWwd[i].value);
-				
+					if(typeof chWwd[i] != 'undefined' && chWwd[i].value.lengh > 0)
+						curTestObj.watchword.push(chWwd[i].value);	
+				}
 			}
 			
-			curTestObj.tips = [];
-			if(typeof $('textarea[name="tips"]').val() != 'undefined'){
+			delete curTestObj.tips;
+			var tipVal = $('textarea[name="tips"]').val()
+			if(typeof tipVal != 'undefined' && tipVal.length > 0){
+				curTestObj.tips = [];
 				curTestObj.tips=$('textarea[name="tips"]').val().split('\n');
 				//curTestObj.tips=$('textarea[name="tips"]').val()
-				console.log("[save]: "+curTestObj.tips);
+				//console.log("[save]: "+curTestObj.tips);
 			}
 		}
 		
@@ -554,17 +559,17 @@ $(document).ready(function() {
 				var kwds = p.tests[testItor].kwds;
 				for(var i = 0; i < kwds.length; ++i){
 					if(i%2 == 0){
-						$("#kwden").append("<textarea name=\"kwd\" class=\"form-control\">" + kwds[i] + "</textarea>");
+						$("#kwden").append("<input type=\"text\" name=\"kwd\" class=\"form-control\" value=\"" + kwds[i] + "\"></input>");
 					}else{
-						$("#kwdch").append("<textarea name=\"kwd\" class=\"form-control\">" + kwds[i] + "</textarea>");						
+						$("#kwdch").append("<input type=\"text\" name=\"kwd\" class=\"form-control\" value=\"" + kwds[i] + "\"></input>");						
 					}
 				}
 			}
 			answell.append("<button type=\"button\" id=\"pluskwdbtn\" class=\"btn btn-info\">");
 			answell.children().last()
 			.on('click',function(){
-				$("#kwden").append("<textarea name=\"kwd\" class=\"form-control\"></textarea>");	
-				$("#kwdch").append("<textarea name=\"kwd\" class=\"form-control\"></textarea>");
+				$("#kwden").append("<input type=\"text\" name=\"kwd\" class=\"form-control\"></input>");	
+				$("#kwdch").append("<input type=\"text\" name=\"kwd\" class=\"form-control\"></input>");
 			});
 			answell.children().last().append("<span class=\"glyphicon glyphicon-plus\"></span>");
 			
@@ -584,17 +589,17 @@ $(document).ready(function() {
 				var wwds = p.tests[testItor].watchword;
 				for(var w = 0; w < wwds.length; ++w){
 					if(w%2 == 0){
-						$("#wwden").append("<textarea name=\"wwd\" class=\"form-control\">" + wwds[w] + "</textarea>");
+						$("#wwden").append("<input type=\"text\" name=\"wwd\" class=\"form-control\" value=\"" + wwds[w] + "\"></input>");
 					}else{
-						$("#wwdch").append("<textarea name=\"wwd\" class=\"form-control\">" + wwds[w] + "</textarea>");						
+						$("#wwdch").append("<input type=\"text\" name=\"wwd\" class=\"form-control\" value=\"" + wwds[w] + "\"></input>");						
 					}
 				}
 			}
 			answell.append("<button type=\"button\"  id=\"pluswdbtn\" class=\"btn btn-info\">");
 			$("#pluswdbtn").append("<span class=\"glyphicon glyphicon-plus\"></span>");
 			$("#pluswdbtn").on('click',function(){
-				$("#wwden").append("<textarea name=\"wwd\" class=\"form-control\"></textarea>");	
-				$("#wwdch").append("<textarea name=\"wwd\" class=\"form-control\"></textarea>");							
+				$("#wwden").append("<input type=\"text\" name=\"wwd\" class=\"form-control\"></input>");	
+				$("#wwdch").append("<input type=\"text\" name=\"wwd\" class=\"form-control\"></input>");							
 			});
 			answell.append("<button type=\"button\" id=\"minuswdbtn\" class=\"btn btn-info\">");
 			answell.children().last()
@@ -830,6 +835,24 @@ $(document).ready(function() {
     </div>
   </div>
 </div>
+<!-- Chinese Conversion Modal -->
+<div class="modal fade" id="chModal" role="dialog">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title"></h4>
+      </div>
+      <div class="modal-body">
+        
+      </div>
+      <div class="modal-footer">
+        <button id="endtestbtn" type="button" class="btn btn-default" data-dismiss="modal" >OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <form:form id="myform" method="POST" enctype="multipart/form-data" action="${pageContext.request.contextPath}/submitedit"> 
 <div class="row">
 <div class="col-sm-8">
@@ -855,7 +878,7 @@ $(document).ready(function() {
 </div>
 </div>
 <div class="row">
-<div class="col-sm-8 col-lg-10" id="quescol">
+<div class="col-sm-12 col-lg-12" id="quescol">
 
 </div>
 

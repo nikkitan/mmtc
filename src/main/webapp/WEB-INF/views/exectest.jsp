@@ -411,7 +411,7 @@ $(document).ready(function() {
 </div>
 <hr>
 <div class="row">
-<div class="col-sm-8 col-lg-10" id="quescol">
+<div class="col-xs-12 col-sm-12 col-lg-12" id="quescol">
 
 </div>
 
