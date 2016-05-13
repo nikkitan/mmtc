@@ -632,9 +632,20 @@ public class HomeController {
 			}
 			if(test.getWatchword() != null){
 				columns.put("watchword", test.getWatchword().toString());						
+			}else{
+				JsonArray nohighlight = new JsonArray();
+				nohighlight.add("NOHIGHLIGHT");
+				columns.put("tips", nohighlight.toString());
+				nohighlight = null;				
 			}
+			
 			if(test.getTips() != null){
 				columns.put("tips", test.getTips().toString());						
+			}else{
+				JsonArray notip = new JsonArray();
+				notip.add("NOTIPS");
+				columns.put("tips", notip.toString());
+				notip = null;
 			}
 			
 			if(columns.size() > 0){

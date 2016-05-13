@@ -356,7 +356,9 @@ $(document).ready(function() {
 			
 			curTestObj.tips = [];
 			if(typeof $('textarea[name="tips"]').val() != 'undefined'){
-				curTestObj.tips=$('textarea[name="tips"]').val().replace(/n/g,"<br>");	
+				curTestObj.tips=$('textarea[name="tips"]').val().split('\n');
+				//curTestObj.tips=$('textarea[name="tips"]').val()
+				console.log("[save]: "+curTestObj.tips);
 			}
 		}
 		
@@ -372,6 +374,7 @@ $(document).ready(function() {
 				t.question[0] = t.serialNo + t.question[0];
 			}
 		}
+		//p.tests[testItor].tips = curTestObj.tips.toString().replace(/[\n\r]/g,'\\n');
 		window.sessionStorage.setItem("tests",JSON.stringify(p));
 	}
 	
@@ -605,7 +608,11 @@ $(document).ready(function() {
 			//Tips.
 			answell.append("<div class=\"row\">Tips:</div><div class=\"row\">");
 			if(typeof p.tests[testItor].tips != 'undefined'){
-				answell.children().last().append("<div class=\"col-xs-12\"><textarea name=\"tips\" class=\"form-control\" >"+ p.tests[testItor].tips+"</textarea></div>");
+				var tp = p.tests[testItor].tips.join('\n');
+				//var tp = p.tests[testItor].tips.toString();
+				//tp = tp.replace(/\\\\/g,'\\');
+				//tp = tp.replace(/\\\\n/g,String.fromCharCode(13, 10));
+				answell.children().last().append("<div class=\"col-xs-12\"><textarea name=\"tips\" class=\"form-control\" >"+ tp+"</textarea></div>");
 			}else{
 				answell.children().last().append("<div class=\"col-xs-12\"><textarea name=\"tips\" class=\"form-control\" ></textarea></div>");
 			}
@@ -722,7 +729,10 @@ $(document).ready(function() {
 			}
 			
 			if(typeof p.tests[testItor].tips != 'undefined'){
-				answell.append("Tips:"+ p.tests[testItor].tips);
+				//var tp = p.tests[testItor].tips.toString();
+				var tp=p.tests[testItor].tips.join("<br>");
+				//tp = tp.replace(/\\n/g,"<br>");
+				answell.append("Tips:"+ tp);
 			}
 			
 			
