@@ -47,6 +47,7 @@
 	    <li data-target="#myCarousel" data-slide-to="1"></li>
 	    <li data-target="#myCarousel" data-slide-to="2"></li>
 	    <li data-target="#myCarousel" data-slide-to="3"></li>
+	    <li data-target="#myCarousel" data-slide-to="4"></li>
 	  </ol>
 
 	  <!-- Wrapper for slides -->
@@ -64,7 +65,11 @@
 	    </div>
 	
 	    <div class="item">
-	      <img src="${pageContext.request.contextPath}/resources/pic/Virginia.jpg" alt="Virginia">
+	      <img src="${pageContext.request.contextPath}/resources/pic/Virginia.jpg" alt="Virginia License">
+	    </div>
+	    
+	    <div class="item">
+	      <img src="${pageContext.request.contextPath}/resources/pic/california.jpg" alt="California License">
 	    </div>
 	  </div>
 

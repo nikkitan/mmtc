@@ -10,6 +10,7 @@
 <script src="${pageContext.request.contextPath}/resources/js/jquery-2.1.4.min.js" type="text/javascript"></script>
 <script src="${pageContext.request.contextPath}/resources/js/jquery.highlight.js" type="text/javascript"></script>
 <script src="${pageContext.request.contextPath}/resources/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
+<script src="${pageContext.request.contextPath}/resources/js/cjst.js" type="text/javascript"></script>
 <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/css/style3.css">
 
@@ -48,6 +49,10 @@ label[for="chekedit"]{
 #delbtn.notorig{
 	margin-right:6px;
 }
+/*#delbtn.recover{
+	margin-right:6px;
+	color:#AA0000;
+}*/
 div.row.disabled{
 	background-color: #A9A9A9;
 }
@@ -126,16 +131,19 @@ $(document).ready(function() {
 			if(p.tests[testItor].del == false){
 				p.tests[testItor].del = true;
 				$(this).text('Recover');
+				$(this).addClass('recover');
 				disableTestGUI();
 			}else{
 				p.tests[testItor].del = false;		
 				$(this).text('Delete');
+				$(this).removeClass('recover');
 				enableTestGUI();
 			}
 		}else{
 			console.log('[2_recover]');
 			p.tests[testItor].del = true;
 			$(this).text('Recover');
+			$(this).addClass('recover');
 			disableTestGUI();
 		}
 		window.sessionStorage.setItem('tests',JSON.stringify(p));
@@ -202,15 +210,18 @@ $(document).ready(function() {
 					if(p.tests[testItor].del == false){
 						p.tests[testItor].del = true;
 						$(this).text('Recover');
+						$(this).addClass('recover');
 						disableTestGUI();
 					}else{
 						p.tests[testItor].del = false;		
 						$(this).text('Delete');
+						$(this).removeClass('recover');
 						enableTestGUI();
 					}
 				}else{
 					p.tests[testItor].del = true;
 					$(this).text('Recover');
+					$(this).addClass('recover');
 					disableTestGUI();
 				}
 				window.sessionStorage.setItem('tests',JSON.stringify(p));
@@ -335,25 +346,25 @@ $(document).ready(function() {
 				}
 			}
 			delete curTestObj.kwds;
-			var engKwd = $('#kwden > textarea[name="kwd"]');
-			var chKwd = $('#kwdch > textarea[name="kwd"]');
+			var engKwd = $('#kwden > input[name="kwd"]');
+			var chKwd = $('#kwdch > input[name="kwd"]');
 			for(var i = 0; i < engKwd.length; ++i){
 				curTestObj.kwds = [];
 				if(typeof engKwd[i] != 'undefined' && engKwd[i].value.length > 0){
 					curTestObj.kwds.push(engKwd[i].value);
 					if(typeof chKwd[i] != 'undefined' && chKwd[i].value.length > 0)
-						curTestObj.kwds.push(chKwd[i].value);	
+						curTestObj.kwds.push(cjst.traditionalToSimplified(chKwd[i].value));	
 				}			
 			}			
 			delete curTestObj.watchword;
-			var engWwd = $('#wwden > textarea[name="wwd"]');
-			var chWwd = $('#wwdch > textarea[name="wwd"]');
+			var engWwd = $('#wwden > input[name="wwd"]');
+			var chWwd = $('#wwdch > input[name="wwd"]');
 			for(var i = 0; i < engWwd.length; ++i){
 				curTestObj.watchword = [];
 				if(typeof engWwd[i] != 'undefined' && engWwd[i].value.length > 0){
 					curTestObj.watchword.push(engWwd[i].value);
-					if(typeof chWwd[i] != 'undefined' && chWwd[i].value.lengh > 0)
-						curTestObj.watchword.push(chWwd[i].value);	
+					if(typeof chWwd[i] != 'undefined' && chWwd[i].value.length > 0)
+						curTestObj.watchword.push(cjst.traditionalToSimplified(chWwd[i].value));	
 				}
 			}
 			
@@ -361,7 +372,9 @@ $(document).ready(function() {
 			var tipVal = $('textarea[name="tips"]').val()
 			if(typeof tipVal != 'undefined' && tipVal.length > 0){
 				curTestObj.tips = [];
-				curTestObj.tips=$('textarea[name="tips"]').val().split('\n');
+				tipVal = cjst.traditionalToSimplified(tipVal);
+				curTestObj.tips=tipVal.split('\n');
+				
 				//curTestObj.tips=$('textarea[name="tips"]').val()
 				//console.log("[save]: "+curTestObj.tips);
 			}
@@ -745,9 +758,11 @@ $(document).ready(function() {
 				&& typeof p.tests[testItor].del != 'undefined'){
 				if(p.tests[testItor].del == true){
 					$('#delbtn').text('Recover');
+					$('#delbtn').addClass('recover');
 					disableTestGUI();	
 				}else{
 					$('#delbtn').text('Delete');
+					$('#delbtn').removeClass('recover');
 					enableTestGUI();
 				}
 			}else{

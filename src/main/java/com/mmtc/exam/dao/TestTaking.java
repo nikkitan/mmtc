@@ -33,6 +33,6 @@ public class TestTaking {
 	}
 
 	private String stuAns;//Student answer.
-	private String serial;//Result of randomization to test order.
-	private JsonArray options;//Randomization to option order.
+	private String serial;//Result of randomizing test order.
+	private JsonArray options;//Randomizing option order.
 }
