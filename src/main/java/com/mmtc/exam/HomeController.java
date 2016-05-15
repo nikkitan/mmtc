@@ -97,6 +97,8 @@ import com.mmtc.exam.dao.MMTCUser;
 import com.mmtc.exam.dao.Test;
 import com.mmtc.exam.dao.TestSuite;
 import com.mmtc.exam.dao.TestTaking;
+
+import net.spy.memcached.MemcachedClient;
 /**
  * Handles requests for the application home page.
  */
