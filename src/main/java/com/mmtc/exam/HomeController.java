@@ -97,7 +97,6 @@ import com.mmtc.exam.dao.MMTCUser;
 import com.mmtc.exam.dao.Test;
 import com.mmtc.exam.dao.TestSuite;
 import com.mmtc.exam.dao.TestTaking;
-
 import net.spy.memcached.MemcachedClient;
 /**
  * Handles requests for the application home page.
@@ -1900,7 +1899,6 @@ public class HomeController {
 		return tests;
 		
 	}
-	//https://www.owasp.org/index.php/Using_the_Java_Cryptographic_Extensions
 	private String encrypt(String key, String secret2Encrypt){
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 	    MessageDigest md = null;
