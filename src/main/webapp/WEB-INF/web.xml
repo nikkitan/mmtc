@@ -11,11 +11,31 @@
 		/WEB-INF/spring/mmtcexam/springsec-context.xml
 		</param-value>
 	</context-param>
+	<context-param>
+	    <param-name>spring.profiles.active</param-name>
+	    <param-value>release</param-value>
+	</context-param>
 	
 	<!-- Creates the Spring Container shared by all Servlets and Filters -->
 	<listener>
 		<listener-class>com.mmtc.exam.MMTCCtxListener</listener-class>
 	</listener>
+	<filter>
+		<filter-name>encodingFilter</filter-name>
+		<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+		<init-param>
+			<param-name>encoding</param-name>
+			<param-value>UTF-8</param-value>
+		</init-param>
+		<init-param>
+			<param-name>forceEncoding</param-name>
+			<param-value>true</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+  		<filter-name>encodingFilter</filter-name>
+  		<url-pattern>/*</url-pattern>
+	</filter-mapping>
 	<!--To make PUT method aware of x-www-urlencoded data-->
     <filter>
         <filter-name>HttpPutFormContentFilter</filter-name>
@@ -35,6 +55,7 @@
 	    <filter-name>springMultipartFilter</filter-name>
 	    <url-pattern>/*</url-pattern>
 	</filter-mapping>
+	
 	<!-- Security Filter -->
 	<filter>
 		<filter-name>springSecurityFilterChain</filter-name>
@@ -48,22 +69,6 @@
 	<filter-mapping>
 		<filter-name>springSecurityFilterChain</filter-name>
 		<url-pattern>/*</url-pattern>
-	</filter-mapping>
-	<filter>
-		<filter-name>CharacterEncodingFilter</filter-name>
-		<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
-		<init-param>
-			<param-name>encoding</param-name>
-			<param-value>UTF-8</param-value>
-		</init-param>
-		<init-param>
-			<param-name>forceEncoding</param-name>
-			<param-value>true</param-value>
-		</init-param>
-	</filter>
-	<filter-mapping>
-  		<filter-name>CharacterEncodingFilter</filter-name>
-  		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 	<!-- Processes application requests -->
 	<servlet>

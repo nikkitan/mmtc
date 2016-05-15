@@ -3,6 +3,7 @@
     pageEncoding="UTF-8" session="false"%>
 <!DOCTYPE html>
 <head>
+<meta http-equiv="X-UA-Compatible" content="IE=8, IE=9, IE=5"><!-- IE fix -->
 <meta charset="utf8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <script src="${pageContext.request.contextPath}/resources/js/jquery-2.1.4.min.js" type="text/javascript"></script>
@@ -16,8 +17,8 @@
 </style>
 </head>
 <body>
-
 <!-- Navbar -->
+<div class="row">
 <nav class="container-fluid navbar navbar-default">
   <div class="container">
     <div class="navbar-header">
@@ -31,16 +32,14 @@
     <div class="collapse navbar-collapse" id="myNavbar">
       <ul class="nav navbar-nav navbar-right">
         <li><a href="${pageContext.request.contextPath}/login">Log in</a></li>
-        <li><a href="${pageContext.request.contextPath}/adduser" id="signup" class="btn btn-signup">Sign Up</a></li>
+        <li><a href="${pageContext.request.contextPath}/signup" id="signup" class="btn btn-signup">Sign Up</a></li>
       </ul>
     </div>
   </div>
 </nav>
-
+</div>
 <!-- First Container -->
-  <!-- <h3 class="margin">Welcome to MMTC! 加州最大按摩职照培训中心！(這裡會放照片跑馬燈)</h3>
-   <img src="bird.jpg" class="imgresponsive img-circle margin" style="display:inline" alt="Bird" width="350" height="350">
-  <h3>I'm an adventurer</h3> -->
+<div class="row">
   <div id="myCarousel" class="carousel slide" data-ride="carousel">
 	  <!-- Indicators -->
 	  <ol class="carousel-indicators">
@@ -48,24 +47,29 @@
 	    <li data-target="#myCarousel" data-slide-to="1"></li>
 	    <li data-target="#myCarousel" data-slide-to="2"></li>
 	    <li data-target="#myCarousel" data-slide-to="3"></li>
+	    <li data-target="#myCarousel" data-slide-to="4"></li>
 	  </ol>
 
 	  <!-- Wrapper for slides -->
 	  <div class="carousel-inner licensepic" role="listbox">
 	    <div class="item active">
-	      <img src="${pageContext.request.contextPath}/resources/pic/slogan.jpg" alt="slogan">
+	      <img src="${pageContext.request.contextPath}/resources/pic/slogan.jpg" alt="slogan" width="100%">
 	    </div>
 	
 	    <div class="item">
-	      <img src="${pageContext.request.contextPath}/resources/pic/Indiana.jpg" alt="Indiana License">
+	      <img src="${pageContext.request.contextPath}/resources/pic/Indiana.jpg" alt="Indiana License" width="100%">
 	    </div>
 	
 	    <div class="item">
-	      <img src="${pageContext.request.contextPath}/resources/pic/slogan2.jpg" alt="slogan2">
+	      <img src="${pageContext.request.contextPath}/resources/pic/slogan2.jpg" alt="slogan2" width="100%">
 	    </div>
 	
 	    <div class="item">
-	      <img src="${pageContext.request.contextPath}/resources/pic/Virginia.jpg" alt="Virginia">
+	      <img src="${pageContext.request.contextPath}/resources/pic/Virginia.jpg" alt="Virginia License" width="100%">
+	    </div>
+	    
+	    <div class="item">
+	      <img src="${pageContext.request.contextPath}/resources/pic/california.jpg" alt="California License" width="100%">
 	    </div>
 	  </div>
 
@@ -79,8 +83,9 @@
 	 		<span class="sr-only">Next</span>
 		</a>
 	</div>
-
+</div>
 <!-- Second Container -->
+<div class="row">
 <div class="container-fluid bg-2 text-center">
   <h3 class="margin">Our Services</h3>
   <p>這裡要放業務流程（希望有插圖）</p>
@@ -88,8 +93,9 @@
     <span class="glyphicon glyphicon-search"></span> Search
   </a> -->
 </div>
-
+</div>
 <!-- Third Container (Grid) -->
+<div class="row">
 <div class="container-fluid bg-3 text-center">    
   <h3 class="margin">Hear what our students say</h3><br>
   <div class="row">
@@ -107,11 +113,12 @@
     </div>
   </div>
 </div>
-
+</div>
 <!-- Footer -->
+<div class="row">
 <footer class="container-fluid bg-4 text-center">
   <p>@2016 Mendez Master Training Center. All rights reserved.</p> 
 </footer>
-
+</div>
 </body>
 </html>

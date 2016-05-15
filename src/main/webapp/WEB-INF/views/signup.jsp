@@ -44,10 +44,62 @@
 	-moz-border-radius: 2px;
 	border: 1px solid #000;
 }
+.select {
+  font-size: 16px;
+  position: relative;
+}
+.select select{
+	outline:none;
+	-webkit-appearance: none;
+	display: inline;
+	padding: 0.1em 2em 0.1em 1em;
+ 	margin: 0;
+ 	
+ 	line-height: normal;
+  	font-family: inherit;
+  	font-size: inherit;
+  	line-height: inherit;
+  	
+   	transition: border-color 0.2s;
+  	border: 1px solid #92A8D1;
+  	border-radius: 5px;
+}
+.arrow {
+  position: absolute;
+  left:150px;
+  top:15px;
+  pointer-events: none;
+}
+
+.arrow:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-top: 7px solid #92A8D1;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+}
+
+.arrow:after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 0;
+  border-top: -1px solid #eeeeee;
+  border-left: -1px solid transparent;
+  border-right: -1px solid transparent;
+}
 </style>
+<script type="text/javascript">
+function dropdown_selected(elem){
+	$('#dropdownbtn').val(elem.text());
+}
+</script>
 </head>
 <body>
 <!-- Navbar -->
+<div class="row">
 <nav class="navbar navbar-default">
   <div class="container">
     <div class="navbar-header">
@@ -66,29 +118,44 @@
     </div>
   </div>
 </nav>
-<div class="container-fluid bg-3" id="testrootpanel">
+</div>
+<div class="container bg-3" id="testrootpanel">
+<div class="row text-center">
+<div class="col-xs-12 col-md-10 col-lg-10">
+<h3>Sign Up for MMTC's Training and Program Info!</h3>  
+</div>
+</div>
 <div class="row">
-<div class="col-xs-12 col-md-5 col-lg-5">
-<form:form method="POST" action="adduser">  
+<div class="col-md-3 col-lg-3"></div>
+<div class="col-xs-12 col-md-6 col-lg-6">
+<form:form method="POST" action="signup" commandName="newvisitor">
 <div class="form-group">
         <label for="fn">First Name:</label>
-    	<input type="text" name="firstname" class="form-control" placeholder="Your First Name" id="fn"/> 
+    	<form:input type="text" name="firstname" class="form-control" placeholder="Your First Name" path="firstName" id="fn"/> 
         <label for="ln">Last Name:</label>
-    	<input type="text" name="lastname" class="form-control" placeholder="Your Last Name" id="ln"/> 
-        <font color="red">*</font><label for="pw">Password:</label>
-    	<input type="password" name="pwd" class="form-control" placeholder="Create Your Password" id="pw"/> 
-        <font color="red">*</font><label for="em">Email:</label>
-    	<input type="email" name="email" class="form-control" placeholder="Your Email" id="em"/> 
-    <% if (request.isUserInRole("ROLE_ADMIN")) {%> 
-        <font color="red">***</font><label for="epw">Email Password:</label>
-    	<input type="password" name="emailpwd" class="form-control" placeholder="Password to student's email" id="epw"/> 
-    <% } %> 
+    	<form:input type="text" name="lastname" class="form-control" placeholder="Your Last Name" id="ln" path="lastName"/> 
+        <label for="em">Email:</label>
+    	<form:input type="email" name="email" class="form-control" placeholder="Your Email" id="em" path="email"/>
+        <label for="msg">How Can We Help?:</label>
+    	<form:input type="text" name="msg" class="form-control" placeholder="" id="msg" path="msg"/>  
+   		<label for="adleadsel">How Did You Hear About Us?</label><br>
+		<div class="select">
+		<span class="arrow"></span>
+		<form:select id="adleadsel" path="webLead" onchange="$('#altweblead').prop('disabled',false);if($('#adleadsel :selected').text() == 'Other'){$('#altweblead').focus();}" items="${sources}"></form:select>
+		<form:input id="altweblead" disabled="true" path="altWebLead"/>
+		</div>
+		<br>
         <button type="submit" class="btn btn-primary">Register</button>  
 </div> 
+<div class="well">
+<h4>SAFE SIGN UP GUARANTEE</h4>
+<p>We do not and will not sell or release your contact information to other companies, for any reason, at any time.</p>
+</div>
 <input type="hidden" name="${_csrf.parameterName}"
 	value="${_csrf.token}" />  
 </form:form>
 </div>
+<div class="col-md-3 col-lg-3"></div>
 </div>
 </div>
 <!-- Footer -->

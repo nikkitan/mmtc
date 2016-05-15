@@ -4,6 +4,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta http-equiv="X-UA-Compatible" content="IE=8, IE=9, IE=5"><!-- IE fix -->
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <script src="${pageContext.request.contextPath}/resources/js/jquery-2.1.4.min.js" type="text/javascript"></script>
@@ -25,6 +26,9 @@ label#wrongsel{
 
 p.wrongans{
 	color:red;
+}
+#ques>h3{
+	font-weight:500;
 }
 </style>
 <script type="text/javascript">
@@ -48,6 +52,14 @@ $(document).ready(function() {
 	//Get and save in JSON.
 	<% String origTest=(String)request.getAttribute("tests");%>
 	var oo = '<%=origTest%>';
+	if(oo == null || typeof oo == 'undefined' || oo.length == 0){
+		oo = null;//window.sessionStorage.getItem('tests');
+		if(oo == null || oo.length == 0){
+			//Really bad...nothing from server, nor from local storage....
+			window.location.replace("${pageContext.request.contextPath}/error?msg=Your previous test data was lost. Please contact Elaine or Nikki for solutions.");
+		}
+	}
+	
 	var p = jQuery.parseJSON(oo);
 	window.sessionStorage.setItem('tests',oo);	
 	var total = p.tests.length;
@@ -212,17 +224,16 @@ $(document).ready(function() {
 	})
 	//Show/Hide answer.
 	$('#ansbtn').on('click', function (e) {
-		//.log("answer!" + curTest);
 		if($(this).html() == "Show Answer"){
 			$(this).html("Hide Answer");
-			$('#ansrow #anscol #answell').removeClass('hidden');
+			$('#answell').removeClass('hidden');
 			if(typeof p.tests[curTest].answers != 'undefined'){
-				$("#ansrow #anscol #answell").append("Answer:"+ p.tests[curTest].answers[0] + "<br>");
+				$("#answell").append("Answer:"+ p.tests[curTest].answers[0] + "<br>");
 			}
 
 			if(typeof p.tests[curTest].kwds != 'undefined'){
 				var kwds = p.tests[curTest].kwds;
-				$("#ansrow #anscol #answell").append("Keyword: " + kwds + "<br>");
+				$("#answell").append("Keyword: " + kwds + "<br>");
 				for(var i = 0; i < kwds.length; i+=2){
 					$('#testrootpanel #quescol #ques').highlight(kwds[i]);
 					$('#testrootpanel #optcol .radio .radiobtnopt').highlight(kwds[i]);					
@@ -231,47 +242,47 @@ $(document).ready(function() {
 			
 			
 			if(typeof p.tests[curTest].watchword != 'undefined'){
-				$("#ansrow #anscol #answell").append("Watchword:"+ p.tests[curTest].watchword + "<br>");
+				$(" #answell").append("Watchword:"+ p.tests[curTest].watchword + "<br>");
 			}
 			
 			if(typeof p.tests[curTest].tips != 'undefined'){
-				$("#ansrow #anscol #answell").append("Tips:"+ p.tests[curTest].tips);
+				$("#answell").append("Tips:"+ p.tests[curTest].tips);
 			}
 
 		}else{
 			$(this).html("Show Answer");
-			$("#ansrow #anscol #answell").html('');
-			$('#ansrow #anscol #answell').addClass('hidden');
+			$("#answell").html('');
+			$('#answell').addClass('hidden');
 		}
 	});	
 	
 	//Display tests.
 	function showTest(){
-		console.log('[curTest] ' + curTest);
 		if(curTest > -1 && curTest < total){
-			$('#testrootpanel #qh').children().last().remove();
-			$('#testrootpanel #quescol').html('');
-			$('#testrootpanel #optcol').html('');
-			$('#testrootpanel #ansrow #anscol #answell').html('');
-			$('#ansrow #anscol #answell').addClass('hidden');
-			$('#testrootpanel #ansbtn').html('Show Answer');
+			$('#qh').children().last().remove();
+			$('#quescol').html('');
+			$('#optcol').html('');
+			var answell = $('#answell');
+			answell.html('');
+			$('#ansbtn').html('Show Answer');
 			var curSN = curTest + 1;
-			$('#testrootpanel #qh').append("<h4>Item " + curSN + " of "+ total +"</h4>");
+			$('#qh').append("<h4>Item " + curSN + " of "+ total +"</h4>");
 			if(typeof p.tests[curTest].pic != 'undefined'){
-				$('#testrootpanel #quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[curTest].pic+ "\"/></div>")
-				$('#testrootpanel #quescol').append("<div class=\"caption\" id=\"ques\"><h4>" + p.tests[curTest].question[0] + "</h4>");
+				$('#quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[curTest].pic+ "\"/></div>")
+				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h3>" + p.tests[curTest].question[0] + "</h3>");
 			}else{
-				$('#testrootpanel #quescol').append("<div class=\"caption\" id=\"ques\"><h4>" 
-						+ p.tests[curTest].question[0] +"</h4></div>")
+				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h3>" 
+						+ p.tests[curTest].question[0] +"</h3></div>")
 			}
 			var opts;
-			if(typeof p.tests[curTest].taking != 'undefined'){
+			if(typeof p.tests[curTest].taking != 'undefined'
+				&& typeof p.tests[curTest].taking.options != 'undefined'){
 				opts = p.tests[curTest].taking.options;
 			}else{
 				opts = p.tests[curTest].options;
 			}
 			var studentAns = "";
-			var correctAns = p.tests[curTest].answers[0];
+			var correctAns = p.tests[curTest].answers[0].trim();
 
 			for(var i = 0; i < opts.length; ++i){
 				var opt = opts[i];
@@ -283,22 +294,56 @@ $(document).ready(function() {
 				}
 				if(correctAns == opt.charAt(0)){					
 					if(studentAns == opt.charAt(0)){
-						$('#testrootpanel #optcol').append("<div class=\"radio\"><label id=\"correctsel\" class=\"radiobtnopt\" for=\"" 
+						$('#optcol').append("<div class=\"radio\"><label id=\"correctsel\" class=\"radiobtnopt\" for=\"" 
 								+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\" checked disabled>" + opt + "</label></div>");						
 					}else{
-						$('#testrootpanel #optcol').append("<div class=\"radio\"><label id=\"correctsel\" class=\"radiobtnopt\" for=\"" 
+						$('#optcol').append("<div class=\"radio\"><label id=\"correctsel\" class=\"radiobtnopt\" for=\"" 
 								+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\" disabled>" + opt + "</label></div>");						
 					}
 				}else{
 					if(studentAns == opt.charAt(0)){
-						$('#testrootpanel #optcol').append("<div class=\"radio\"><label id=\"wrongsel\" class=\"radiobtnopt\" for=\"" 
+						$('#optcol').append("<div class=\"radio\"><label id=\"wrongsel\" class=\"radiobtnopt\" for=\"" 
 								+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\" checked disabled>" + opt + "</label></div>");						
 					}else{
-						$('#testrootpanel #optcol').append("<div class=\"radio\"><label id=\"wrongsel\" class=\"radiobtnopt\" for=\"" 
+						$('#optcol').append("<div class=\"radio\"><label id=\"wrongsel\" class=\"radiobtnopt\" for=\"" 
 								+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\" disabled>" + opt + "</label></div>");						
 					}					
 				}
 
+			}
+			
+			
+			if(typeof p.tests[curTest].answers != 'undefined'){
+				answell.append("Answer:"+ p.tests[curTest].answers[0] + "<br>");
+			}
+
+			if(typeof p.tests[curTest].kwds != 'undefined'){
+				var kwds = p.tests[curTest].kwds;
+				var kwd;
+				answell.append("Keyword: " + kwds + "<br>");
+				for(var i = 0; i < kwds.length; i+=2){
+					kwd = kwds[i].trim();
+					$('#ques').highlight(kwd);
+					$('#optcol .radio .radiobtnopt').highlight(kwd);
+					answell.highlight(kwd);
+				}
+			}
+			
+			
+			if(typeof p.tests[curTest].watchword != 'undefined'){
+				answell.append("Watchword:"+ p.tests[curTest].watchword + "<br>");
+				var wwds = p.tests[curTest].watchword;
+				var wwd;
+				for(var i = 0; i < wwds.length; i+=2){
+					wwd = wwds[i].trim();
+					$('#ques').highlight(wwd);
+					$('#optcol .radio .radiobtnopt').highlight(wwd);
+					answell.highlight(wwd);
+				}
+			}
+			
+			if(typeof p.tests[curTest].tips != 'undefined'){
+				answell.append("Tips:"+ p.tests[curTest].tips);
 			}
 		}
 	}
@@ -393,26 +438,26 @@ $(document).ready(function() {
 <div id="qh"></div>
 </div>
 <div style="text-align:right" class="col-sm-4">
-<button type="button" id="ansbtn">Show Answer</button>
+<button type="button" id="ansbtn" disabled>Show Answer</button>
 <button>Calculator</button>
 </div>
 </div>
 <hr>
 <div class="row">
-<div class="col-sm-8" id="quescol">
+<div class="col-sm-8 col-lg-10" id="quescol">
 
 </div>
 
 </div>
 <div class="row">
-<div class="col-sm-8" id="optcol">
+<div class="col-sm-8 col-lg-10" id="optcol">
 <!-- radio buttons -->
 </div>
 </div>
 <div class="row" id="ansrow">
 <!-- ANSWER -->
 <div class="col-sm-12" id="anscol">
-<div class="well hidden" id="answell">
+<div class="well" id="answell">
 </div>
 </div>
 </div>

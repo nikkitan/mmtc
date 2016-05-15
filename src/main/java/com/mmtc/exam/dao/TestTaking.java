@@ -6,7 +6,7 @@ package com.mmtc.exam.dao;
 
 import com.google.gson.JsonArray;
 
-//Representing data of each test-taking by different student.
+//Representing data of each test-taking by different students.
 public class TestTaking {
 	public TestTaking(){
 		stuAns = null;
@@ -37,6 +37,6 @@ public class TestTaking {
 	}
 
 	private String stuAns;//Student answer.
-	private String serial;//Result of randomization to test order.
-	private JsonArray options;//Randomization to option order.
+	private String serial;//Result of randomizing test order.
+	private JsonArray options;//Randomizing option order.
 }

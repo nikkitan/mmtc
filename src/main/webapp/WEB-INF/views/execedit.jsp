@@ -4,11 +4,13 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta http-equiv="X-UA-Compatible" content="IE=8, IE=9, IE=5"><!-- IE fix -->
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <script src="${pageContext.request.contextPath}/resources/js/jquery-2.1.4.min.js" type="text/javascript"></script>
 <script src="${pageContext.request.contextPath}/resources/js/jquery.highlight.js" type="text/javascript"></script>
 <script src="${pageContext.request.contextPath}/resources/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
+<script src="${pageContext.request.contextPath}/resources/js/cjst.js" type="text/javascript"></script>
 <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/css/style3.css">
 
@@ -47,6 +49,29 @@ label[for="chekedit"]{
 #delbtn.notorig{
 	margin-right:6px;
 }
+/*#delbtn.recover{
+	margin-right:6px;
+	color:#AA0000;
+}*/
+div.row.disabled{
+	background-color: #A9A9A9;
+}
+div.row.disabled{
+	background-color: #A9A9A9;
+}
+#testrootpanel.container-fluid.bg-3.disabled{
+	background-color: #808080;	
+}
+
+#delpicbtn {
+    position: absolute;
+    left: 10px;
+    top: 0px;
+}
+
+#ques>h3{
+	font-weight:500;
+}
 </style>
 <script type="text/javascript">
 $(document).on("contextmenu", function (event) { event.preventDefault(); });
@@ -60,13 +85,14 @@ var view = 'v';
 var edit = 'e';
 var curMode = view;
 var curDom;
+
 $(document).ready(function() {
 	//Get and save in JSON.
+	var debug = JSON.parse("${debug}");
 	<% String origTest=(String)request.getAttribute("tests");%>
 	var oo = '<%=origTest%>';
-	var p = jQuery.parseJSON(oo);
-	window.localStorage.setItem('tests',oo);	
-	var total = p.tests.length;
+	var p = $.parseJSON(oo);
+	window.sessionStorage.setItem('tests',oo);	
 	
 	//Next test.
 	var testItor = 0;
@@ -100,33 +126,58 @@ $(document).ready(function() {
 	
 	//Delete Test Btn.
 	$('#delbtn').on('click', function (e) {
-		p.tests.splice(testItor,1);
+		if(p.tests[testItor].hasOwnProperty('del')
+				&& typeof p.tests[testItor].del != 'undefined'){
+			if(p.tests[testItor].del == false){
+				p.tests[testItor].del = true;
+				$(this).text('Recover');
+				$(this).addClass('recover');
+				disableTestGUI();
+			}else{
+				p.tests[testItor].del = false;		
+				$(this).text('Delete');
+				$(this).removeClass('recover');
+				enableTestGUI();
+			}
+		}else{
+			console.log('[2_recover]');
+			p.tests[testItor].del = true;
+			$(this).text('Recover');
+			$(this).addClass('recover');
+			disableTestGUI();
+		}
+		window.sessionStorage.setItem('tests',JSON.stringify(p));
 	});
 		
 	//New Test Btn.
 	$('#newbtn').on('click', function (e) {
-		console.log("[new1] " + curMode);
-		p.tests.splice(testItor,0,{"dirty":true,"isnew":true,"serialNo":testItor});
-		window.localStorage.setItem("tests",JSON.stringify(p));
+		p.tests.splice(testItor,0,{"dirty":true,"isnew":true,"serialNo":testItor+1});
 		curMode = edit;
 		showTest4Edit();
-		console.log("[new2] " + curMode);
-
 	});
-	
-	
+		
 	//Ans <p> in Review Modal.
 	$('#rvwModal').on('hide.bs.modal', function (e) {
-		testItor = parseInt(window.localStorage.getItem('modelsel'));
+		testItor = parseInt(window.sessionStorage.getItem('modelsel'));
 		showTest4View();
-	});	
+	});
+	
+	//Review Modal
+	$('#rvwModal').on('show.bs.modal', function (event) {
+	  var modal = $(this);
+	  modal.find('.modal-title').html('Test Suite of ' + p.suite);
+	  modal.find('.modal-body').html(genReviewTable());
+	})
 	
 	//Edit checkbox.
 	$('#chekedit').on('click', function (e) {
-		console.log("[chekedit] " + curMode);
 		p.tests[testItor].dirty = true;
 		if(curMode == view){
 			curMode = edit;
+			if(p.tests[testItor].hasOwnProperty('pic')
+				&& p.tests[testItor].pic != null){
+				window.sessionStorage.setItem('_origpic'+testItor,p.tests[testItor].pic);
+			}
 			showTest4Edit();
 		}else{
 			//Save dirty data.
@@ -153,25 +204,72 @@ $(document).ready(function() {
 			});
 			curDom = $('#delnewdiv');
 			curDom.append(delBtn);
+			curDom.children().last().on('click', function (e) {
+				if(p.tests[testItor].hasOwnProperty('del')
+						&& typeof p.tests[testItor].del != 'undefined'){
+					if(p.tests[testItor].del == false){
+						p.tests[testItor].del = true;
+						$(this).text('Recover');
+						$(this).addClass('recover');
+						disableTestGUI();
+					}else{
+						p.tests[testItor].del = false;		
+						$(this).text('Delete');
+						$(this).removeClass('recover');
+						enableTestGUI();
+					}
+				}else{
+					p.tests[testItor].del = true;
+					$(this).text('Recover');
+					$(this).addClass('recover');
+					disableTestGUI();
+				}
+				window.sessionStorage.setItem('tests',JSON.stringify(p));
+			});
 			curDom.append(newBtn);
 			curDom.children().last().on('click', function (e) {
 				p.tests.splice(testItor,0,{"dirty":true,"isnew":true,"serialNo":testItor});
-				window.localStorage.setItem("tests",JSON.stringify(p));
+				window.sessionStorage.setItem("tests",JSON.stringify(p));
 				curMode = edit;
 				showTest4Edit();
 				
 			});
 			curDom = $('#sbtdiv');
+			curDom.append("<input type=\"hidden\" name=\"testdata\" />" 
+					      + "<input type=\"hidden\" name=\"${_csrf.parameterName}\" value=\"${_csrf.token}\"/>");
 			curDom.append(sbtBtn).on('click', function (e) {
 				p.user = "${pageContext.request.userPrincipal.name}";
-				testStartTime = window.localStorage.getItem('start_time');
-				var curDate = new Date();
-				p.end = Date.now();
-				p.beg = testStartTime;
-				$('input[name="tests"]').attr("value",JSON.stringify(p));
-				clearInterval(timerIntervalObj);
+				$('input[name="testdata"]').attr("value",JSON.stringify(p));
 			});
 			curMode = view;
+			//Ajax upload.
+			$.ajaxPrefilter(function (options, originalOptions, jqXHR) {
+			  jqXHR.setRequestHeader('X-CSRF-Token', "${_csrf.token}");
+			});
+			var postParam = {"suite":p.suite,"test":JSON.stringify(p.tests[testItor])};
+			var ip = debug == true?'localhost:8080/':'www.mmtctest.com/';
+			var scheme = debug == true?'http://':'https://';
+			var subdomain = debug == true? "mmtcexam/oneedit":"oneedit";
+			var url = scheme + ip + subdomain;
+			$.ajax({
+			    url : url,
+			    type: "POST",
+			    data : postParam,
+			    dataType: "json",
+			    async:true,
+			    success: function(data, textStatus, jqXHR)
+			    {
+			        var result =  data;
+			        var index = result.test.serialNo - 1;
+			        p.tests[index] = result.test;
+					window.sessionStorage.removeItem("pic"+index,e.target.result);
+			    },
+			    error: function (jqXHR, textStatus, errorThrown)
+			    {
+			        console.log("[AJAX_fail]: " + errorThrown);	
+			        
+			    }
+			});
 			showTest4View();
 		}
 	});
@@ -179,32 +277,40 @@ $(document).ready(function() {
 	//Submit.
 	$('#sbtbtn').on('click', function (e) {
 		p.user = "${pageContext.request.userPrincipal.name}";
-		testStartTime = window.localStorage.getItem('start_time');
-		var curDate = new Date();
-		p.end = Date.now();//Date.parse(curDate);
-		p.beg = testStartTime;//Date.parse(testStartTime);
-		//p.testdur = (Date.parse(curDate) - Date.parse(testStartTime))/1000;
-		console.log("s: " + testStartTime);
-		console.log("c: " + curDate);
-		console.log(Date.parse(curDate));
-		console.log(Date.parse(testStartTime));
-		console.log((Date.parse(curDate) - Date.parse(testStartTime))/1000);
-		$('input[name="tests"]').attr("value",JSON.stringify(p));
-		clearInterval(timerIntervalObj);
+		$('input[name="testdata"]').attr("value",JSON.stringify(p));
+		
 	});
 	
 	
 	function saveTestFromGUI(){
 		var curTestObj = p.tests[testItor];
 		if(curTestObj.dirty == true || curTestObj.isnew == true){
-			curTestObj.pic = $('#pic_input').prop('src');	
+			if($('#pic_input').val() != null && $('#pic_input').val().length > 0){
+				curTestObj.pic = $('#picholder').prop('src');
+				curTestObj.newpic = true;
+			}else{
+				if(window.sessionStorage.getItem('_origpic'+testItor) != null){
+					if(curTestObj.hasOwnProperty('delpic') == false
+					|| curTestObj.delpic == false){
+						curTestObj.pic = "${pageContext.request.contextPath}/resources/pic/" + window.sessionStorage.getItem('_origpic'+testItor);
+					}
+					window.sessionStorage.removeItem('_origpic'+testItor);
+				}
+			}
+			var quesTrans;
+			if(typeof curTestObj.question != 'undefined' 
+				&& curTestObj.question.length == 2){
+				//Preserve the second item.
+				quesTrans=curTestObj.question[1].toString();//deep copy.
+			}
 			curTestObj.question = [];		
 			var q = $('textarea[name="ques"]').val();
 			if(typeof q != 'undefiend'){
-				if(q.charAt(1) != '.'){
-					q = testItor + '.' + q;
-				}
+				q = testItor+1 + '.' + q;
 				curTestObj.question.push(q);
+			}
+			if(quesTrans != null && typeof quesTrans != 'undefined' && quesTrans.length > 0){
+				curTestObj.question.push(quesTrans);
 			}
 			
 			curTestObj.options = [];
@@ -216,12 +322,13 @@ $(document).ready(function() {
 						}
 						curTestObj.options.push(value.value);
 					}else{
-						if(value.getAttribute('placeholder').length > 0){
+						if(value.getAttribute('placeholder').length > 0
+							&& value.getAttribute('placeholder') != ('Option ' + String.fromCharCode(index+65))){							
 							curTestObj.options.push(value.getAttribute('placeholder'));
-						}else{
+						}/*else{
 							//overwrite though input is empty.
 							curTestObj.options.push(String.fromCharCode(index+65) + '.' + value.value);
-						}
+						}*/
 					}
 				}
 			});
@@ -229,7 +336,7 @@ $(document).ready(function() {
 			curDom = $('input[name="ans"]');
 			if(typeof curDom.val() != 'undefined'){
 				if(curDom.val().length > 0){
-					curTestObj.answers.push(curDom.val());
+					curTestObj.answers.push(curDom.val().toUpperCase());
 				}else{
 					if(curDom.prop('placeholder').length>0){
 						curTestObj.answers.push(curDom.prop('placeholder'));
@@ -238,24 +345,55 @@ $(document).ready(function() {
 					}
 				}
 			}
-			curTestObj.kwds = [];
-			$('textarea[name="kwd"]').each(function(index,value){
-				if(typeof value.value != 'undefined'){
-					curTestObj.kwds.push(value.value);
+			delete curTestObj.kwds;
+			var engKwd = $('#kwden > input[name="kwd"]');
+			var chKwd = $('#kwdch > input[name="kwd"]');
+			for(var i = 0; i < engKwd.length; ++i){
+				curTestObj.kwds = [];
+				if(typeof engKwd[i] != 'undefined' && engKwd[i].value.length > 0){
+					curTestObj.kwds.push(engKwd[i].value);
+					if(typeof chKwd[i] != 'undefined' && chKwd[i].value.length > 0)
+						curTestObj.kwds.push(cjst.traditionalToSimplified(chKwd[i].value));	
+				}			
+			}			
+			delete curTestObj.watchword;
+			var engWwd = $('#wwden > input[name="wwd"]');
+			var chWwd = $('#wwdch > input[name="wwd"]');
+			for(var i = 0; i < engWwd.length; ++i){
+				curTestObj.watchword = [];
+				if(typeof engWwd[i] != 'undefined' && engWwd[i].value.length > 0){
+					curTestObj.watchword.push(engWwd[i].value);
+					if(typeof chWwd[i] != 'undefined' && chWwd[i].value.length > 0)
+						curTestObj.watchword.push(cjst.traditionalToSimplified(chWwd[i].value));	
 				}
-			});
-			curTestObj.watchword = [];
-			$('textarea[name="wwd"]').each(function(index,value){
-				if(typeof value.value != 'undefined'){
-					curTestObj.watchword.push(value.value);
-				}
-			});
-			curTestObj.tips = [];
-			if(typeof $('textarea[name="tips"]').val() != 'undefined'){
-				curTestObj.tips=$('textarea[name="tips"]').val();	
+			}
+			
+			delete curTestObj.tips;
+			var tipVal = $('textarea[name="tips"]').val()
+			if(typeof tipVal != 'undefined' && tipVal.length > 0){
+				curTestObj.tips = [];
+				tipVal = cjst.traditionalToSimplified(tipVal);
+				curTestObj.tips=tipVal.split('\n');
+				
+				//curTestObj.tips=$('textarea[name="tips"]').val()
+				//console.log("[save]: "+curTestObj.tips);
 			}
 		}
-		console.log("[save]: " + curTestObj);
+		
+		//we need to increment serial# by 1 for tests after new test.
+		if(curTestObj.hasOwnProperty('isnew')
+				&& curTestObj.isnew == true){
+			var index = curTestObj.serialNo;
+			var t;
+			for(var i = index; i < p.tests.length; ++i){
+				t = p.tests[i];
+				t.serialNo += 1;
+				t.question[0] = t.question[0].substring(t.question[0].indexOf('.'));
+				t.question[0] = t.serialNo + t.question[0];
+			}
+		}
+		//p.tests[testItor].tips = curTestObj.tips.toString().replace(/[\n\r]/g,'\\n');
+		window.sessionStorage.setItem("tests",JSON.stringify(p));
 	}
 	
 	function genReviewTable(){
@@ -286,8 +424,14 @@ $(document).ready(function() {
 			}
 			review += markedPrefix
 			if(p.tests[i].hasOwnProperty('dirty')
-					&& p.tests[i].dirty != 'undefined'){
+					&& p.tests[i].dirty != 'undefined'
+					&& p.tests[i].dirty == true){
 				review += 'E';
+			}
+			else if(p.tests[i].hasOwnProperty('del')
+					&& p.tests[i].del != 'undefined'
+					&& p.tests[i].del == true){
+				review += 'D';
 			}
 			review += itemSuffix;
 			review += divEndTag;//close item col1;
@@ -295,14 +439,14 @@ $(document).ready(function() {
 			if(p.tests[i].hasOwnProperty("taking")
 					&& p.tests[i].taking != 'undefined'){
 				review += itemPrefix;
-				review += "\" onclick='window.localStorage.setItem(\"modelsel\","+i+"); $(\"#rvwModal\").modal(\"hide\");' ";
+				review += "\" onclick='window.sessionStorage.setItem(\"modelsel\","+i+"); $(\"#rvwModal\").modal(\"hide\");' ";
 				review += ">";
 				review += i+1;
 				review += ":";
-				review += p.tests[i].taking.stuans;				
+				review += p.tests[i].taking.stuAns;				
 			}else{
 				review += itemPrefix;
-				review += "\" onclick='window.localStorage.setItem(\"modelsel\","+i+"); $(\"#rvwModal\").modal(\"hide\");' ";
+				review += "\" onclick='window.sessionStorage.setItem(\"modelsel\","+i+"); $(\"#rvwModal\").modal(\"hide\");' ";
 				review += "class=\"notanswered\">";
 				review += i+1;
 				review += ":";
@@ -316,24 +460,17 @@ $(document).ready(function() {
 		review += divEndTag;//close root col in modal.
 		return review;
 	}
-	//Review Modal
-	$('#rvwModal').on('show.bs.modal', function (event) {
-	  var button = $(event.relatedTarget);
-	  var recipient = button.data('whatever');
-	  var modal = $(this);
-	  modal.find('.modal-body').html(genReviewTable());
-	})
 
 
 	//Display tests.
 	function showTest4Edit(){
-		if(testItor > -1 && testItor < total){
-			console.log('[show4Edit]');
+		if(testItor > -1 && testItor < p.tests.length){
 			$('#prvnxtrvwdiv').html('');
 			$('#delnewdiv').html('');
 			$('#sbtdiv').html('');
 			$('#qh').children().last().remove();
 			$('#quescol').html('');
+			$('#piccol').html('');
 			$('#optcol').html('');
 			var answell = $('#answell');
 			answell.html('');
@@ -344,21 +481,34 @@ $(document).ready(function() {
 				$('label[for="chekedit"]').text('Uncheck to finalize editing.');
 			}
 			var curSN = testItor + 1;
-			$('#qh').append("<label>Item " + curSN + " of "+ total +"</label>");
-			
-			$('#quescol').append("<div class=\"thumbnail\"><label for=\"pic_input\"><img id=\"picholder\" class=\"img-responsive\" src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/></label><input id=\"pic_input\" type=\"file\" name=\"file\"/></div>");	
+			$('#qh').append("<label>Item " + curSN + " of "+ p.tests.length +"</label>");
+			if(p.tests[testItor].hasOwnProperty('pic')
+				&& typeof p.tests[testItor].pic != 'undefined'
+				&& p.tests[testItor].pic.length > 0
+				&& p.tests[testItor].pic != 'null'){
+				$('#piccol').append("<div><img id=\"picholder\" class=\"img-thumbnail img-responsive\" src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/>"
+						+"<button type=\"button\" id=\"delpicbtn\" class=\"btn btn-info\"><span class=\"glyphicon glyphicon-remove\"></span></button></div>");
+				$('#piccol').children().children()
+				.last().on('click',function(){
+					p.tests[testItor].pic = null;
+					p.tests[testItor].delpic = true;
+					$('#picholder').prop('src','deleted');
+				});
+						
+				$('#piccol').append("<input id=\"pic_input\" type=\"file\" name=\"file\"/>");	
+			}else{
+				$('#piccol').append("<div><img id=\"picholder\" class=\"img-thumbnail img-responsive\" src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/>"
+						+"<input id=\"pic_input\" type=\"file\" name=\"file\"/>");					
+			}
 			$('#pic_input').on('change',function(){
-				console.log("[picchange]: " + $(this).val());
 				var filePath = $(this).val();
 				if(typeof FileReader != 'undefined'){
 					var picholder = $('#picholder');
 					var reader = new FileReader();
 					reader.onload = function(e){
-						//console.log("[load]: " + e.target.result);
 						picholder.prop('src',e.target.result);
-						//$(this).prop('src',"file://"+filePath);
-						p.tests[testItor].pic=e.target.result;//"file:///"+filePath;
-						window.sessionStorage.setItem('test',e.target.result);
+						p.tests[testItor].pic=e.target.result;
+						window.sessionStorage.setItem("pic"+testItor,e.target.result);
 					}		
 					reader.readAsDataURL($(this)[0].files[0]);
 				}else{
@@ -366,32 +516,43 @@ $(document).ready(function() {
 				}
 			});
 			if(typeof p.tests[testItor].question != 'undefined'){
-				$('#quescol').append("<textarea name=\"ques\" class=\"form-control\">" + p.tests[testItor].question[0] + "</textarea>");
+				var dotIndex = p.tests[testItor].question[0].indexOf('.');
+				$('#quescol').append("<textarea name=\"ques\" class=\"form-control\">" + p.tests[testItor].question[0].substring(dotIndex+1) + "</textarea>");
 			}else{
 				$('#quescol').append("<textarea name=\"ques\" class=\"form-control\" placeholder=\"Question\"></textarea>");				
 			}
 						
 			//Options.
 			if(p.tests[testItor].hasOwnProperty('dirty')
-				&& typeof p.tests[testItor].options != 'undefined'){
-				var opts = p.tests[testItor].options;
-				for(var i = 0; i < opts.length; ++i){
-					var opt = opts[i];
-					var id = "opt" + i;
-					$('#optcol').append("<input id=\"" + id + "\"type=\"text\" name=\"opt\" placeholder=\"" + opt + "\"></input><br>");
-				}
-			}else{
-				var optcol = $('#optcol');
-				optcol.append("<div class=\"row\">");
-				optcol.children().last().append("<div id=\"opt\" class=\"col-xs-5\">");
-				optcol.children().last().append("<div class=\"col-xs-5\">");
+				&& p.tests[testItor].dirty == true){
+				if(typeof p.tests[testItor].options != 'undefined'
+					&& p.tests[testItor].options.length > 0){
+					var opts = p.tests[testItor].options;
+					var i = 0;
+					for(; i < opts.length; ++i){
+						var opt = opts[i];
+						var id = "opt" + i;
+						$('#optcol').append("<input id=\"" + id + "\"type=\"text\" name=\"opt\" placeholder=\"" + opt + "\"></input><br>");
+					}
+					//add empty box for if user wants to add options, but no more than 4 options.
+					for(; i < 4; ++i){
+						$('#optcol').append("<input name=\"opt\" type=\"text\" placeholder=\"Option "+String.fromCharCode(i+65)+"\">");						
+					}
+					
+				}else{
+					//Still need to provide option boxes even no options before edit.
+					var optcol = $('#optcol');
+					optcol.append("<div class=\"row\">");
+					optcol.children().last().append("<div id=\"opt\" class=\"col-xs-5\">");
+					optcol.children().last().append("<div class=\"col-xs-5\">");
 
-				optcol = $('#opt');
-				
-				optcol.append("<input name=\"opt\" type=\"text\" placeholder=\"Option A\">");
-				optcol.append("<input name=\"opt\" type=\"text\" placeholder=\"Option B\">");
-				optcol.append("<input name=\"opt\" type=\"text\" placeholder=\"Option C\">");
-				optcol.append("<input name=\"opt\" type=\"text\" placeholder=\"Option D\">");
+					optcol = $('#opt');
+					optcol.append("<input name=\"opt\" type=\"text\" placeholder=\"Option A\">");
+					optcol.append("<input name=\"opt\" type=\"text\" placeholder=\"Option B\">");
+					optcol.append("<input name=\"opt\" type=\"text\" placeholder=\"Option C\">");
+					optcol.append("<input name=\"opt\" type=\"text\" placeholder=\"Option D\">");
+					
+				}
 			}
 			
 			//Answer area
@@ -411,17 +572,17 @@ $(document).ready(function() {
 				var kwds = p.tests[testItor].kwds;
 				for(var i = 0; i < kwds.length; ++i){
 					if(i%2 == 0){
-						$("#kwden").append("<textarea name=\"kwd\" class=\"form-control\"> " + kwds[i] + "</textarea>");
+						$("#kwden").append("<input type=\"text\" name=\"kwd\" class=\"form-control\" value=\"" + kwds[i] + "\"></input>");
 					}else{
-						$("#kwdch").append("<textarea name=\"kwd\" class=\"form-control\"> " + kwds[i] + "</textarea>");						
+						$("#kwdch").append("<input type=\"text\" name=\"kwd\" class=\"form-control\" value=\"" + kwds[i] + "\"></input>");						
 					}
 				}
 			}
 			answell.append("<button type=\"button\" id=\"pluskwdbtn\" class=\"btn btn-info\">");
 			answell.children().last()
 			.on('click',function(){
-				$("#kwden").append("<textarea class=\"form-control\"> </textarea>");	
-				$("#kwdch").append("<textarea class=\"form-control\"> </textarea>");
+				$("#kwden").append("<input type=\"text\" name=\"kwd\" class=\"form-control\"></input>");	
+				$("#kwdch").append("<input type=\"text\" name=\"kwd\" class=\"form-control\"></input>");
 			});
 			answell.children().last().append("<span class=\"glyphicon glyphicon-plus\"></span>");
 			
@@ -439,19 +600,19 @@ $(document).ready(function() {
 			answell.children().last().append("<div id=\"wwdch\" class=\"col-xs-5\">");
 			if(typeof p.tests[testItor].watchword != 'undefined'){
 				var wwds = p.tests[testItor].watchword;
-				for(var i = 0; i < wwds.length; ++i){
-					if(i%2 != 0){
-						$("#wwden").append("<textarea name=\"wwd\" class=\"form-control\"> " + wwds[i] + "</textarea>");
+				for(var w = 0; w < wwds.length; ++w){
+					if(w%2 == 0){
+						$("#wwden").append("<input type=\"text\" name=\"wwd\" class=\"form-control\" value=\"" + wwds[w] + "\"></input>");
 					}else{
-						$("#wwdch").append("<textarea name=\"wwd\" class=\"form-control\"> " + wwds[i] + "</textarea>");						
+						$("#wwdch").append("<input type=\"text\" name=\"wwd\" class=\"form-control\" value=\"" + wwds[w] + "\"></input>");						
 					}
 				}
 			}
 			answell.append("<button type=\"button\"  id=\"pluswdbtn\" class=\"btn btn-info\">");
 			$("#pluswdbtn").append("<span class=\"glyphicon glyphicon-plus\"></span>");
 			$("#pluswdbtn").on('click',function(){
-				$("#wwden").append("<textarea class=\"form-control\"> </textarea>");	
-				$("#wwdch").append("<textarea class=\"form-control\"> </textarea>");							
+				$("#wwden").append("<input type=\"text\" name=\"wwd\" class=\"form-control\"></input>");	
+				$("#wwdch").append("<input type=\"text\" name=\"wwd\" class=\"form-control\"></input>");							
 			});
 			answell.append("<button type=\"button\" id=\"minuswdbtn\" class=\"btn btn-info\">");
 			answell.children().last()
@@ -465,44 +626,58 @@ $(document).ready(function() {
 			//Tips.
 			answell.append("<div class=\"row\">Tips:</div><div class=\"row\">");
 			if(typeof p.tests[testItor].tips != 'undefined'){
-				answell.children().last().append("<div class=\"col-xs-12\"><textarea name=\"tips\" class=\"form-control\" >"+ p.tests[testItor].tips+"</textarea></div>");
+				var tp = p.tests[testItor].tips.join('\n');
+				//var tp = p.tests[testItor].tips.toString();
+				//tp = tp.replace(/\\\\/g,'\\');
+				//tp = tp.replace(/\\\\n/g,String.fromCharCode(13, 10));
+				answell.children().last().append("<div class=\"col-xs-12\"><textarea name=\"tips\" class=\"form-control\" >"+ tp+"</textarea></div>");
 			}else{
 				answell.children().last().append("<div class=\"col-xs-12\"><textarea name=\"tips\" class=\"form-control\" ></textarea></div>");
 			}
 		}
 	}
 	
+	//Disable GUI.
+	function disableTestGUI(){
+		$('#testrootpanel').addClass('disabled');
+		$('#ques').css('color','#D3D3D3');
+		$('#chekedit').prop('disabled',true);
+		$('input[name="optradio"]').prop('disabled',true);
+	}
+	//Enable GUI.
+	function enableTestGUI(){
+		$('#testrootpanel').removeClass('disabled');
+		$('#ques').css('color','black');
+		$('#chekedit').prop('disabled',false);
+		$('input[name="optradio"]').prop('disabled',false);
+	}
 	//Display tests.
 	function showTest4View(){
-		if(testItor > -1 && testItor < total){
-			console.log('cur: ' + testItor);
+		if(testItor > -1 && testItor < p.tests.length){
 			$('#qh').children().last().remove();
 			$('#quescol').html('');
+			$('#piccol').html('');
 			$('#optcol').html('');			
 			var answell = $('#answell');
 			answell.html('');
-			answell.addClass('hidden');
 			$('#chekedit').prop('checked',false);
 			$('label[for="chekedit"]').text('Edit');
 			var curSN = testItor + 1;
 			//Pic
-			$('#qh').append("<label>Item " + curSN + " of "+ total +"</label>");
-			if(typeof p.tests[testItor].pic != 'undefined'){
-				if(p.tests[testItor].dirty == true){
-					//$('#quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img \"img-responsive\" src=\"" + p.tests[testItor].pic+ "\"/></div>");					
-					$('#quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img id=\"picholder\" \"img-responsive\"/></div>");	
-					$('#picholder').prop('src',window.sessionStorage.getItem('test'));
-					console.log("[setsrc]: " + p.tests[testItor].pic);
-					
+			$('#qh').append("<label>Item " + curSN + " of "+ p.tests.length +"</label>");
+			if(p.tests[testItor].hasOwnProperty('pic') && p.tests[testItor].pic != 'undefined'){
+				if(p.tests[testItor].hasOwnProperty('dirty') && p.tests[testItor].dirty == true){
+					$('#piccol').append("<img id=\"picholder\" \"img-thumbnail img-responsive\"/>");	
+					$('#picholder').prop('src',p.tests[testItor].pic);//window.sessionStorage.getItem('pic'+testItor));					
 				}else{
-					$('#quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img \"img-responsive\" src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/></div>");
+					$('#piccol').append("<img \"img-thumbnail img-responsive\" src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[testItor].pic+ "\"/>");
 				}
 			}
 			//Question
 			if(typeof p.tests[testItor].question != "undefined"){
-				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h4>" + p.tests[testItor].question[0] + "</h4>");
+				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h3>" + p.tests[testItor].question[0] + "</h3>");
 			}else{
-				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h4></h4></div>")
+				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h3></h3></div>")
 			}
 			
 			if(p.tests[testItor].hasOwnProperty("options")
@@ -512,7 +687,7 @@ $(document).ready(function() {
 					var opt = opts[i];
 					var id = "opt" + i;
 					if(typeof p.tests[testItor].taking != 'undefined'){
-						if(p.tests[testItor].taking.stuans == opt.charAt(0)){
+						if(p.tests[testItor].taking.stuAns == opt.charAt(0)){
 							$('#optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
 								+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\" checked>" + opt + "</label></div>");
 						}else{
@@ -526,8 +701,8 @@ $(document).ready(function() {
 					$('input[name="optradio"]').on('click',
 						function(){
 							//onclicked, cache clicked option to local storage.
-							p.tests[testItor].taking = {"stuans":$(this).parent().text().charAt(0)}
-							window.localStorage.setItem('tests',JSON.stringify(p));						
+							p.tests[testItor].taking = {"stuAns":$(this).parent().text().charAt(0)}
+							window.sessionStorage.setItem('tests',JSON.stringify(p));						
 					});
 				}
 			}else{
@@ -545,21 +720,54 @@ $(document).ready(function() {
 
 			if(typeof p.tests[testItor].kwds != 'undefined'){
 				var kwds = p.tests[testItor].kwds;
+				var kwd;
 				answell.append("Keyword: " + kwds + "<br>");
 				for(var i = 0; i < kwds.length; i+=2){
-					answell.highlight(kwds[i]);
-					$('#ques').highlight(kwds[i]);
-					$('#optcol .radio .radiobtnopt').highlight(kwds[i]);					
+					kwd = kwds[i].trim();
+					$('#ques').highlight(kwd);
+					$('#optcol .radio .radiobtnopt').highlight(kwd);	
+					answell.highlight(kwd);
+
 				}
 			}
 			
 			
 			if(typeof p.tests[testItor].watchword != 'undefined'){
 				answell.append("Watchword:"+ p.tests[testItor].watchword + "<br>");
+				var wwd = p.tests[testItor].watchword;
+				var ww;
+				for(var i = 0; i < wwd.length; i+=2){
+					ww = wwd[i].trim();
+					$('#ques').highlight(ww);
+					$('#optcol .radio .radiobtnopt').highlight(ww);	
+					answell.highlight(ww);
+
+
+				}
 			}
 			
 			if(typeof p.tests[testItor].tips != 'undefined'){
-				answell.append("Tips:"+ p.tests[testItor].tips);
+				//var tp = p.tests[testItor].tips.toString();
+				var tp=p.tests[testItor].tips.join("<br>");
+				//tp = tp.replace(/\\n/g,"<br>");
+				answell.append("Tips:"+ tp);
+			}
+			
+			
+			if(p.tests[testItor].hasOwnProperty('del')
+				&& typeof p.tests[testItor].del != 'undefined'){
+				if(p.tests[testItor].del == true){
+					$('#delbtn').text('Recover');
+					$('#delbtn').addClass('recover');
+					disableTestGUI();	
+				}else{
+					$('#delbtn').text('Delete');
+					$('#delbtn').removeClass('recover');
+					enableTestGUI();
+				}
+			}else{
+				$('#delbtn').text('Delete');
+				enableTestGUI();
 			}
 		}
 	}
@@ -580,7 +788,7 @@ $(document).ready(function() {
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>                        
       </button>
-      <a class="navbar-brand" href="#">MMTC 全方位专业按摩培训</a>
+      <a class="navbar-brand" href="${pageContext.request.contextPath}/index">MMTC 全方位专业按摩培训</a>
     </div>
     <div class="collapse navbar-collapse" id="myNavbar">
       <ul class="nav navbar-nav navbar-right">
@@ -631,7 +839,7 @@ $(document).ready(function() {
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
-        <h4 class="modal-title">Test Review</h4>
+        <h4 class="modal-title"></h4>
       </div>
       <div class="modal-body">
         
@@ -642,6 +850,24 @@ $(document).ready(function() {
     </div>
   </div>
 </div>
+<!-- Chinese Conversion Modal -->
+<div class="modal fade" id="chModal" role="dialog">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title"></h4>
+      </div>
+      <div class="modal-body">
+        
+      </div>
+      <div class="modal-footer">
+        <button id="endtestbtn" type="button" class="btn btn-default" data-dismiss="modal" >OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <form:form id="myform" method="POST" enctype="multipart/form-data" action="${pageContext.request.contextPath}/submitedit"> 
 <div class="row">
 <div class="col-sm-8">
@@ -663,13 +889,17 @@ $(document).ready(function() {
 </div>
 <hr>
 <div class="row">
-<div class="col-sm-8" id="quescol">
+<div class="col-sm-3" id="piccol">
+</div>
+</div>
+<div class="row">
+<div class="col-sm-12 col-lg-12" id="quescol">
 
 </div>
 
 </div>
 <div class="row">
-<div class="col-sm-4" id="optcol">
+<div class="col-sm-4 col-lg-10" id="optcol">
 <!-- OPTIONS -->
 </div>
 </div>
@@ -689,7 +919,7 @@ $(document).ready(function() {
 </div>
 <div style="text-align:right" class="col-sm-4" id="sbtdiv">
 <!-- pause,end exam -->
-<input type="hidden" name="tests" />
+<input type="hidden" name="testdata" />
 <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
 <input type="submit" value="Submit" id="sbtbtn"/> 
 </div>

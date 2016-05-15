@@ -26,7 +26,7 @@
 	        <span class="icon-bar"></span>
 	        <span class="icon-bar"></span>                        
 	      </button>
-	      <a class="navbar-brand" href="#">MMTC 全方位专业按摩培训</a>
+	      <a class="navbar-brand" href="${pageContext.request.contextPath}/index">MMTC 全方位专业按摩培训</a>
 	    </div>
 	    <div class="collapse navbar-collapse" id="myNavbar">
 	      <ul class="nav navbar-nav navbar-right">
@@ -37,7 +37,7 @@
 	  </div>
 	</nav>
 <div class="container-fluid bg-3">
-<form:form method="POST" action="listtest" commandName="ts" >  
+<form:form method="POST" action="delsuite" commandName="ts" >  
 <table><!-- ROOT -->
 <tr>
 <td style="width:70%;">
