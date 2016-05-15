@@ -3,7 +3,7 @@
     pageEncoding="UTF-8" session="false"%>
 <!DOCTYPE html>
 <head>
-<meta http-equiv="X-UA-Compatible" content="IE=9"><!-- IE 11 fix -->
+<meta http-equiv="X-UA-Compatible" content="IE=8, IE=9, IE=5"><!-- IE fix -->
 <meta charset="utf8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <script src="${pageContext.request.contextPath}/resources/js/jquery-2.1.4.min.js" type="text/javascript"></script>
@@ -53,23 +53,23 @@
 	  <!-- Wrapper for slides -->
 	  <div class="carousel-inner licensepic" role="listbox">
 	    <div class="item active">
-	      <img src="${pageContext.request.contextPath}/resources/pic/slogan.jpg" alt="slogan">
+	      <img src="${pageContext.request.contextPath}/resources/pic/slogan.jpg" alt="slogan" width="100%">
 	    </div>
 	
 	    <div class="item">
-	      <img src="${pageContext.request.contextPath}/resources/pic/Indiana.jpg" alt="Indiana License">
+	      <img src="${pageContext.request.contextPath}/resources/pic/Indiana.jpg" alt="Indiana License" width="100%">
 	    </div>
 	
 	    <div class="item">
-	      <img src="${pageContext.request.contextPath}/resources/pic/slogan2.jpg" alt="slogan2">
+	      <img src="${pageContext.request.contextPath}/resources/pic/slogan2.jpg" alt="slogan2" width="100%">
 	    </div>
 	
 	    <div class="item">
-	      <img src="${pageContext.request.contextPath}/resources/pic/Virginia.jpg" alt="Virginia License">
+	      <img src="${pageContext.request.contextPath}/resources/pic/Virginia.jpg" alt="Virginia License" width="100%">
 	    </div>
 	    
 	    <div class="item">
-	      <img src="${pageContext.request.contextPath}/resources/pic/california.jpg" alt="California License">
+	      <img src="${pageContext.request.contextPath}/resources/pic/california.jpg" alt="California License" width="100%">
 	    </div>
 	  </div>
 
