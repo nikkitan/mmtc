@@ -3,16 +3,12 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 package com.mmtc.exam.dao;
-
-import java.util.ArrayList;
-
 import com.google.gson.JsonArray;
 
 public class Test {
 	public Test(){
 		taking = null;
 	}
-	
 	public JsonArray getQuestion() {
 		return question;
 	}

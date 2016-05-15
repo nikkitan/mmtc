@@ -4,13 +4,14 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta http-equiv="X-UA-Compatible" content="IE=8, IE=9, IE=5"><!-- IE fix -->
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <script src="${pageContext.request.contextPath}/resources/js/jquery-2.1.4.min.js" type="text/javascript"></script>
 <script src="${pageContext.request.contextPath}/resources/js/jquery.highlight.js" type="text/javascript"></script>
 <script src="${pageContext.request.contextPath}/resources/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
-<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/bootstrap/css/bootstrap.min.css">
-<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/css/style3.css">
+<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/bootstrap/css/bootstrap.min.css"/>
+<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/css/style3.css"/>
 
 <style type="text/css">
 .highlight{
@@ -23,6 +24,10 @@ p.marked{
 
 p.notanswered{
 	color:red;
+}
+
+#ques>h3{
+	font-weight:500;
 }
 
 </style>
@@ -135,9 +140,8 @@ $(document).ready(function() {
 		p.user = "${pageContext.request.userPrincipal.name}";
 		testStartTime = window.sessionStorage.getItem('start_time');
 		var curDate = new Date();
-		p.end = Date.now();//Date.parse(curDate);
-		p.beg = testStartTime;//Date.parse(testStartTime);
-		//p.testdur = (Date.parse(curDate) - Date.parse(testStartTime))/1000;
+		p.end = Date.now();
+		p.beg = testStartTime;
 		console.log("s: " + testStartTime);
 		console.log("c: " + curDate);
 		console.log(Date.parse(curDate));
@@ -187,7 +191,7 @@ $(document).ready(function() {
 				review += ">";
 				review += i+1;
 				review += ":";
-				review += p.tests[i].taking.stuans;				
+				review += p.tests[i].taking.stuAns;				
 			}else{
 				review += itemPrefix;
 				review += "class=\"notanswered\">";
@@ -205,12 +209,7 @@ $(document).ready(function() {
 	}
 	//Review Modal
 	$('#rvwModal').on('show.bs.modal', function (event) {
-	  var button = $(event.relatedTarget) // Button that triggered the modal
-	  var recipient = button.data('whatever') // Extract info from data-* attributes
-	  // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
-	  // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
 	  var modal = $(this)
-	  //modal.find('.modal-title').text('New message to ' + recipient)
 	  modal.find('.modal-body').html(genReviewTable());
 	})
 	//Show/Hide answer.
@@ -226,17 +225,27 @@ $(document).ready(function() {
 
 			if(typeof p.tests[curTest].kwds != 'undefined'){
 				var kwds = p.tests[curTest].kwds;
+				var kwd;
 				answell.append("Keyword: " + kwds + "<br>");
 				for(var i = 0; i < kwds.length; i+=2){
-					answell.highlight(kwds[i]);
-					$('#ques').highlight(kwds[i]);
-					$('#optcol .radio .radiobtnopt').highlight(kwds[i]);					
+					kwd = kwds[i].trim();
+					answell.highlight(kwd);
+					$('#ques').highlight(kwd);
+					$('#optcol .radio .radiobtnopt').highlight(kwd);					
 				}
 			}
 			
 			
 			if(typeof p.tests[curTest].watchword != 'undefined'){
 				answell.append("Watchword:"+ p.tests[curTest].watchword + "<br>");
+				var wwds = p.tests[curTest].watchword;
+				var wwd;
+				for(var i = 0; i < wwds.length; i+=2){
+					wwd = wwds[i].trim();
+					answell.highlight(wwd);
+					$('#ques').highlight(wwd);
+					$('#optcol .radio .radiobtnopt').highlight(wwd);					
+				}
 			}
 			
 			if(typeof p.tests[curTest].tips != 'undefined'){
@@ -247,6 +256,8 @@ $(document).ready(function() {
 			$(this).html("Show Answer");
 			answell.html('');
 			answell.addClass('hidden');
+			$('#ques').unhighlight();
+			$('#optcol .radio .radiobtnopt').unhighlight();
 		}
 	});	
 	
@@ -269,17 +280,17 @@ $(document).ready(function() {
 			$('#qh').append("<label>Item " + curSN + " of "+ total +"</label>");
 			if(typeof p.tests[curTest].pic != 'undefined'){
 				$('#quescol').append("<div class=\"thumbnail\" id=\"qthb\"><img src=\"${pageContext.request.contextPath}/resources/pic/" + p.tests[curTest].pic+ "\"/></div>")
-				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h4>" + p.tests[curTest].question[0] + "</h4>");
+				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h3>" + p.tests[curTest].question[0] + "</h3>");
 			}else{
-				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h4>" 
-						+ p.tests[curTest].question[0] +"</h4></div>")
+				$('#quescol').append("<div class=\"caption\" id=\"ques\"><h3>" 
+						+ p.tests[curTest].question[0] +"</h3></div>")
 			}
 			var opts = p.tests[curTest].options;
 			for(var i = 0; i < opts.length; ++i){
 				var opt = opts[i];
 				var id = "opt" + i;
 				if(typeof p.tests[curTest].taking != 'undefined'){
-					if(p.tests[curTest].taking.stuans == opt.charAt(0)){
+					if(p.tests[curTest].taking.stuAns == opt.charAt(0)){
 						$('#optcol').append("<div class=\"radio\"><label class=\"radiobtnopt\" for=\"" 
 							+ id + "\"><input id=\"" + id + "\"type=\"radio\" name=\"optradio\" checked>" + opt + "</label></div>");
 					}else{
@@ -293,7 +304,7 @@ $(document).ready(function() {
 				$('input[name="optradio"]').on('click',
 					function(){
 						//onclicked, cache clicked option to local storage.
-						p.tests[curTest].taking = {"stuans":$(this).parent().text().charAt(0)}
+						p.tests[curTest].taking = {"stuAns":$(this).parent().text().charAt(0)}
 						window.sessionStorage.setItem('tests',JSON.stringify(p));						
 				});
 			}
@@ -400,13 +411,13 @@ $(document).ready(function() {
 </div>
 <hr>
 <div class="row">
-<div class="col-sm-8" id="quescol">
+<div class="col-xs-12 col-sm-12 col-lg-12" id="quescol">
 
 </div>
 
 </div>
 <div class="row">
-<div class="col-sm-8" id="optcol">
+<div class="col-sm-8 col-lg-10" id="optcol">
 <!-- radio buttons -->
 </div>
 </div>

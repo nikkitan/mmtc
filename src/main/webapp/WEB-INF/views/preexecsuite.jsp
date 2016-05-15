@@ -5,6 +5,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta http-equiv="X-UA-Compatible" content="IE=8, IE=9, IE=5"><!-- IE fix -->
 <meta charset="utf8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <script src="${pageContext.request.contextPath}/resources/js/jquery-2.1.4.min.js" type="text/javascript"></script>
@@ -46,12 +47,12 @@
 </div>
 <div class="row">
 <div class="col-sm-12">
-<form:radiobutton path="isQuestionRandom" value="1"/> Randomize Questions
+<form:checkbox path="isQuestionRandom" value="1"/> Randomize Questions
 </div>
 </div>
 <div class="row">
 <div class="col-sm-12">
-<form:radiobutton path="isChoiceRandom" value="1"/> Randomize Choices 
+<form:checkbox path="isChoiceRandom" value="1"/> Randomize Choices 
 </div>
 </div>
 <div class="row">
