@@ -87,7 +87,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.reflect.TypeToken;
-import com.mmtc.MMTCVisitor;
+import com.mmtc.exam.MMTCVisitor;
 import com.mmtc.exam.auth.MMTCJdbcUserDetailsMgr;
 import com.mmtc.exam.dao.MMTCUser;
 import com.mmtc.exam.dao.Test;
