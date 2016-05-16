@@ -1,4 +1,4 @@
-package com.mmtc;
+package com.mmtc.exam;
 
 public class MMTCVisitor {
 
